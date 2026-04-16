@@ -6,3 +6,4 @@ dist/
 data/
 *.jpg
 *.mp4
+.superpowers/

@@ -33,8 +33,10 @@ export function DoneScreen({ result, onBack }: Props) {
         </Box>
       )}
 
-      <Text dimColor marginTop={1}>{"─".repeat(46)}</Text>
-      <Text dimColor>아무 키나 누르면 메뉴로 복귀</Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>{"─".repeat(46)}</Text>
+        <Text dimColor>아무 키나 누르면 메뉴로 복귀</Text>
+      </Box>
     </Box>
   );
 }

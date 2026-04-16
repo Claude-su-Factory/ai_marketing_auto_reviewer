@@ -32,7 +32,9 @@ export function MenuScreen({ mode, selectedIndex, inputValue, inputPrompt }: Pro
         ))}
       </Box>
 
-      <Text dimColor marginTop={1}>{"─".repeat(46)}</Text>
+      <Box marginTop={1}>
+        <Text dimColor>{"─".repeat(46)}</Text>
+      </Box>
 
       {mode === "input" ? (
         <Box flexDirection="column">
