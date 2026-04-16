@@ -1,18 +1,20 @@
-export interface Course {
+export interface Product {
   id: string;
-  title: string;
+  name: string;
   description: string;
-  thumbnail: string;
-  url: string;
-  platform: "inflearn" | "class101" | "other";
-  price: number;
+  price?: number;
+  currency: string;          // KRW, USD 등
+  imageUrl?: string;
+  targetUrl: string;         // 광고 클릭 시 이동할 URL
+  category?: string;         // course | app | ecommerce | service | other
   tags: string[];
-  scrapedAt: string;
+  inputMethod: "scraped" | "manual";
+  createdAt: string;
 }
 
 export interface Creative {
   id: string;
-  courseId: string;
+  productId: string;
   copy: {
     headline: string;
     body: string;
@@ -29,7 +31,7 @@ export interface Creative {
 export interface Campaign {
   id: string;
   creativeId: string;
-  courseId: string;
+  productId: string;
   metaCampaignId: string;
   metaAdSetId: string;
   metaAdIds: string[];
@@ -40,7 +42,7 @@ export interface Campaign {
 export interface Report {
   id: string;
   campaignId: string;
-  courseId: string;
+  productId: string;
   date: string;
   impressions: number;
   clicks: number;

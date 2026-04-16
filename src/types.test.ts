@@ -1,20 +1,28 @@
 import { describe, it, expectTypeOf } from "vitest";
-import type { Course, Creative, Campaign, Report, Improvement } from "./types.js";
+import type { Product, Creative, Campaign, Report, Improvement } from "./types.js";
 
 describe("types", () => {
-  it("Course has required fields", () => {
-    expectTypeOf<Course>().toMatchTypeOf<{
+  it("Product has required fields", () => {
+    expectTypeOf<Product>().toMatchTypeOf<{
       id: string;
-      title: string;
-      url: string;
-      platform: string;
+      name: string;
+      targetUrl: string;
+      currency: string;
     }>();
+  });
+
+  it("Creative productId is string", () => {
+    expectTypeOf<Creative["productId"]>().toEqualTypeOf<string>();
   });
 
   it("Creative status is union type", () => {
     expectTypeOf<Creative["status"]>().toEqualTypeOf<
       "pending" | "approved" | "rejected" | "edited"
     >();
+  });
+
+  it("Product inputMethod is union type", () => {
+    expectTypeOf<Product["inputMethod"]>().toEqualTypeOf<"scraped" | "manual">();
   });
 
   it("Improvement has changes array", () => {
