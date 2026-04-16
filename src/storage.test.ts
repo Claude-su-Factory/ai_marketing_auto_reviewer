@@ -38,4 +38,13 @@ describe("storage", () => {
     const result = await readJson(path.join(TEST_DIR, "missing.json"));
     expect(result).toBeNull();
   });
+
+  it("listJson returns only .json files, not other file types", async () => {
+    const { writeFile } = await import("fs/promises");
+    await writeJson(path.join(TEST_DIR, "valid.json"), { id: "valid" });
+    await writeFile(path.join(TEST_DIR, "ignore.txt"), "text file");
+    const files = await listJson(TEST_DIR);
+    expect(files).toHaveLength(1);
+    expect(files[0]).toContain("valid.json");
+  });
 });

@@ -19,10 +19,11 @@ export function computeStats(reports: Report[]): PerformanceStats {
     return { top: [], bottom: [], totalSpend: 0, avgCtr: 0 };
   }
   const sorted = [...reports].sort((a, b) => b.ctr - a.ctr);
-  const half = Math.ceil(sorted.length / 2);
+  const topCount = Math.min(3, Math.ceil(sorted.length / 2));
+  const bottomCount = Math.min(3, sorted.length - topCount);
   return {
-    top: sorted.slice(0, Math.min(3, half)),
-    bottom: sorted.slice(-Math.min(3, sorted.length - half)).reverse(),
+    top: sorted.slice(0, topCount),
+    bottom: sorted.slice(sorted.length - bottomCount).reverse(),
     totalSpend: reports.reduce((sum, r) => sum + r.spend, 0),
     avgCtr: reports.reduce((sum, r) => sum + r.ctr, 0) / reports.length,
   };

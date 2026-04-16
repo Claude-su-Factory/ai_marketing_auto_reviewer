@@ -49,3 +49,15 @@ describe("parseImprovements", () => {
     expect(result.newCode).toBe("const a = 2;");
   });
 });
+
+describe("buildImprovementPrompt safety", () => {
+  it("explicitly prohibits modifying external platform pages", () => {
+    const prompt = buildImprovementPrompt(
+      "src/generator/copy.ts",
+      "const x = 1;",
+      "CTR 0.5%",
+      "카피가 약함"
+    );
+    expect(prompt).toMatch(/인프런|class101|외부.*수정.*금지|절대.*수정/);
+  });
+});

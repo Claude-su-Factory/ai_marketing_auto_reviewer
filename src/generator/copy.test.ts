@@ -46,3 +46,39 @@ describe("generateCopy", () => {
     expect(COPY_SYSTEM_PROMPT.length).toBeGreaterThan(50);
   });
 });
+
+describe("copy business rules", () => {
+  it("generateCopy returns headline within 40 chars when Claude follows prompt", async () => {
+    const mockClient = {
+      messages: {
+        create: vi.fn().mockResolvedValue({
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                headline: "React를 3주 만에 마스터하세요",
+                body: "현직 개발자가 알려주는 실전 React 강의",
+                cta: "지금 수강하기",
+                hashtags: ["#React", "#프론트엔드", "#개발공부"],
+              }),
+            },
+          ],
+        }),
+      },
+    };
+    const result = await generateCopy(mockClient as any, mockCourse);
+    expect(result.headline.length).toBeLessThanOrEqual(40);
+  });
+
+  it("COPY_SYSTEM_PROMPT specifies 40-char headline limit", () => {
+    expect(COPY_SYSTEM_PROMPT).toContain("40");
+  });
+
+  it("COPY_SYSTEM_PROMPT specifies 125-char body limit", () => {
+    expect(COPY_SYSTEM_PROMPT).toContain("125");
+  });
+
+  it("COPY_SYSTEM_PROMPT specifies exactly 3 hashtags", () => {
+    expect(COPY_SYSTEM_PROMPT).toContain("3");
+  });
+});

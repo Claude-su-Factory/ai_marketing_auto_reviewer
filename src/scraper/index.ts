@@ -4,7 +4,7 @@ import type { Course } from "../types.js";
 import { writeJson } from "../storage.js";
 import { randomUUID } from "crypto";
 
-function detectPlatform(url: string): Course["platform"] {
+export function detectPlatform(url: string): Course["platform"] {
   if (url.includes("inflearn.com")) return "inflearn";
   if (url.includes("class101.net")) return "class101";
   return "other";
