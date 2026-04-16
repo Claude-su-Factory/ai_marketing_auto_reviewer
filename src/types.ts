@@ -45,7 +45,9 @@ export interface Report {
   impressions: number;
   clicks: number;
   ctr: number;
+  /** Ad spend in KRW (Korean Won, whole units). Meta returns this as-is for KRW accounts. */
   spend: number;
+  /** Cost per click in KRW (Korean Won, whole units). */
   cpc: number;
   reach: number;
   frequency: number;

@@ -19,7 +19,7 @@ describe("types", () => {
 
   it("Improvement has changes array", () => {
     expectTypeOf<Improvement["changes"]>().toEqualTypeOf<
-      Array<{ file: string; type: string; before: string; after: string }>
+      Array<{ file: string; type: "prompt_update" | "param_update" | "bug_fix"; before: string; after: string }>
     >();
   });
 });
