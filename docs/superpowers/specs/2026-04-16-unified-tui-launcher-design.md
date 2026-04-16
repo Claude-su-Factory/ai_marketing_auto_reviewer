@@ -18,15 +18,19 @@
 
 ```
 "menu" → "running" → "done" → "menu"
-                  ↘ "review" → "done" → "menu"
+"menu" → "input"   → "running" → "done" → "menu"   (Scrape, Monitor)
+"menu" → "review"  → "done" → "menu"
 ```
 
 | 상태 | 화면 | 전환 조건 |
 |------|------|-----------|
-| `menu` | MenuScreen | Enter 키 → `running` 또는 `review` |
+| `menu` | MenuScreen | Enter 키 → `input` / `running` / `review` |
+| `input` | MenuScreen (인라인 입력) | 입력 완료(Enter) → `running` |
 | `running` | PipelineProgress | 실행 완료 → `done` |
 | `review` | ReviewScreen | 검토 완료 → `done` |
 | `done` | DoneScreen | 아무 키 → `menu` |
+
+`input` 상태는 별도 화면 없이 MenuScreen 하단에 인라인 입력 필드를 추가해 처리한다.
 
 ---
 
@@ -34,13 +38,13 @@
 
 | 액션 | 설명 | 전환 |
 |------|------|------|
-| Scrape | 강의 URL 입력 → 스크래핑 | running |
-| Generate | 선택된 강의 → 소재 생성 | running |
+| Scrape | URL 입력(input) → 스크래핑 | input → running |
+| Generate | data/courses/ 전체 강의 소재 생성 | running |
 | Review | 대기 중인 소재 검토·승인 | review |
 | Launch | 승인된 소재 Meta 게재 | running |
-| Monitor | 성과 수집·분석 (daily/weekly 선택) | running |
+| Monitor | daily/weekly 선택(input) → 성과 수집·분석 | input → running |
 | Improve | 자율 개선 실행 | running |
-| Pipeline | 전체 파이프라인 일괄 실행 | running |
+| Pipeline | URL 입력(input) → 전체 파이프라인 일괄 실행 | input → running |
 
 ---
 
@@ -112,6 +116,7 @@ src/
 
 ## 제약 사항
 
-- Scrape 액션은 URL 입력이 필요하므로 메뉴 선택 후 인라인 텍스트 입력 UI로 URL을 받는다
-- Generate는 `data/courses/`에 있는 강의 목록을 자동으로 읽어 전체 처리한다
-- 기존 개별 CLI(`npm run scrape` 등)는 변경하지 않는다
+- Scrape, Pipeline: 메뉴 선택 시 `input` 상태로 전환되어 MenuScreen 하단에 "URL 입력:" 프롬프트가 표시된다. Enter 키로 확정하면 `running`으로 진행한다.
+- Monitor: 메뉴 선택 시 `input` 상태로 전환되어 "daily / weekly 선택 (d/w):" 프롬프트가 표시된다. d 또는 w 입력 후 Enter로 확정한다.
+- Generate: `data/courses/`에 있는 모든 강의를 자동으로 읽어 전체 처리한다. 별도 선택 UI 없음.
+- 기존 개별 CLI(`npm run scrape` 등)는 변경하지 않는다.
