@@ -144,7 +144,7 @@ export async function launchCampaign(
     metaAdSetId: adSet.id as string,
     metaAdIds: adIds,
     launchedAt: new Date().toISOString(),
-    status: "active",
+    status: "paused", // Created as PAUSED in Meta — activate manually in Ads Manager, then update to "active"
   };
 
   await writeJson(`data/campaigns/${campaignRecord.id}.json`, campaignRecord);

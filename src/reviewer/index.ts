@@ -51,6 +51,7 @@ export async function runReviewSession(): Promise<void> {
           const item = items.find((i) => i.creative.id === id);
           if (!item) return;
           const updated = applyReviewDecision(item.creative, { action: "approve" });
+          item.creative = updated;  // update in-memory reference
           await writeJson(`data/creatives/${id}.json`, updated);
           if (items.every((i) => i.creative.status !== "pending")) {
             unmount();
@@ -61,6 +62,7 @@ export async function runReviewSession(): Promise<void> {
           const item = items.find((i) => i.creative.id === id);
           if (!item) return;
           const updated = applyReviewDecision(item.creative, { action: "reject", note });
+          item.creative = updated;  // update in-memory reference
           await writeJson(`data/creatives/${id}.json`, updated);
         },
         onEdit: async (id, field, value) => {
@@ -71,6 +73,7 @@ export async function runReviewSession(): Promise<void> {
             field,
             value,
           });
+          item.creative = updated;  // update in-memory reference
           await writeJson(`data/creatives/${id}.json`, updated);
         },
       })

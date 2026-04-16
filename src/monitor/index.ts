@@ -15,10 +15,14 @@ export interface PerformanceStats {
 }
 
 export function computeStats(reports: Report[]): PerformanceStats {
+  if (reports.length === 0) {
+    return { top: [], bottom: [], totalSpend: 0, avgCtr: 0 };
+  }
   const sorted = [...reports].sort((a, b) => b.ctr - a.ctr);
+  const half = Math.ceil(sorted.length / 2);
   return {
-    top: sorted.slice(0, 3),
-    bottom: sorted.slice(-3).reverse(),
+    top: sorted.slice(0, Math.min(3, half)),
+    bottom: sorted.slice(-Math.min(3, sorted.length - half)).reverse(),
     totalSpend: reports.reduce((sum, r) => sum + r.spend, 0),
     avgCtr: reports.reduce((sum, r) => sum + r.ctr, 0) / reports.length,
   };
@@ -89,7 +93,7 @@ export async function collectDailyReports(): Promise<Report[]> {
 
   for (const p of campaignPaths) {
     const campaign = await readJson<Campaign>(p);
-    if (!campaign || campaign.status !== "active") continue;
+    if (!campaign || campaign.status === "completed") continue;
     const report = await fetchInsights(campaign.metaCampaignId, yesterday);
     if (report) {
       report.courseId = campaign.courseId;
@@ -103,7 +107,8 @@ export async function collectDailyReports(): Promise<Report[]> {
 
 export async function generateWeeklyAnalysis(): Promise<string> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const reportPaths = await listJson("data/reports");
+  const reportPaths = (await listJson("data/reports"))
+    .filter((p) => !p.includes("weekly-analysis"));
   const allReports: Report[] = [];
 
   for (const p of reportPaths.slice(-7)) {

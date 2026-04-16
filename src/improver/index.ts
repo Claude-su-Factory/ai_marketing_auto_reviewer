@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { readFile, writeFile } from "fs/promises";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import type { Report, Improvement, ImprovementChange } from "../types.js";
 import { appendJson } from "../storage.js";
 
@@ -129,10 +129,22 @@ export async function runImprovementCycle(
 
   // 변경 사항 git 커밋
   try {
-    const changedFiles = improvements.map((c) => c.file).join(" ");
-    execSync(`git add ${changedFiles} data/improvements/${dateKey}.json`);
-    execSync(`git commit -m "improve: auto-optimize pipeline (${improvements.length} changes) [${dateKey}]"`);
-    console.log(`[Improver] ${improvements.length}개 개선 적용 및 커밋 완료`);
+    const changedFiles = improvements.map((c) => c.file);
+
+    // Validate each file path (only allow src/*.ts files)
+    const safeFiles = changedFiles.filter((f) =>
+      /^src\/[\w./-]+\.ts$/.test(f)
+    );
+    if (safeFiles.length === 0) return;
+
+    const dataFile = `data/improvements/${dateKey}.json`;
+    execFileSync("git", ["add", ...safeFiles, dataFile]);
+    execFileSync("git", [
+      "commit",
+      "-m",
+      `improve: auto-optimize pipeline (${safeFiles.length} changes) [${dateKey}]`,
+    ]);
+    console.log(`[Improver] ${safeFiles.length}개 개선 적용 및 커밋 완료`);
   } catch (e) {
     console.warn("[Improver] git 커밋 실패:", e);
   }

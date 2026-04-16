@@ -18,12 +18,39 @@ export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) 
   const current = pending[selectedIndex];
 
   useInput((input, key) => {
-    if (mode !== "browse") return;
-    if (key.upArrow) setSelectedIndex((i) => Math.max(0, i - 1));
-    if (key.downArrow) setSelectedIndex((i) => Math.min(pending.length - 1, i + 1));
-    if (input === "a" && current) onApprove(current.creative.id);
-    if (input === "r" && current) setMode("reject");
-    if (input === "e" && current) setMode("edit");
+    if (mode === "browse") {
+      if (key.upArrow) setSelectedIndex((i) => Math.max(0, i - 1));
+      if (key.downArrow) setSelectedIndex((i) => Math.min(pending.length - 1, i + 1));
+      if (input === "a" && current) onApprove(current.creative.id);
+      if (input === "r" && current) { setMode("reject"); setInputValue(""); }
+      if (input === "e" && current) { setMode("edit"); setInputValue(""); }
+      return;
+    }
+
+    // reject/edit mode: handle text input, Enter to confirm, Escape to cancel
+    if (key.escape) {
+      setMode("browse");
+      setInputValue("");
+      return;
+    }
+    if (key.return) {
+      if (mode === "reject" && current) {
+        onReject(current.creative.id, inputValue);
+      }
+      if (mode === "edit" && current) {
+        onEdit(current.creative.id, "headline", inputValue);
+      }
+      setMode("browse");
+      setInputValue("");
+      return;
+    }
+    if (key.backspace || key.delete) {
+      setInputValue((v) => v.slice(0, -1));
+      return;
+    }
+    if (input && !key.ctrl && !key.meta) {
+      setInputValue((v) => v + input);
+    }
   });
 
   if (!current) {
@@ -64,8 +91,14 @@ export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) 
         )}
         {mode === "reject" && (
           <Box marginTop={1} flexDirection="column">
-            <Text>거절 이유 입력 후 Enter:</Text>
+            <Text>거절 이유 입력 후 Enter (Esc: 취소):</Text>
             <Text color="cyan">{inputValue}_</Text>
+          </Box>
+        )}
+        {mode === "edit" && (
+          <Box marginTop={1} flexDirection="column">
+            <Text>새 헤드라인 입력 후 Enter (Esc: 취소):</Text>
+            <Text color="yellow">{inputValue}_</Text>
           </Box>
         )}
       </Box>
