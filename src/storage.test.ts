@@ -22,8 +22,9 @@ describe("storage", () => {
     await appendJson(path.join(TEST_DIR, "items.json"), { id: "1" });
     await appendJson(path.join(TEST_DIR, "items.json"), { id: "2" });
     const result = await readJson<Array<{ id: string }>>(path.join(TEST_DIR, "items.json"));
+    expect(result).not.toBeNull();
     expect(result).toHaveLength(2);
-    expect(result[1].id).toBe("2");
+    expect(result![1].id).toBe("2");
   });
 
   it("listJson returns all JSON files in directory", async () => {
