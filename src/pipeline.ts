@@ -3,12 +3,12 @@ import React from "react";
 import { render } from "ink";
 import type { PipelineStep, StepStatus } from "./tui/PipelineProgress.js";
 import { PipelineProgress } from "./tui/PipelineProgress.js";
-import { scrapeCourse } from "./scraper/index.js";
+import { scrapeProduct } from "./scraper/index.js";
 import { generateCopy, createAnthropicClient } from "./generator/copy.js";
 import { generateImage } from "./generator/image.js";
 import { generateVideo } from "./generator/video.js";
 import { writeJson } from "./storage.js";
-import type { Course, Creative } from "./types.js";
+import type { Product, Creative } from "./types.js";
 import { randomUUID } from "crypto";
 
 export async function runPipeline(urls: string[]): Promise<void> {
@@ -55,32 +55,32 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
   // Step 1: Scrape
   update("scrape", "running", "스크래핑 시작...");
-  const courses: Course[] = [];
+  const products: Product[] = [];
   for (let i = 0; i < urls.length; i++) {
     update("scrape", "running", `스크래핑 중... ${urls[i].slice(0, 40)}`, urls[i].split("/").pop() ?? "", i + 1);
-    const course = await scrapeCourse(urls[i]);
-    courses.push(course);
+    const product = await scrapeProduct(urls[i]);
+    products.push(product);
   }
-  update("scrape", "done", `${courses.length}개 강의 스크래핑 완료`);
+  update("scrape", "done", `${products.length}개 제품 스크래핑 완료`);
 
   // Step 2: Generate
   update("generate", "running", "소재 생성 시작...");
-  for (let i = 0; i < courses.length; i++) {
-    const course = courses[i];
-    update("generate", "running", `카피 생성 중...`, course.title, i + 1);
-    const copy = await generateCopy(client, course);
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i];
+    update("generate", "running", `카피 생성 중...`, product.name, i + 1);
+    const copy = await generateCopy(client, product);
 
-    update("generate", "running", `이미지 생성 중...`, course.title, i + 1);
-    const imageLocalPath = await generateImage(course);
+    update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
+    const imageLocalPath = await generateImage(product);
 
-    update("generate", "running", `영상 생성 중... (최대 10분 소요)`, course.title, i + 1);
-    const videoLocalPath = await generateVideo(course, (msg) =>
-      update("generate", "running", msg, course.title, i + 1)
+    update("generate", "running", `영상 생성 중... (최대 10분 소요)`, product.name, i + 1);
+    const videoLocalPath = await generateVideo(product, (msg) =>
+      update("generate", "running", msg, product.name, i + 1)
     );
 
     const creative: Creative = {
       id: randomUUID(),
-      courseId: course.id,
+      productId: product.id,
       copy,
       imageLocalPath,
       videoLocalPath,

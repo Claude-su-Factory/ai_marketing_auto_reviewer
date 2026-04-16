@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { scrapeCourse } from "../scraper/index.js";
+import { scrapeProduct } from "../scraper/index.js";
 import { generateCopy, createAnthropicClient } from "../generator/copy.js";
 import { generateImage } from "../generator/image.js";
 import { generateVideo } from "../generator/video.js";
@@ -27,11 +27,11 @@ export async function runScrape(
 ): Promise<DoneResult> {
   try {
     onProgress({ message: `스크래핑 중... ${url.slice(0, 40)}` });
-    const course = await scrapeCourse(url);
+    const product = await scrapeProduct(url);
     return {
       success: true,
       message: "Scrape 완료",
-      logs: [`${course.title} (${course.platform}) 저장됨`],
+      logs: [`${product.name} (${product.category ?? "unknown"}) 저장됨`],
     };
   } catch (e) {
     return { success: false, message: "Scrape 실패", logs: [String(e)] };

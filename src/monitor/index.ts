@@ -72,7 +72,7 @@ async function fetchInsights(campaignId: string, date: string): Promise<Report |
     return {
       id: randomUUID(),
       campaignId,
-      courseId: "",
+      productId: "",
       date,
       impressions: Number(d.impressions ?? 0),
       clicks: Number(d.clicks ?? 0),

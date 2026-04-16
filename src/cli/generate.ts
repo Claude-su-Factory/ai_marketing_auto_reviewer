@@ -3,25 +3,25 @@ import { generateCopy, createAnthropicClient } from "../generator/copy.js";
 import { generateImage } from "../generator/image.js";
 import { generateVideo } from "../generator/video.js";
 import { readJson, writeJson } from "../storage.js";
-import type { Course, Creative } from "../types.js";
+import type { Product, Creative } from "../types.js";
 import { randomUUID } from "crypto";
 
-const courseId = process.argv[2];
-if (!courseId) { console.error("Usage: npm run generate <courseId>"); process.exit(1); }
+const productId = process.argv[2];
+if (!productId) { console.error("Usage: npm run generate <productId>"); process.exit(1); }
 
-const course = await readJson<Course>(`data/courses/${courseId}.json`);
-if (!course) { console.error("강의를 찾을 수 없습니다:", courseId); process.exit(1); }
+const product = await readJson<Product>(`data/products/${productId}.json`);
+if (!product) { console.error("제품을 찾을 수 없습니다:", productId); process.exit(1); }
 
 const client = createAnthropicClient();
 console.log("카피 생성 중...");
-const copy = await generateCopy(client, course);
+const copy = await generateCopy(client, product);
 console.log("이미지 생성 중...");
-const imageLocalPath = await generateImage(course);
+const imageLocalPath = await generateImage(product);
 console.log("영상 생성 중... (최대 10분 소요)");
-const videoLocalPath = await generateVideo(course, console.log);
+const videoLocalPath = await generateVideo(product, console.log);
 
 const creative: Creative = {
-  id: randomUUID(), courseId: course.id, copy,
+  id: randomUUID(), productId: product.id, copy,
   imageLocalPath, videoLocalPath, status: "pending",
   createdAt: new Date().toISOString(),
 };
