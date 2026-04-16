@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "app": "tsx src/cli/app.ts",
     "scrape": "tsx src/cli/scrape.ts",
     "generate": "tsx src/cli/generate.ts",
     "review": "tsx src/cli/review.ts",
