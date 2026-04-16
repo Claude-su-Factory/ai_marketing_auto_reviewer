@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
-import type { Creative, Course } from "../types.js";
+import type { Creative, Product } from "../types.js";
 
 interface Props {
-  creatives: Array<{ creative: Creative; course: Course }>;
+  creatives: Array<{ creative: Creative; product: Product }>;
   onApprove: (creativeId: string) => void;
   onReject: (creativeId: string, note: string) => void;
   onEdit: (creativeId: string, field: keyof Creative["copy"], value: string) => void;
@@ -68,7 +68,7 @@ export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) 
         {pending.map((item, i) => (
           <Text key={item.creative.id} color={i === selectedIndex ? "cyan" : "white"}>
             {i === selectedIndex ? "▶ " : "  "}
-            {item.course.title.slice(0, 16)}
+            {item.product.name.slice(0, 16)}
           </Text>
         ))}
       </Box>

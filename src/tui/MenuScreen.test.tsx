@@ -4,7 +4,7 @@ import { render } from "ink-testing-library";
 import { MenuScreen } from "./MenuScreen.js";
 
 describe("MenuScreen", () => {
-  it("renders all 7 menu items", () => {
+  it("renders all 8 menu items", () => {
     const { lastFrame } = render(
       React.createElement(MenuScreen, {
         onSelect: vi.fn(),
@@ -15,6 +15,7 @@ describe("MenuScreen", () => {
       })
     );
     expect(lastFrame()).toContain("Scrape");
+    expect(lastFrame()).toContain("Add Product");
     expect(lastFrame()).toContain("Generate");
     expect(lastFrame()).toContain("Review");
     expect(lastFrame()).toContain("Launch");
@@ -28,7 +29,7 @@ describe("MenuScreen", () => {
       React.createElement(MenuScreen, {
         onSelect: vi.fn(),
         mode: "browse",
-        selectedIndex: 2,
+        selectedIndex: 3,
         inputValue: "",
         inputPrompt: "",
       })
