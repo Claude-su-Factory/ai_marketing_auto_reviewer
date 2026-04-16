@@ -1,0 +1,50 @@
+export type AppState = "menu" | "input" | "running" | "done" | "review";
+
+export interface TaskProgress {
+  copy: number;    // 0-100
+  image: number;   // 0-100
+  video: number;   // 0-100
+}
+
+export interface RunProgress {
+  message: string;
+  currentCourse?: string;
+  courseIndex?: number;
+  totalCourses?: number;
+  taskProgress?: TaskProgress;
+}
+
+export type ProgressCallback = (p: RunProgress) => void;
+
+export interface DoneResult {
+  success: boolean;
+  message: string;
+  logs: string[];
+}
+
+export type ActionKey =
+  | "scrape"
+  | "generate"
+  | "review"
+  | "launch"
+  | "monitor"
+  | "improve"
+  | "pipeline";
+
+export interface MenuItem {
+  key: ActionKey;
+  label: string;
+  description: string;
+  needsInput: boolean;
+  inputPrompt?: string;
+}
+
+export const MENU_ITEMS: MenuItem[] = [
+  { key: "scrape",   label: "Scrape",   description: "강의 정보 수집",      needsInput: true,  inputPrompt: "URL 입력 (Enter 확정):" },
+  { key: "generate", label: "Generate", description: "소재 생성",            needsInput: false },
+  { key: "review",   label: "Review",   description: "검토·승인",            needsInput: false },
+  { key: "launch",   label: "Launch",   description: "광고 게재",            needsInput: false },
+  { key: "monitor",  label: "Monitor",  description: "성과 분석",            needsInput: true,  inputPrompt: "daily / weekly 선택 (d/w):" },
+  { key: "improve",  label: "Improve",  description: "자율 개선",            needsInput: false },
+  { key: "pipeline", label: "Pipeline", description: "전체 파이프라인 실행", needsInput: true,  inputPrompt: "URL 입력 (공백으로 구분, Enter 확정):" },
+];
