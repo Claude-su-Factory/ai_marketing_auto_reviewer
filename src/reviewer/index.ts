@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink";
-import type { Creative, Course } from "../types.js";
+import type { Creative, Product } from "../types.js";
 import { ReviewScreen } from "../tui/ReviewScreen.js";
 import { readJson, writeJson, listJson } from "../storage.js";
 
@@ -29,13 +29,13 @@ export function applyReviewDecision(
 
 export async function runReviewSession(): Promise<void> {
   const creativePaths = await listJson("data/creatives");
-  const items: Array<{ creative: Creative; course: Course }> = [];
+  const items: Array<{ creative: Creative; product: Product }> = [];
 
   for (const p of creativePaths) {
     const creative = await readJson<Creative>(p);
     if (!creative || creative.status !== "pending") continue;
-    const course = await readJson<Course>(`data/courses/${creative.courseId}.json`);
-    if (course) items.push({ creative, course });
+    const product = await readJson<Product>(`data/products/${creative.productId}.json`);
+    if (product) items.push({ creative, product });
   }
 
   if (items.length === 0) {

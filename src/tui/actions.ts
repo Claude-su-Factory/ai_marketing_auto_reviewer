@@ -7,7 +7,7 @@ import { launchCampaign } from "../launcher/index.js";
 import { collectDailyReports, generateWeeklyAnalysis } from "../monitor/index.js";
 import { runImprovementCycle, shouldTriggerImprovement } from "../improver/index.js";
 import { readJson, writeJson, listJson } from "../storage.js";
-import type { Course, Creative, Report } from "../types.js";
+import type { Product, Creative, Report } from "../types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./AppTypes.js";
 import { randomUUID } from "crypto";
 
@@ -40,61 +40,61 @@ export async function runScrape(
 
 export async function runGenerate(onProgress: ProgressCallback): Promise<DoneResult> {
   try {
-    const coursePaths = await listJson("data/courses");
-    if (coursePaths.length === 0) {
+    const productPaths = await listJson("data/products");
+    if (productPaths.length === 0) {
       return {
         success: false,
         message: "Generate 실패",
-        logs: ["data/courses/에 강의가 없습니다. Scrape을 먼저 실행하세요."],
+        logs: ["data/products/에 제품이 없습니다. Scrape을 먼저 실행하세요."],
       };
     }
 
     const client = createAnthropicClient();
     const logs: string[] = [];
 
-    for (let i = 0; i < coursePaths.length; i++) {
-      const course = await readJson<Course>(coursePaths[i]);
-      if (!course) continue;
+    for (let i = 0; i < productPaths.length; i++) {
+      const product = await readJson<Product>(productPaths[i]);
+      if (!product) continue;
 
       const taskProgress: TaskProgress = { copy: 0, image: 0, video: 0 };
 
       onProgress({
         message: "카피 생성 중...",
-        currentCourse: course.title,
+        currentCourse: product.name,
         courseIndex: i + 1,
-        totalCourses: coursePaths.length,
+        totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const copy = await generateCopy(client, course);
+      const copy = await generateCopy(client, product);
       taskProgress.copy = 100;
 
       onProgress({
         message: "이미지 생성 중...",
-        currentCourse: course.title,
+        currentCourse: product.name,
         courseIndex: i + 1,
-        totalCourses: coursePaths.length,
+        totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const imageLocalPath = await generateImage(course);
+      const imageLocalPath = await generateImage(product);
       taskProgress.image = 100;
 
       onProgress({
         message: "영상 생성 중...",
-        currentCourse: course.title,
+        currentCourse: product.name,
         courseIndex: i + 1,
-        totalCourses: coursePaths.length,
+        totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const videoLocalPath = await generateVideo(course, (msg) => {
+      const videoLocalPath = await generateVideo(product, (msg) => {
         const match = msg.match(/\((\d+)\/(\d+)\)/);
         if (match) {
           taskProgress.video = Math.round((Number(match[1]) / Number(match[2])) * 90);
         }
         onProgress({
           message: msg,
-          currentCourse: course.title,
+          currentCourse: product.name,
           courseIndex: i + 1,
-          totalCourses: coursePaths.length,
+          totalCourses: productPaths.length,
           taskProgress: { ...taskProgress },
         });
       });
@@ -102,15 +102,15 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
 
       onProgress({
         message: "저장 중...",
-        currentCourse: course.title,
+        currentCourse: product.name,
         courseIndex: i + 1,
-        totalCourses: coursePaths.length,
+        totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
 
       const creative: Creative = {
         id: randomUUID(),
-        courseId: course.id,
+        productId: product.id,
         copy,
         imageLocalPath,
         videoLocalPath,
@@ -118,12 +118,12 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         createdAt: new Date().toISOString(),
       };
       await writeJson(`data/creatives/${creative.id}.json`, creative);
-      logs.push(`${course.title} ✓`);
+      logs.push(`${product.name} ✓`);
     }
 
     return {
       success: true,
-      message: `Generate 완료 — ${logs.length}개 강의`,
+      message: `Generate 완료 — ${logs.length}개 제품`,
       logs,
     };
   } catch (e) {
@@ -139,12 +139,12 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
     for (const p of creativePaths) {
       const creative = await readJson<Creative>(p);
       if (!creative || (creative.status !== "approved" && creative.status !== "edited")) continue;
-      const course = await readJson<Course>(`data/courses/${creative.courseId}.json`);
-      if (!course) continue;
+      const product = await readJson<Product>(`data/products/${creative.productId}.json`);
+      if (!product) continue;
 
-      onProgress({ message: `게재 중: ${course.title}` });
-      const campaign = await launchCampaign(course, creative);
-      logs.push(`${course.title} → ${campaign.metaCampaignId}`);
+      onProgress({ message: `게재 중: ${product.name}` });
+      const campaign = await launchCampaign(product, creative);
+      logs.push(`${product.name} → ${campaign.metaCampaignId}`);
     }
 
     if (logs.length === 0) {

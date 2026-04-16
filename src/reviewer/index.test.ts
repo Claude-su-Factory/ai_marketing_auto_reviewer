@@ -7,15 +7,15 @@ let mockCreative: Creative;
 beforeEach(() => {
   mockCreative = {
     id: "creative-1",
-    courseId: "course-1",
+    productId: "product-1",
     copy: {
       headline: "TypeScript 마스터",
       body: "3주 만에 TypeScript 완성",
       cta: "지금 수강하기",
       hashtags: ["#TypeScript"],
     },
-    imageLocalPath: "data/creatives/course-1-image.jpg",
-    videoLocalPath: "data/creatives/course-1-video.mp4",
+    imageLocalPath: "data/creatives/product-1-image.jpg",
+    videoLocalPath: "data/creatives/product-1-video.mp4",
     status: "pending",
     createdAt: "2026-04-16T00:00:00.000Z",
   };
