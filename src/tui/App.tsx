@@ -13,10 +13,23 @@ import {
 } from "./actions.js";
 import { readJson, writeJson, listJson } from "../storage.js";
 import { applyReviewDecision } from "../reviewer/index.js";
-import type { Creative, Course } from "../types.js";
+import type { Creative, Product } from "../types.js";
+import { randomUUID } from "crypto";
+
+type FormStep = "name" | "description" | "targetUrl" | "price";
+
+const FORM_STEPS: FormStep[] = ["name", "description", "targetUrl", "price"];
+
+const FORM_PROMPTS: Record<FormStep, string> = {
+  name: "제품명 입력:",
+  description: "제품 설명 입력:",
+  targetUrl: "광고 랜딩 URL 입력:",
+  price: "가격 입력 (없으면 Enter 스킵):",
+};
 
 export function getNextStateForAction(key: ActionKey): AppState {
   if (key === "review") return "review";
+  if (key === "add-product") return "input";
   const item = MENU_ITEMS.find((m) => m.key === key);
   return item?.needsInput ? "input" : "running";
 }
@@ -35,7 +48,9 @@ export function App() {
   const [currentAction, setCurrentAction] = useState<ActionKey | null>(null);
   const [runProgress, setRunProgress] = useState<RunProgress>({ message: "" });
   const [doneResult, setDoneResult] = useState<DoneResult | null>(null);
-  const [reviewItems, setReviewItems] = useState<Array<{ creative: Creative; course: Course }>>([]);
+  const [reviewItems, setReviewItems] = useState<Array<{ creative: Creative; product: Product }>>([]);
+  const [formStep, setFormStep] = useState<FormStep>("name");
+  const [formData, setFormData] = useState<Partial<Product>>({});
 
   const handleProgressUpdate = useCallback((p: RunProgress) => {
     setRunProgress(p);
@@ -85,12 +100,12 @@ export function App() {
 
   const loadReviewItems = useCallback(async () => {
     const creativePaths = await listJson("data/creatives");
-    const items: Array<{ creative: Creative; course: Course }> = [];
+    const items: Array<{ creative: Creative; product: Product }> = [];
     for (const p of creativePaths) {
       const creative = await readJson<Creative>(p);
       if (!creative || creative.status !== "pending") continue;
-      const course = await readJson<Course>(`data/courses/${creative.courseId}.json`);
-      if (course) items.push({ creative, course });
+      const product = await readJson<Product>(`data/products/${creative.productId}.json`);
+      if (product) items.push({ creative, product });
     }
     setReviewItems(items);
   }, []);
@@ -112,6 +127,13 @@ export function App() {
       if (key.return) {
         const item = MENU_ITEMS[selectedIndex];
         setCurrentAction(item.key);
+        if (item.key === "add-product") {
+          setFormStep("name");
+          setFormData({});
+          setInputValue("");
+          setAppState("input");
+          return;
+        }
         const nextState = getNextStateForAction(item.key);
         setInputValue("");
         setAppState(nextState);
@@ -124,6 +146,49 @@ export function App() {
       if (key.escape) {
         setAppState("menu");
         setInputValue("");
+        setFormStep("name");
+        setFormData({});
+        return;
+      }
+      if (key.return && currentAction === "add-product") {
+        const currentIdx = FORM_STEPS.indexOf(formStep);
+        const newFormData = { ...formData };
+
+        if (formStep === "name") newFormData.name = inputValue;
+        else if (formStep === "description") newFormData.description = inputValue;
+        else if (formStep === "targetUrl") newFormData.targetUrl = inputValue;
+        else if (formStep === "price") newFormData.price = inputValue ? Number(inputValue) : undefined;
+
+        setFormData(newFormData);
+        setInputValue("");
+
+        if (currentIdx < FORM_STEPS.length - 1) {
+          setFormStep(FORM_STEPS[currentIdx + 1]);
+        } else {
+          const product: Product = {
+            id: randomUUID(),
+            name: newFormData.name ?? "",
+            description: newFormData.description ?? "",
+            targetUrl: newFormData.targetUrl ?? "",
+            price: newFormData.price,
+            currency: "KRW",
+            imageUrl: undefined,
+            category: undefined,
+            tags: [],
+            inputMethod: "manual",
+            createdAt: new Date().toISOString(),
+          };
+          void writeJson(`data/products/${product.id}.json`, product).then(() => {
+            setDoneResult({
+              success: true,
+              message: "제품 추가 완료",
+              logs: [`${product.name} 저장됨 (ID: ${product.id})`],
+            });
+            setFormData({});
+            setFormStep("name");
+            setAppState("done");
+          });
+        }
         return;
       }
       if (key.return) {
@@ -151,7 +216,9 @@ export function App() {
       mode: appState === "input" ? "input" : "browse",
       selectedIndex,
       inputValue,
-      inputPrompt: currentMenuItem?.inputPrompt ?? "",
+      inputPrompt: currentAction === "add-product"
+        ? (FORM_PROMPTS[formStep] ?? "")
+        : (currentMenuItem?.inputPrompt ?? ""),
     });
   }
 
