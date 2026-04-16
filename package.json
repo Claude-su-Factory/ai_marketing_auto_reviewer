@@ -11,6 +11,7 @@
     "monitor": "tsx src/cli/monitor.ts",
     "pipeline": "tsx src/cli/pipeline.ts",
     "improve": "tsx src/cli/improve.ts",
+    "migrate": "tsx scripts/migrate.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
