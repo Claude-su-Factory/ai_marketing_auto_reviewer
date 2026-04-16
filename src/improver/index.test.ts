@@ -3,13 +3,13 @@ import { buildImprovementPrompt, parseImprovements, shouldTriggerImprovement } f
 import type { Report } from "../types.js";
 
 const lowPerformanceReport: Report = {
-  id: "r1", campaignId: "c1", courseId: "course-1", date: "2026-04-15",
+  id: "r1", campaignId: "c1", productId: "product-1", date: "2026-04-15",
   impressions: 5000, clicks: 40, ctr: 0.8, spend: 60000,
   cpc: 1500, reach: 4500, frequency: 1.1,
 };
 
 const highPerformanceReport: Report = {
-  id: "r2", campaignId: "c2", courseId: "course-2", date: "2026-04-15",
+  id: "r2", campaignId: "c2", productId: "product-2", date: "2026-04-15",
   impressions: 10000, clicks: 420, ctr: 4.2, spend: 134400,
   cpc: 320, reach: 8500, frequency: 1.18,
 };

@@ -97,7 +97,7 @@ export async function collectDailyReports(): Promise<Report[]> {
     if (!campaign || campaign.status === "completed") continue;
     const report = await fetchInsights(campaign.metaCampaignId, yesterday);
     if (report) {
-      report.courseId = campaign.courseId;
+      report.productId = campaign.productId;
       await appendJson(`data/reports/${yesterday}.json`, report);
       reports.push(report);
     }

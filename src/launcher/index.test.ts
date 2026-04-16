@@ -1,22 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { buildCampaignName, buildAdSetTargeting, buildAdConfig } from "./index.js";
-import type { Course } from "../types.js";
+import type { Product } from "../types.js";
 
-const mockCourse: Course = {
-  id: "course-1",
-  title: "Docker 기초",
-  description: "컨테이너 기술",
-  thumbnail: "",
-  url: "https://inflearn.com/course/docker",
-  platform: "inflearn",
-  price: 44000,
-  tags: ["docker", "devops"],
-  scrapedAt: "2026-04-16T00:00:00.000Z",
+const mockProduct: Product = {
+  id: "product-1", name: "Docker 기초", description: "컨테이너 기술",
+  imageUrl: "", targetUrl: "https://inflearn.com/course/docker",
+  category: "course", currency: "KRW", price: 44000, tags: ["docker", "devops"],
+  inputMethod: "scraped", createdAt: "2026-04-16T00:00:00.000Z",
 };
 
 describe("buildCampaignName", () => {
-  it("includes course title and date", () => {
-    const name = buildCampaignName(mockCourse);
+  it("includes product name and date", () => {
+    const name = buildCampaignName(mockProduct);
     expect(name).toContain("Docker 기초");
     expect(name).toMatch(/\d{4}-\d{2}-\d{2}/);
   });
@@ -28,7 +23,6 @@ describe("buildAdSetTargeting", () => {
     expect(targeting.age_min).toBe(20);
     expect(targeting.age_max).toBe(45);
   });
-
   it("targets South Korea", () => {
     const targeting = buildAdSetTargeting();
     expect(targeting.geo_locations.countries).toContain("KR");

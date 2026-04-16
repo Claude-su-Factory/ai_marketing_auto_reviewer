@@ -4,12 +4,12 @@ import type { Report } from "../types.js";
 
 const mockReports: Report[] = [
   {
-    id: "r1", campaignId: "c1", courseId: "course-1", date: "2026-04-15",
+    id: "r1", campaignId: "c1", productId: "product-1", date: "2026-04-15",
     impressions: 10000, clicks: 420, ctr: 4.2, spend: 134400,
     cpc: 320, reach: 8500, frequency: 1.18,
   },
   {
-    id: "r2", campaignId: "c2", courseId: "course-2", date: "2026-04-15",
+    id: "r2", campaignId: "c2", productId: "product-2", date: "2026-04-15",
     impressions: 8000, clicks: 72, ctr: 0.9, spend: 86400,
     cpc: 1200, reach: 7000, frequency: 1.14,
   },
@@ -47,7 +47,7 @@ describe("computeStats edge cases", () => {
 
   it("handles single report without top/bottom overlap", () => {
     const singleReport: Report = {
-      id: "r1", campaignId: "c1", courseId: "course-1", date: "2026-04-15",
+      id: "r1", campaignId: "c1", productId: "product-1", date: "2026-04-15",
       impressions: 1000, clicks: 10, ctr: 1.0, spend: 5000,
       cpc: 500, reach: 900, frequency: 1.1,
     };
