@@ -1,20 +1,14 @@
 import "dotenv/config";
 import { createDb } from "./db.js";
 import { randomUUID } from "crypto";
+import { generateKey, getFlag as getFlagUtil } from "./adminUtils.js";
 
 const db = createDb();
 const args = process.argv.slice(2);
 const command = args[0];
 
-function generateKey(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const part = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `AD-AI-${part()}-${part()}`;
-}
-
 function getFlag(flag: string): string | undefined {
-  const arg = args.find((a) => a.startsWith(`--${flag}=`));
-  return arg?.split("=")[1];
+  return getFlagUtil(args, flag);
 }
 
 switch (command) {
