@@ -7,3 +7,6 @@ data/
 *.jpg
 *.mp4
 .superpowers/
+server/data.db
+server/tmp/
+server/test.db
