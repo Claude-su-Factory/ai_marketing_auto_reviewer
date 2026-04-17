@@ -30,18 +30,18 @@ Stripe 결제는 이 스펙에 포함하지 않는다 (DB 스키마에 `stripe_c
 ```
 앱 시작
     ↓
-라이선스 키 존재? (--key 플래그 or AD_AI_LICENSE_KEY 환경변수)
-    ├── NO  → Owner 모드
-    │         .env API 키 직접 사용
-    │         AI 직접 호출
-    │         사용량 추적 없음
-    │         모든 메뉴 표시
-    │
-    └── YES → Customer 모드
-              Usage Server에 키 검증 (POST /license/validate)
-              ├── 유효 → 세션 토큰 수령 → AI 프록시 모드로 TUI 실행
-              │          Improve 메뉴 숨김
-              └── 무효/만료 → 에러 메시지 출력 후 종료
+AD_AI_MODE 환경변수 확인 (owner | customer)
+    ├── customer → Customer 모드 강제 진입
+    └── owner/없음 → 라이선스 키 존재 여부 확인
+        ├── NO  → Owner 모드
+        │         .env API 키 직접 사용
+        │         AI 직접 호출
+        │         사용량 추적 없음
+        │         모든 메뉴 표시
+        │
+        └── YES → Customer 모드 (자동 감지)
+                  Usage Server에 키 검증 (POST /license/validate)
+                  ...
 ```
 
 ### src/mode.ts
@@ -54,19 +54,28 @@ export interface ModeConfig {
   licenseKey?: string;
   serverUrl?: string;
   sessionToken?: string;
+  tempDir: string;        // 로컬 임시 저장소 경로: "data/temp"
 }
 ```
 
 감지 로직:
-1. `process.argv`에서 `--key=` 플래그 파싱
-2. 없으면 `process.env.AD_AI_LICENSE_KEY` 확인
-3. 둘 다 없으면 Owner 모드
+1. `process.env.AD_AI_MODE`가 `customer`이면 Customer 모드.
+2. `process.argv`에서 `--key=` 플래그 파싱.
+3. `process.env.AD_AI_LICENSE_KEY` 확인.
+4. 위 항목이 모두 없거나 `AD_AI_MODE`가 `owner`이면 Owner 모드.
 
 ---
 
 ## aiProxy — AI 호출 분기점
 
 모든 AI 호출과 사용량 보고를 하나의 인터페이스로 통합한다. 기존 generator 모듈은 수정하지 않고 aiProxy가 래핑한다.
+
+### 로컬 파일 관리 (Customer 모드)
+
+Customer 모드에서 서버로부터 전달받은 소재는 `data/temp/` 디렉토리에 저장한다.
+- **이미지**: 서버의 Base64 응답을 `.png` 파일로 변환하여 저장.
+- **비디오**: 서버에서 다운로드한 `.mp4` 파일을 저장.
+- **관리**: 앱 종료 시 또는 다음 생성 시작 시 `data/temp/` 내의 파일들을 정리한다.
 
 ### 인터페이스
 
@@ -415,10 +424,11 @@ AI 프록시 요청에서 `401 Unauthorized` 응답 시:
 ### .env.example 추가 항목
 
 ```bash
-# CLI 모드 설정 (Customer만 해당)
+# CLI 모드 설정 (owner | customer)
+AD_AI_MODE=owner
 AD_AI_LICENSE_KEY=
 AD_AI_SERVER_URL=http://localhost:3000
-
+```
 # Server 전용 (.env에 같이 둠, CLI에서는 사용 안 함)
 SERVER_PORT=3000
 ```
