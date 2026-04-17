@@ -174,9 +174,49 @@ app.post("/stripe/webhook", express.raw({ type: "application/json" }), (req, res
 });
 ```
 
-주의: Webhook 라우트는 `express.json()` 미들웨어 이전에 등록해야 함 (raw body 필요).
+### Webhook 중복 방지
 
-### 자동 충전 트리거
+첫 결제 시 `checkout.session.completed`와 `payment_intent.succeeded`가 동시에 발생한다. 이중 잔액 추가를 방지하기 위해:
+- `checkout.session.completed` → 첫 결제만 처리 (잔액 추가 + active 전환)
+- `payment_intent.succeeded` → `metadata.type === "auto_recharge"`인 경우만 처리 (자동 충전)
+- 첫 결제의 PaymentIntent에는 `metadata.type`을 설정하지 않으므로 `payment_intent.succeeded`에서 무시됨
+
+### 서버 시작 시 orphaned pending events 정리
+
+서버 재시작 시 in-memory 영상 잡이 유실된다. 시작 시 아래 로직으로 orphaned events를 환불한다:
+
+```typescript
+// server/index.ts 시작 시 실행
+function cleanupOrphanedEvents(db: AppDb) {
+  const orphaned = db.prepare(
+    "SELECT id, license_id, charged_usd FROM usage_events WHERE status = 'pending'"
+  ).all();
+
+  for (const event of orphaned) {
+    db.transaction(() => {
+      db.prepare("UPDATE licenses SET balance_usd = balance_usd + ? WHERE id = ?").run(event.charged_usd, event.license_id);
+      db.prepare("UPDATE usage_events SET status = 'refunded' WHERE id = ?").run(event.id);
+    });
+  }
+
+  if (orphaned.length > 0) {
+    console.log(`[Billing] ${orphaned.length}개 orphaned pending events 환불 완료`);
+  }
+}
+```
+
+### 비동기 작업 처리 (Video Gen)
+
+`video_gen`과 같이 작업 시간이 긴 비동기 요청은 다음과 같이 처리한다:
+1. **요청 시**: 즉시 `charged` 금액 선차감 + `usage_event(pending)` 생성.
+2. **작업 완료 (`done`)**: `usage_event`를 `completed`로 업데이트.
+3. **작업 실패 (`failed`)**: 서버의 폴링 루프 또는 잡 관리자에서 실패 감지 시 즉시 잔액 환불 + `usage_event(refunded)` 업데이트.
+   - 서버 재시작으로 인한 잡 유실 시에도 "failed"로 간주 — 위의 orphaned events 정리 로직이 자동 처리.
+
+### 금액 계산 정밀도
+
+- DB 저장 및 계산은 `REAL` 타입을 사용하되, Stripe API 호출 시에는 항상 `Math.round(amount * 100)`을 통해 정수(cents)로 변환하여 부동 소수점 오차를 방지한다.
+- 모든 잔액 변동 로그(`usage_events`)는 소수점 4자리까지 기록한다.
 
 ```typescript
 async function triggerAutoRecharge(licenseId: string, license: License) {
