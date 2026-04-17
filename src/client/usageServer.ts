@@ -51,14 +51,39 @@ export async function serverFetch(
 
 export async function serverGet(
   config: ModeConfig,
-  path: string
+  path: string,
+  maxRetries = 3
 ): Promise<Response> {
   const url = buildUrl(config.serverUrl!, path);
-  const headers: Record<string, string> = {};
-  if (config.sessionToken) {
-    headers["Authorization"] = `Bearer ${config.sessionToken}`;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const headers: Record<string, string> = {};
+      if (config.sessionToken) {
+        headers["Authorization"] = `Bearer ${config.sessionToken}`;
+      }
+
+      const response = await fetch(url, { headers });
+
+      if (response.status === 401 && config.licenseKey && attempt < maxRetries - 1) {
+        const refreshed = await refreshSession(config);
+        if (refreshed) continue;
+      }
+
+      if (response.status === 429 && attempt < maxRetries - 1) {
+        const data = await response.json() as { retryAfter?: number };
+        await new Promise((r) => setTimeout(r, (data.retryAfter ?? 5) * 1000));
+        continue;
+      }
+
+      return response;
+    } catch (e) {
+      if (attempt === maxRetries - 1) throw e;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
-  return fetch(url, { headers });
+
+  throw new Error("서버 연결 실패");
 }
 
 async function refreshSession(config: ModeConfig): Promise<boolean> {

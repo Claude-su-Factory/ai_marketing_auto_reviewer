@@ -22,7 +22,14 @@ export function createAiParseRouter(db: AppDb) {
 
       res.json(product);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      // 실패해도 AI API 비용은 발생했을 수 있으므로 기록
+      try {
+        const pricing = PRICING.parse;
+        db.prepare(
+          "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
+        ).run(randomUUID(), (req as any).licenseId, "parse", pricing.aiCost, 0, JSON.stringify({ error: true }));
+      } catch {}
+      res.status(500).json({ error: "AI 처리 중 오류가 발생했습니다." });
     }
   });
 

@@ -14,7 +14,7 @@ import { createUsageRouter } from "./routes/usage.js";
 import { cleanupOldFiles } from "./jobs/videoJob.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 3000);
-const SERVER_URL = `http://localhost:${PORT}`;
+const SERVER_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`;
 
 const db = createDb();
 const sessions = createSessionStore();
@@ -45,17 +45,21 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
     return;
   }
   (req as any).licenseId = session.licenseId;
+  next();
+};
 
-  const rateResult = rateLimiter.check(session.licenseId);
+const rateLimitMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const licenseId = (req as any).licenseId;
+  const rateResult = rateLimiter.check(licenseId);
   if (!rateResult.allowed) {
     res.status(429).json({ error: "Rate limit exceeded", retryAfter: rateResult.retryAfter });
     return;
   }
-
   next();
 };
 
-app.use("/ai", authMiddleware);
+// Apply: auth to both, rate limit only to /ai
+app.use("/ai", authMiddleware, rateLimitMiddleware);
 app.use("/usage", authMiddleware);
 
 // Routes

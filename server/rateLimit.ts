@@ -16,15 +16,14 @@ export function createRateLimiter(maxRequests = 10, windowMs = 60000) {
         buckets.set(licenseId, bucket);
       }
 
-      bucket.count++;
-
-      if (bucket.count > maxRequests) {
+      if (bucket.count >= maxRequests) {
         return {
           allowed: false,
           retryAfter: Math.ceil((bucket.resetAt - now) / 1000),
         };
       }
 
+      bucket.count++;
       return { allowed: true };
     },
   };

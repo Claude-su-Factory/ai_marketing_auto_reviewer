@@ -5,6 +5,7 @@ export type AppDb = Database.Database;
 export function createDb(path = "server/data.db"): AppDb {
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS licenses (
