@@ -29,4 +29,19 @@ describe("createDb", () => {
     expect(row.customer_email).toBe("test@example.com");
     expect(row.status).toBe("active");
   });
+
+  it("licenses table has balance_usd column", () => {
+    db.prepare("INSERT INTO licenses (id, key, customer_email) VALUES (?, ?, ?)").run("id-bal", "AD-AI-BAL-TEST", "bal@test.com");
+    const row = db.prepare("SELECT balance_usd, recharge_amount, recharge_tier FROM licenses WHERE id = ?").get("id-bal") as any;
+    expect(row.balance_usd).toBe(0);
+    expect(row.recharge_amount).toBe(20);
+    expect(row.recharge_tier).toBe("standard");
+  });
+
+  it("usage_events table has status column", () => {
+    db.prepare("INSERT INTO licenses (id, key, customer_email) VALUES (?, ?, ?)").run("id-st", "AD-AI-ST-TEST", "st@test.com");
+    db.prepare("INSERT INTO usage_events (id, license_id, type, status) VALUES (?, ?, ?, ?)").run("ev1", "id-st", "copy_gen", "pending");
+    const row = db.prepare("SELECT status FROM usage_events WHERE id = ?").get("ev1") as any;
+    expect(row.status).toBe("pending");
+  });
 });

@@ -14,6 +14,10 @@ export function createDb(path = "server/data.db"): AppDb {
       customer_email TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'active',
       stripe_customer_id TEXT,
+      balance_usd REAL NOT NULL DEFAULT 0,
+      recharge_amount REAL NOT NULL DEFAULT 20,
+      recharge_tier TEXT NOT NULL DEFAULT 'standard',
+      stripe_payment_method_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -24,6 +28,7 @@ export function createDb(path = "server/data.db"): AppDb {
       ai_cost_usd REAL NOT NULL DEFAULT 0,
       charged_usd REAL NOT NULL DEFAULT 0,
       metadata TEXT,
+      status TEXT NOT NULL DEFAULT 'completed',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -39,6 +44,13 @@ export function createDb(path = "server/data.db"): AppDb {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  const safeAlter = (sql: string) => { try { db.exec(sql); } catch {} };
+  safeAlter("ALTER TABLE licenses ADD COLUMN balance_usd REAL NOT NULL DEFAULT 0");
+  safeAlter("ALTER TABLE licenses ADD COLUMN recharge_amount REAL NOT NULL DEFAULT 20");
+  safeAlter("ALTER TABLE licenses ADD COLUMN recharge_tier TEXT NOT NULL DEFAULT 'standard'");
+  safeAlter("ALTER TABLE licenses ADD COLUMN stripe_payment_method_id TEXT");
+  safeAlter("ALTER TABLE usage_events ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'");
 
   return db;
 }
