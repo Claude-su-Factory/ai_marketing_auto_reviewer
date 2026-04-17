@@ -11,3 +11,4 @@ data/
 server/data.db
 server/tmp/
 server/test.db
+server/test-billing.db
