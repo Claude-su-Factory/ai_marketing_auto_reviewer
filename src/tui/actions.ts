@@ -1,10 +1,7 @@
 import "dotenv/config";
-import { scrapeProduct } from "../scraper/index.js";
-import { generateCopy, createAnthropicClient } from "../generator/copy.js";
-import { generateImage } from "../generator/image.js";
-import { generateVideo } from "../generator/video.js";
+import type { AiProxy } from "../client/aiProxy.js";
 import { launchCampaign } from "../launcher/index.js";
-import { collectDailyReports, generateWeeklyAnalysis } from "../monitor/index.js";
+import { collectDailyReports } from "../monitor/index.js";
 import { runImprovementCycle, shouldTriggerImprovement } from "../improver/index.js";
 import { readJson, writeJson, listJson } from "../storage.js";
 import type { Product, Creative, Report } from "../types.js";
@@ -22,23 +19,34 @@ export function validateMonitorMode(input: string): "daily" | "weekly" | null {
 }
 
 export async function runScrape(
+  proxy: AiProxy,
   url: string,
   onProgress: ProgressCallback
 ): Promise<DoneResult> {
   try {
     onProgress({ message: `스크래핑 중... ${url.slice(0, 40)}` });
-    const product = await scrapeProduct(url);
-    return {
-      success: true,
-      message: "Scrape 완료",
-      logs: [`${product.name} (${product.category ?? "unknown"}) 저장됨`],
-    };
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    try {
+      await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+      const html = await page.content();
+      const product = await proxy.parseProduct(url, html);
+      await writeJson(`data/products/${product.id}.json`, product);
+      return {
+        success: true,
+        message: "Scrape 완료",
+        logs: [`${product.name} 저장됨`],
+      };
+    } finally {
+      await browser.close();
+    }
   } catch (e) {
     return { success: false, message: "Scrape 실패", logs: [String(e)] };
   }
 }
 
-export async function runGenerate(onProgress: ProgressCallback): Promise<DoneResult> {
+export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
     const productPaths = await listJson("data/products");
     if (productPaths.length === 0) {
@@ -49,7 +57,6 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
       };
     }
 
-    const client = createAnthropicClient();
     const logs: string[] = [];
 
     for (let i = 0; i < productPaths.length; i++) {
@@ -65,7 +72,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const copy = await generateCopy(client, product);
+      const copy = await proxy.generateCopy(product);
       taskProgress.copy = 100;
 
       onProgress({
@@ -75,7 +82,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const imageLocalPath = await generateImage(product);
+      const imageLocalPath = await proxy.generateImage(product);
       taskProgress.image = 100;
 
       onProgress({
@@ -85,7 +92,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const videoLocalPath = await generateVideo(product, (msg) => {
+      const videoLocalPath = await proxy.generateVideo(product, (msg) => {
         const match = msg.match(/\((\d+)\/(\d+)\)/);
         if (match) {
           taskProgress.video = Math.round((Number(match[1]) / Number(match[2])) * 90);
@@ -131,7 +138,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
   }
 }
 
-export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResult> {
+export async function runLaunch(proxy: AiProxy, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
     const creativePaths = await listJson("data/creatives");
     const logs: string[] = [];
@@ -144,6 +151,7 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
 
       onProgress({ message: `게재 중: ${product.name}` });
       const campaign = await launchCampaign(product, creative);
+      await proxy.reportUsage("campaign_launch", { campaignId: campaign.id });
       logs.push(`${product.name} → ${campaign.metaCampaignId}`);
     }
 
@@ -161,6 +169,7 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
 }
 
 export async function runMonitor(
+  proxy: AiProxy,
   mode: "daily" | "weekly",
   onProgress: ProgressCallback
 ): Promise<DoneResult> {
@@ -175,7 +184,20 @@ export async function runMonitor(
       };
     } else {
       onProgress({ message: "주간 분석 중... (Claude 분석 포함)" });
-      const analysis = await generateWeeklyAnalysis();
+      const reportPaths = (await listJson("data/reports")).filter(f => !f.includes("weekly-analysis"));
+      const allReports: Report[] = [];
+      for (const p of reportPaths.slice(-7)) {
+        const daily = await readJson<Report[]>(p);
+        if (daily) allReports.push(...daily);
+      }
+      if (allReports.length === 0) {
+        return { success: true, message: "Monitor (weekly) 완료", logs: ["성과 데이터 없음"] };
+      }
+      const analysis = await proxy.analyzePerformance(allReports);
+      await writeJson(
+        `data/reports/weekly-analysis-${new Date().toISOString().split("T")[0]}.json`,
+        JSON.parse(analysis.match(/\{[\s\S]*\}/)?.[0] ?? "{}")
+      );
       return {
         success: true,
         message: "Monitor (weekly) 완료",
@@ -187,7 +209,7 @@ export async function runMonitor(
   }
 }
 
-export async function runImprove(onProgress: ProgressCallback): Promise<DoneResult> {
+export async function runImprove(proxy: AiProxy, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
     const reportPaths = await listJson("data/reports");
     const allReports: Report[] = [];
@@ -225,6 +247,7 @@ export async function runImprove(onProgress: ProgressCallback): Promise<DoneResu
 }
 
 export async function runPipelineAction(
+  proxy: AiProxy,
   urls: string[],
   onProgress: ProgressCallback
 ): Promise<DoneResult> {
@@ -236,12 +259,12 @@ export async function runPipelineAction(
       courseIndex: i + 1,
       totalCourses: urls.length,
     });
-    const scrapeResult = await runScrape(urls[i], onProgress);
+    const scrapeResult = await runScrape(proxy, urls[i], onProgress);
     if (!scrapeResult.success) return scrapeResult;
     logs.push(...scrapeResult.logs);
   }
 
-  const generateResult = await runGenerate(onProgress);
+  const generateResult = await runGenerate(proxy, onProgress);
   logs.push(...generateResult.logs);
 
   return {

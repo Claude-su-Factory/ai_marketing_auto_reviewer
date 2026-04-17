@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { MENU_ITEMS } from "./AppTypes.js";
-import type { ActionKey } from "./AppTypes.js";
+import type { ActionKey, MenuItem } from "./AppTypes.js";
 
 interface Props {
   onSelect: (key: ActionKey, inputValue?: string) => void;
@@ -9,9 +9,11 @@ interface Props {
   selectedIndex: number;
   inputValue: string;
   inputPrompt: string;
+  items?: MenuItem[];
 }
 
-export function MenuScreen({ mode, selectedIndex, inputValue, inputPrompt }: Props) {
+export function MenuScreen({ mode, selectedIndex, inputValue, inputPrompt, items }: Props) {
+  const menuItems = items ?? MENU_ITEMS;
   return (
     <Box flexDirection="column" borderStyle="round" padding={1} width={50}>
       <Box justifyContent="space-between">
@@ -21,7 +23,7 @@ export function MenuScreen({ mode, selectedIndex, inputValue, inputPrompt }: Pro
       <Text dimColor>{"─".repeat(46)}</Text>
 
       <Box marginTop={1} flexDirection="column">
-        {MENU_ITEMS.map((item, i) => (
+        {menuItems.map((item, i) => (
           <Box key={item.key}>
             <Text color={i === selectedIndex ? "cyan" : "white"}>
               {i === selectedIndex ? "▶ " : "  "}
