@@ -2,19 +2,26 @@ import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { computeStats, buildAnalysisPrompt } from "../../src/monitor/index.js";
 import type { Report } from "../../src/types.js";
-import type { AppDb } from "../db.js";
+import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
-import { randomUUID } from "crypto";
+import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
-export function createAiAnalyzeRouter(db: AppDb) {
+export function createAiAnalyzeRouter(billing: BillingService) {
   const router = Router();
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
   router.post("/ai/analyze", async (req, res) => {
-    try {
-      const { reports } = req.body as { reports: Report[] };
-      const licenseId = (req as any).licenseId;
+    const { reports } = req.body as { reports: Report[] };
+    const licenseId = (req as any).licenseId;
+    const pricing = PRICING.analyze;
 
+    if (!billing.checkBalance(licenseId, pricing.charged)) {
+      res.status(402).json({ error: "잔액 부족", required: pricing.charged });
+      return;
+    }
+
+    const eventId = billing.deductAndRecord(licenseId, "analyze", pricing.aiCost, pricing.charged);
+    try {
       const stats = computeStats(reports);
       const prompt = buildAnalysisPrompt(reports, stats);
       const response = await client.messages.create({
@@ -24,22 +31,20 @@ export function createAiAnalyzeRouter(db: AppDb) {
       });
 
       const analysis = response.content[0].type === "text" ? response.content[0].text : "";
+      billing.confirmUsage(eventId);
 
-      const pricing = PRICING.analyze;
-      db.prepare(
-        "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(randomUUID(), licenseId, "analyze", pricing.aiCost, pricing.charged, JSON.stringify({ reportCount: reports.length }));
+      if (billing.needsRecharge(licenseId)) {
+        const license = billing.getLicense(licenseId);
+        if (license?.stripe_customer_id && license?.stripe_payment_method_id) {
+          const stripe = createStripeClient();
+          triggerAutoRecharge(stripe, license.stripe_customer_id, license.stripe_payment_method_id, license.recharge_amount, licenseId).catch(() => {});
+        }
+      }
 
       res.json({ analysis });
     } catch (e) {
-      // 실패해도 AI API 비용은 발생했을 수 있으므로 기록
-      try {
-        const pricing = PRICING.analyze;
-        db.prepare(
-          "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
-        ).run(randomUUID(), (req as any).licenseId, "analyze", pricing.aiCost, 0, JSON.stringify({ error: true }));
-      } catch {}
-      res.status(500).json({ error: "AI 처리 중 오류가 발생했습니다." });
+      billing.refund(eventId, licenseId, pricing.charged);
+      res.status(500).json({ error: "AI 처리 실패. 잔액이 환불되었습니다." });
     }
   });
 

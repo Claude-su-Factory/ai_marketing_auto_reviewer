@@ -5,8 +5,9 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "../../src/generator/video.js";
 import type { Product } from "../../src/types.js";
-import type { AppDb } from "../db.js";
+import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
+import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export interface VideoJob {
   id: string;
@@ -31,7 +32,8 @@ export async function startVideoJob(
   product: Product,
   licenseId: string,
   serverBaseUrl: string,
-  db: AppDb
+  billing: BillingService,
+  eventId: string
 ): Promise<string> {
   const jobId = `veo-${randomUUID().slice(0, 8)}`;
   const job: VideoJob = {
@@ -42,9 +44,10 @@ export async function startVideoJob(
   };
   jobs.set(jobId, job);
 
-  runVeoGeneration(job, product, serverBaseUrl, db).catch((e) => {
+  runVeoGeneration(job, product, serverBaseUrl, billing, eventId).catch((e) => {
     job.status = "failed";
     job.error = String(e);
+    billing.refund(eventId, licenseId, PRICING.video_gen.charged);
   });
 
   return jobId;
@@ -54,7 +57,8 @@ async function runVeoGeneration(
   job: VideoJob,
   product: Product,
   serverBaseUrl: string,
-  db: AppDb
+  billing: BillingService,
+  eventId: string
 ) {
   const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
   const prompt = buildVideoPrompt(product);
@@ -76,6 +80,7 @@ async function runVeoGeneration(
   if (!operation.done) {
     job.status = "failed";
     job.error = "Veo 3.1: 영상 생성 타임아웃";
+    billing.refund(eventId, job.licenseId, PRICING.video_gen.charged);
     return;
   }
 
@@ -83,6 +88,7 @@ async function runVeoGeneration(
   if (!videoData) {
     job.status = "failed";
     job.error = "Veo 3.1: 영상 데이터 없음";
+    billing.refund(eventId, job.licenseId, PRICING.video_gen.charged);
     return;
   }
 
@@ -97,10 +103,15 @@ async function runVeoGeneration(
   job.downloadUrl = `${serverBaseUrl}/files/${job.id}.mp4`;
   job.status = "done";
 
-  const pricing = PRICING.video_gen;
-  db.prepare(
-    "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
-  ).run(randomUUID(), job.licenseId, "video_gen", pricing.aiCost, pricing.charged, JSON.stringify({ jobId: job.id }));
+  billing.confirmUsage(eventId);
+
+  if (billing.needsRecharge(job.licenseId)) {
+    const license = billing.getLicense(job.licenseId);
+    if (license?.stripe_customer_id && license?.stripe_payment_method_id) {
+      const stripe = createStripeClient();
+      triggerAutoRecharge(stripe, license.stripe_customer_id, license.stripe_payment_method_id, license.recharge_amount, job.licenseId).catch(() => {});
+    }
+  }
 }
 
 export async function cleanupOldFiles() {

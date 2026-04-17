@@ -1,19 +1,29 @@
 import { Router } from "express";
 import { startVideoJob, getJob } from "../jobs/videoJob.js";
 import type { Product } from "../../src/types.js";
-import type { AppDb } from "../db.js";
+import type { BillingService } from "../billing.js";
+import { PRICING } from "../pricing.js";
 
-export function createAiVideoRouter(db: AppDb, serverBaseUrl: string) {
+export function createAiVideoRouter(billing: BillingService, serverBaseUrl: string) {
   const router = Router();
 
   router.post("/ai/video", async (req, res) => {
+    const { product } = req.body as { product: Product };
+    const licenseId = (req as any).licenseId;
+    const pricing = PRICING.video_gen;
+
+    if (!billing.checkBalance(licenseId, pricing.charged)) {
+      res.status(402).json({ error: "잔액 부족", required: pricing.charged });
+      return;
+    }
+
+    const eventId = billing.deductAndRecord(licenseId, "video_gen", pricing.aiCost, pricing.charged);
     try {
-      const { product } = req.body as { product: Product };
-      const licenseId = (req as any).licenseId;
-      const jobId = await startVideoJob(product, licenseId, serverBaseUrl, db);
+      const jobId = await startVideoJob(product, licenseId, serverBaseUrl, billing, eventId);
       res.json({ jobId, status: "pending" });
     } catch (e) {
-      res.status(500).json({ error: "AI 처리 중 오류가 발생했습니다." });
+      billing.refund(eventId, licenseId, pricing.charged);
+      res.status(500).json({ error: "AI 처리 실패. 잔액이 환불되었습니다." });
     }
   });
 

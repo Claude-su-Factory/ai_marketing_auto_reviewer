@@ -1,35 +1,41 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { parseProductWithGemini } from "../../src/scraper/index.js";
-import type { AppDb } from "../db.js";
+import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
-import { randomUUID } from "crypto";
+import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
-export function createAiParseRouter(db: AppDb) {
+export function createAiParseRouter(billing: BillingService) {
   const router = Router();
 
   router.post("/ai/parse", async (req, res) => {
+    const { url, html } = req.body as { url: string; html: string };
+    const licenseId = (req as any).licenseId;
+    const pricing = PRICING.parse;
+
+    if (!billing.checkBalance(licenseId, pricing.charged)) {
+      res.status(402).json({ error: "잔액 부족", required: pricing.charged });
+      return;
+    }
+
+    const eventId = billing.deductAndRecord(licenseId, "parse", pricing.aiCost, pricing.charged);
     try {
-      const { url, html } = req.body as { url: string; html: string };
-      const licenseId = (req as any).licenseId;
       const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
       const product = await parseProductWithGemini(ai, url, html);
+      billing.confirmUsage(eventId);
 
-      const pricing = PRICING.parse;
-      db.prepare(
-        "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(randomUUID(), licenseId, "parse", pricing.aiCost, pricing.charged, JSON.stringify({ url }));
+      if (billing.needsRecharge(licenseId)) {
+        const license = billing.getLicense(licenseId);
+        if (license?.stripe_customer_id && license?.stripe_payment_method_id) {
+          const stripe = createStripeClient();
+          triggerAutoRecharge(stripe, license.stripe_customer_id, license.stripe_payment_method_id, license.recharge_amount, licenseId).catch(() => {});
+        }
+      }
 
       res.json(product);
     } catch (e) {
-      // 실패해도 AI API 비용은 발생했을 수 있으므로 기록
-      try {
-        const pricing = PRICING.parse;
-        db.prepare(
-          "INSERT INTO usage_events (id, license_id, type, ai_cost_usd, charged_usd, metadata) VALUES (?, ?, ?, ?, ?, ?)"
-        ).run(randomUUID(), (req as any).licenseId, "parse", pricing.aiCost, 0, JSON.stringify({ error: true }));
-      } catch {}
-      res.status(500).json({ error: "AI 처리 중 오류가 발생했습니다." });
+      billing.refund(eventId, licenseId, pricing.charged);
+      res.status(500).json({ error: "AI 처리 실패. 잔액이 환불되었습니다." });
     }
   });
 
