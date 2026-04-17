@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { existsSync, mkdirSync } from "fs";
 import { createDb } from "./db.js";
+import { createBillingService } from "./billing.js";
+import { createStripeClient } from "./stripe.js";
 import { createSessionStore } from "./auth.js";
 import { createRateLimiter } from "./rateLimit.js";
 import { createLicenseRouter } from "./routes/license.js";
@@ -11,16 +13,29 @@ import { createAiVideoRouter } from "./routes/aiVideo.js";
 import { createAiParseRouter } from "./routes/aiParse.js";
 import { createAiAnalyzeRouter } from "./routes/aiAnalyze.js";
 import { createUsageRouter } from "./routes/usage.js";
+import { createStripeWebhookRouter } from "./routes/stripeWebhook.js";
 import { cleanupOldFiles } from "./jobs/videoJob.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 3000);
 const SERVER_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`;
 
 const db = createDb();
+const billing = createBillingService(db);
 const sessions = createSessionStore();
 const rateLimiter = createRateLimiter(10, 60000);
 
+// Cleanup orphaned pending events from previous crashes
+const orphaned = billing.cleanupOrphanedEvents();
+if (orphaned > 0) console.log(`[Billing] Cleaned up ${orphaned} orphaned pending events`);
+
 const app = express();
+
+// Stripe webhook must be registered BEFORE express.json() — needs raw body
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) {
+  const stripe = createStripeClient();
+  app.use(createStripeWebhookRouter(stripe, process.env.STRIPE_WEBHOOK_SECRET, billing));
+}
+
 app.use(express.json({ limit: "10mb" }));
 
 // Static file serving for video downloads
@@ -63,11 +78,11 @@ app.use("/ai", authMiddleware, rateLimitMiddleware);
 app.use("/usage", authMiddleware);
 
 // Routes
-app.use(createAiCopyRouter(db));
-app.use(createAiImageRouter(db));
-app.use(createAiVideoRouter(db, SERVER_URL));
-app.use(createAiParseRouter(db));
-app.use(createAiAnalyzeRouter(db));
+app.use(createAiCopyRouter(billing));
+app.use(createAiImageRouter(billing));
+app.use(createAiVideoRouter(billing, SERVER_URL));
+app.use(createAiParseRouter(billing));
+app.use(createAiAnalyzeRouter(billing));
 app.use(createUsageRouter(db));
 
 // Cleanup old video files
