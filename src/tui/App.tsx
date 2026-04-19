@@ -12,7 +12,7 @@ import {
   runImprove, runPipelineAction, validateMonitorMode,
 } from "./actions.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
-import { applyReviewDecision } from "../reviewer/index.js";
+import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 import type { Creative, Product } from "../../core/types.js";
 import { randomUUID } from "crypto";
 import { detectMode, type ModeConfig } from "../mode.js";

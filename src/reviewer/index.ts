@@ -3,29 +3,10 @@ import { render } from "ink";
 import type { Creative, Product } from "../../core/types.js";
 import { ReviewScreen } from "../tui/ReviewScreen.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
+import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 
-export type ReviewAction =
-  | { action: "approve" }
-  | { action: "reject"; note: string }
-  | { action: "edit"; field: keyof Creative["copy"]; value: string };
-
-export function applyReviewDecision(
-  creative: Creative,
-  decision: ReviewAction
-): Creative {
-  switch (decision.action) {
-    case "approve":
-      return { ...creative, status: "approved" };
-    case "reject":
-      return { ...creative, status: "rejected", reviewNote: decision.note };
-    case "edit":
-      return {
-        ...creative,
-        status: "edited",
-        copy: { ...creative.copy, [decision.field]: decision.value },
-      };
-  }
-}
+export { applyReviewDecision } from "../../core/reviewer/decisions.js";
+export type { ReviewAction } from "../../core/reviewer/decisions.js";
 
 export async function runReviewSession(): Promise<void> {
   const creativePaths = await listJson("data/creatives");
