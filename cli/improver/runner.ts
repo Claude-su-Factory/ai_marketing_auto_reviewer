@@ -5,8 +5,6 @@ import type { Report, Improvement, ImprovementChange } from "../../core/types.js
 import { appendJson } from "../../core/storage.js";
 import { buildImprovementPrompt, parseImprovements } from "../../core/improver/index.js";
 
-export { shouldTriggerImprovement, buildImprovementPrompt, parseImprovements } from "../../core/improver/index.js";
-
 const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
 
 async function applyCodeChange(

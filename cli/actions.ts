@@ -2,7 +2,7 @@ import "dotenv/config";
 import type { AiProxy } from "./client/aiProxy.js";
 import { launchCampaign } from "../core/campaign/launcher.js";
 import { collectDailyReports } from "../core/campaign/monitor.js";
-import { runImprovementCycle } from "../src/improver/index.js";
+import { runImprovementCycle } from "./improver/runner.js";
 import { shouldTriggerImprovement } from "../core/improver/index.js";
 import { readJson, writeJson, listJson } from "../core/storage.js";
 import type { Product, Creative, Report } from "../core/types.js";

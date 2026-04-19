@@ -1,3 +1,3 @@
 import "dotenv/config";
-import { runReviewSession } from "../reviewer/index.js";
+import { runReviewSession } from "../../cli/reviewer/session.js";
 runReviewSession().catch(console.error);
