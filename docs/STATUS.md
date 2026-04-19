@@ -11,7 +11,7 @@
 - [x] SP1.5 — 통합 TUI 앱 (Ink 기반 메뉴/입력/진행 화면)
 - [x] SP2 — CLI 모드 분리 (Owner/Customer) + Usage API Server (Express + SQLite)
 - [x] SP3 — Stripe 빌링 (deduct-first 패턴 + 자동 충전 + Webhook dedup)
-- [ ] SP4 — 레이어드 아키텍처 리팩터 (설계 승인됨, 구현 대기)
+- [x] SP4 — 레이어드 아키텍처 리팩터 (`core/` + `cli/` + `server/` 분리 완료)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | 컴포넌트 | 상태 | 위치 |
 |---------|------|------|
-| CLI 앱 (Owner/Customer 모드) | ✅ 운영 | `src/cli/`, `src/tui/` |
+| CLI 앱 (Owner/Customer 모드) | ✅ 운영 | `cli/entries/`, `cli/tui/` |
 | Usage API Server (Express + SQLite) | ✅ 구현 완료 | `server/index.ts` |
 | AI 프록시 라우트 (copy/image/video/parse/analyze) | ✅ 구현 완료 | `server/routes/` |
 | Stripe Webhook + 자동 충전 | ✅ 구현 완료 (dedup 포함) | `server/routes/stripeWebhook.ts` |
@@ -32,6 +32,7 @@
 
 ## 최근 변경 이력
 
+- 2026-04-19 refactor: SP4 레이어드 리팩터 완료 (`src/` 제거, `core/` + `cli/`로 분리, 127 테스트 유지)
 - 2026-04-19 feat: Stripe Webhook dedup 구현 (stripe_events 테이블 + INSERT OR IGNORE)
 - 2026-04-17 docs: 레이어드 아키텍처 리팩터 설계 스펙 추가
 - 2026-04-17 chore: 빌링 테스트 DB를 gitignore에 추가
@@ -41,7 +42,6 @@
 - 2026-04-17 feat: Stripe Webhook 핸들러 추가 (dedup + 자동 충전)
 - 2026-04-17 feat: Stripe SDK 래퍼 추가 (customer/checkout/recharge)
 - 2026-04-17 feat: deduct-first 패턴 기반 빌링 서비스 + 환불 로직 추가
-- 2026-04-17 feat: DB 스키마에 balance/recharge/status 컬럼 추가
 
 <!--
 업데이트 규칙:

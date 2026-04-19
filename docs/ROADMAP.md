@@ -6,19 +6,13 @@
 
 ## 현재 추천 다음 작업
 
-**SP4 — 레이어드 아키텍처 리팩터**
-
-`src/`와 `server/`의 책임 경계가 흐려져 있는 현재 구조를, 프레임워크 무관 `core/`와 presentation layer `cli/`·`server/`로 재조직한다. 순수 파일 이동 리팩터이며 동작 변경은 없다.
-
-- 설계 문서: [`docs/superpowers/specs/2026-04-17-layered-architecture-refactor-design.md`](superpowers/specs/2026-04-17-layered-architecture-refactor-design.md)
-- 구현 계획: 아직 없음 (`writing-plans` 단계 필요)
+**사용자 확정 필요** — SP4 리팩터가 완료되어 Tier 1이 비었다. Tier 2 후보 중 하나를 선정하거나 새 방향을 제시한다.
 
 ---
 
 ## Tier 1 — 바로 진행
 
-- SP4 레이어드 리팩터 구현 계획 작성 (`writing-plans`)
-- SP4 리팩터 실행 (`subagent-driven-development`)
+(없음 — 다음 작업 선정 대기)
 
 ---
 
@@ -30,6 +24,7 @@
 - 고객 셀프서비스 페이지 (결제 URL 외에 사용량/잔액 확인 대시보드)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
+- SP4 후속 정리 (CTR_THRESHOLD 중복 제거, `cli/improver/runner.ts`의 `/^src\//` 경로 regex 현대화, `.DS_Store` gitignore 추가)
 
 ---
 

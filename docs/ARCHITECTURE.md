@@ -10,7 +10,7 @@ AD-AI는 두 개의 독립적인 구성 요소로 이루어진다.
 
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────┐
-│ CLI 앱 (src/)               │        │ Usage API Server (server/)   │
+│ CLI 앱 (cli/ + core/)       │        │ Usage API Server (server/)   │
 │                             │        │                              │
 │ - Scrape (Playwright)       │        │ - AI 프록시 라우트           │
 │ - Generate (Claude+Imagen+  │  HTTP  │ - 라이선스 + 세션 인증       │
@@ -23,6 +23,10 @@ AD-AI는 두 개의 독립적인 구성 요소로 이루어진다.
 │ Owner 모드: AI 키 직접 호출 │
 │ Customer 모드: 서버 경유    │
 └─────────────────────────────┘
+
+core/는 프레임워크 무관(pure) 도메인 로직, cli/는 presentation·infra(Ink/Playwright/cron),
+server/는 Express/Stripe/SQLite presentation layer. server/는 core/를 import하고, cli/는 core/를 import한다.
+core/는 외부(어떤 presentation layer에도) 의존하지 않는다.
 ```
 
 Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, Customer 모드는 라이선스 키로 Usage Server에 인증한 뒤 사용량에 따라 잔액이 차감된다.
@@ -33,16 +37,24 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 
 | 경로 | 역할 |
 |------|------|
-| `src/cli/` | CLI 진입점 (scrape, generate, review, launch, monitor, improve, pipeline, app) |
-| `src/tui/` | Ink 기반 TUI 화면 (메뉴, 리뷰, 진행 바) |
-| `src/scraper/` | Playwright + Gemini로 제품 정보 수집 |
-| `src/generator/` | 카피(Claude), 이미지(Imagen 3), 영상(Veo 3.1) 생성 |
-| `src/reviewer/` | 검토 세션 (승인/거절/수정) |
-| `src/launcher/` | Meta Ads API 게재 |
-| `src/monitor/` | 일간/주간 성과 수집 + Claude 리포트 |
-| `src/improver/` | 성과 기반 프롬프트 자율 개선 |
-| `src/client/` | Usage Server HTTP 클라이언트 + AI 프록시 추상화 |
-| `src/mode.ts` | Owner/Customer 모드 감지 |
+| `core/types/` | 공용 도메인 타입 (Product/Creative/Campaign 등) |
+| `core/storage.ts` | `data/` 아래 JSON 파일 I/O |
+| `core/product/` | 제품 정보 파싱 순수 함수 (Playwright 호출은 cli/ 쪽) |
+| `core/creative/` | 카피(Claude), 이미지(Imagen 3), 영상(Veo 3.1) 생성 로직 |
+| `core/campaign/` | Meta Ads 게재(launcher) + 성과 수집(monitor) 순수 로직 |
+| `core/billing/` | 가격/티어 계산 |
+| `core/reviewer/` | 검토 결정 적용 함수 (승인/거절/수정) |
+| `core/improver/` | 성과 분석 + 개선 프롬프트 구성 순수 함수 |
+| `cli/entries/` | CLI 진입점 (app/scrape/generate/review/launch/monitor/improve/pipeline) |
+| `cli/tui/` | Ink 기반 TUI 화면 (메뉴, 리뷰, 진행 바) |
+| `cli/scraper.ts` | Playwright 런타임 + `core/product` 조합 |
+| `cli/reviewer/session.ts` | 실제 리뷰 세션 실행 (Ink 상호작용) |
+| `cli/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) |
+| `cli/monitor/scheduler.ts` | `node-cron` 기반 주기 실행 |
+| `cli/client/` | Usage Server HTTP 클라이언트 + AI 프록시 추상화 |
+| `cli/mode.ts` | Owner/Customer 모드 감지 |
+| `cli/pipeline.ts` | 파이프라인 전체 실행 오케스트레이션 |
+| `cli/actions.ts` | TUI 메뉴에서 호출되는 액션 핸들러 |
 | `server/` | Express 서버 진입점 및 DB/인증/빌링 |
 | `server/routes/` | AI 프록시 라우트 + 라이선스/사용량/Webhook |
 | `server/jobs/` | 비동기 작업 (Veo 영상 폴링) |
@@ -58,13 +70,13 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 
 **Why:** 본인이 무제한으로 사용하는 시나리오와 고객에게 유료로 제공하는 시나리오를 같은 코드베이스에서 지원하기 위함.
 
-**How:** `src/mode.ts`의 `detectMode()`가 다음 순서로 판단한다.
+**How:** `cli/mode.ts`의 `detectMode()`가 다음 순서로 판단한다.
 1. `AD_AI_MODE=owner` 환경변수 → Owner
 2. `--key=<키>` CLI 인자 또는 `AD_AI_LICENSE_KEY` 환경변수 존재 → Customer
 3. `AD_AI_MODE=customer` 환경변수 → Customer (키 없이도)
 4. 어느 것도 없으면 → Owner (기본값)
 
-`src/client/aiProxy.ts`가 모드별로 호출을 라우팅. Owner는 SDK 직접 호출, Customer는 Usage Server HTTP 경유.
+`cli/client/aiProxy.ts`가 모드별로 호출을 라우팅. Owner는 SDK 직접 호출, Customer는 Usage Server HTTP 경유.
 
 ### 2. Deduct-First 빌링 패턴
 
@@ -108,6 +120,20 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 **Why:** 결제 실패 상태의 라이선스가 계속 사용되면 미수금이 쌓인다.
 
 **How:** `server/billing.ts`의 `needsRecharge()`가 잔액 < $5이고 `recharge_amount > 0`일 때 자동 충전을 트리거한다. 충전 자체는 Stripe에서 비동기로 진행되며, 결과는 Webhook으로 확인한다. `payment_intent.payment_failed` 이벤트 수신 시 `suspendLicense()`가 호출되어 라이선스 `status = 'suspended'`로 즉시 전환. 이후 모든 AI 호출은 401 반환.
+
+### 8. 레이어드 구조 (core / cli / server)
+
+**Why:** 초기의 `src/` + `server/` 구조에서는 TUI·Playwright·cron 같은 presentation/infra 코드와 pure 도메인 로직이 같은 디렉토리에 뒤섞여 있어, 서버에서 재사용하려 해도 무거운 의존성이 딸려 들어오는 문제가 있었다. `core/`로 순수 로직을 분리하면 server/와 cli/가 같은 도메인 규칙을 공유하면서도 각자의 런타임 의존성만 가져가게 된다.
+
+**How:** 의존성 방향은 **단방향**이다.
+- `core/` → (외부 없음) : 프레임워크·I/O·프로세스 의존 금지
+- `cli/` → `core/` : Ink/Playwright/node-cron/파일 I/O 포함
+- `server/` → `core/` : Express/Stripe/better-sqlite3 포함
+- `cli/` ↔ `server/` 상호 import 금지 (HTTP 경계로만 통신)
+
+Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewer/decisions.ts`의 `applyReviewDecision()`은 pure, `cli/reviewer/session.ts`의 `runReviewSession()`은 Ink 의존. `core/improver/index.ts`의 프롬프트 구성은 pure, `cli/improver/runner.ts`의 파일 패치 사이클은 fs 의존.
+
+자세한 이력과 task 단위 변경 내역은 [`docs/superpowers/specs/2026-04-17-layered-architecture-refactor-design.md`](superpowers/specs/2026-04-17-layered-architecture-refactor-design.md) 참조.
 
 ---
 
