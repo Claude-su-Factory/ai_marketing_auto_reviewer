@@ -1,6 +1,6 @@
 # 아키텍처
 
-마지막 업데이트: 2026-04-17
+마지막 업데이트: 2026-04-19
 
 ---
 
@@ -86,13 +86,16 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 
 **중요한 트레이드오프:** 세션 스토어는 `server/auth.ts`의 메모리 `Map`이다. 서버 재시작 시 모든 세션이 소실되며 클라이언트는 재로그인해야 한다. 단일 서버 운영 가정에서는 수용 가능하지만, 수평 확장 시점에는 Redis 등 외부 저장소로 이전 필요.
 
-### 5. Webhook 서명 검증
+### 5. Webhook 서명 검증 + 이벤트 Dedup
 
-**Why:** Stripe Webhook 엔드포인트는 공개되어 있어, 서명 검증 없이는 위조된 결제 이벤트로 잔액 조작이 가능하다.
+**Why:** Stripe Webhook 엔드포인트는 공개되어 있어 서명 검증 없이는 위조된 결제 이벤트로 잔액 조작이 가능하다. 또한 Stripe는 네트워크 문제 시 동일 이벤트를 재시도하므로 `event.id` 기반 dedup이 없으면 이중 충전이 발생할 수 있다.
 
-**How:** `server/routes/stripeWebhook.ts`가 `stripe.webhooks.constructEvent()`로 `stripe-signature` 헤더와 `STRIPE_WEBHOOK_SECRET`을 비교. 실패 시 400 반환. 이 검증을 위해 Stripe Webhook 라우트는 `express.json()` 전에 등록되어 raw body를 받는다(`server/index.ts:34`).
+**How:**
+1. `server/routes/stripeWebhook.ts`가 `stripe.webhooks.constructEvent()`로 `stripe-signature`와 `STRIPE_WEBHOOK_SECRET`을 비교. 실패 시 400 반환.
+2. 서명 검증 통과 후 `markEventProcessed(db, event.id)` 호출. 내부는 `INSERT OR IGNORE INTO stripe_events (event_id)`. `changes === 0`이면 중복이므로 `{ received: true, duplicate: true }` 반환 후 처리 스킵.
+3. 서명 검증을 위해 Webhook 라우트는 `express.json()` 전에 등록되어 raw body를 받는다 (`server/index.ts:34`). 라우트 자체에도 `express.raw({ type: "application/json" })` 미들웨어가 적용되어 있다.
 
-**⚠️ 미해결 이슈:** Stripe는 네트워크 문제 시 동일 이벤트를 재시도하므로 `event.id` 기반 dedup이 필요하지만, **현재 구현에 dedup 로직이 없다**. 재시도 시 이중 충전 가능성 존재. 관련 SP3 스펙(`docs/superpowers/specs/2026-04-17-stripe-billing-design.md`)에는 dedup이 포함되어 있으나 코드에 반영되지 않았다. ROADMAP Tier 1에서 수정 예정.
+자세한 Addendum 설계는 [`docs/superpowers/specs/2026-04-17-stripe-billing-design.md`](superpowers/specs/2026-04-17-stripe-billing-design.md)의 "Addendum 2026-04-19 — Webhook Idempotency" 섹션 참조.
 
 ### 6. 비동기 Veo 영상 작업
 
@@ -112,13 +115,14 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 
 ### SQLite (`server/data.db`)
 
-`server/db.ts`가 정의하는 실제 테이블은 3개다.
+`server/db.ts`가 정의하는 실제 테이블은 4개다.
 
 | 테이블 | 주요 컬럼 | 용도 |
 |--------|----------|------|
 | `licenses` | `id`, `key`, `customer_email`, `status`, `stripe_customer_id`, `balance_usd`, `recharge_amount`, `recharge_tier`, `stripe_payment_method_id` | 라이선스 상태 및 잔액 |
 | `usage_events` | `id`, `license_id`, `type`, `ai_cost_usd`, `charged_usd`, `status`(pending/completed/refunded), `metadata` | AI 호출별 차감 이벤트. 고아 pending은 서버 시작 시 환불 처리 |
 | `billing_cycles` | `id`, `license_id`, `period_start`, `period_end`, `total_ai_cost_usd`, `total_charged_usd`, `stripe_invoke_id`, `status` | 월 단위 청구 주기 (현재는 스키마만 존재, 정산 로직 미구현) |
+| `stripe_events` | `event_id`, `processed_at` | Webhook 재시도 dedup. INSERT OR IGNORE로 중복 차단 |
 
 세션 토큰은 DB가 아닌 **`server/auth.ts`의 메모리 `Map`**에 저장된다.
 

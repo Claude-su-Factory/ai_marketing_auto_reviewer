@@ -1,6 +1,6 @@
 # 프로젝트 상태
 
-마지막 업데이트: 2026-04-17
+마지막 업데이트: 2026-04-19
 
 ---
 
@@ -13,10 +13,6 @@
 - [x] SP3 — Stripe 빌링 (deduct-first 패턴 + 자동 충전 + Webhook dedup)
 - [ ] SP4 — 레이어드 아키텍처 리팩터 (설계 승인됨, 구현 대기)
 
-## 알려진 결함
-
-- **Webhook dedup 미구현** — SP3 스펙에는 포함되어 있으나 `server/routes/stripeWebhook.ts`에 반영되지 않음. Stripe 재시도 시 이중 충전 가능. ROADMAP Tier 1 최우선 항목.
-
 ---
 
 ## 서비스 컴포넌트 상태
@@ -26,7 +22,7 @@
 | CLI 앱 (Owner/Customer 모드) | ✅ 운영 | `src/cli/`, `src/tui/` |
 | Usage API Server (Express + SQLite) | ✅ 구현 완료 | `server/index.ts` |
 | AI 프록시 라우트 (copy/image/video/parse/analyze) | ✅ 구현 완료 | `server/routes/` |
-| Stripe Webhook + 자동 충전 | ⚠️ 부분 구현 (dedup 누락) | `server/routes/stripeWebhook.ts` |
+| Stripe Webhook + 자동 충전 | ✅ 구현 완료 (dedup 포함) | `server/routes/stripeWebhook.ts` |
 | Admin CLI (라이선스 관리) | ✅ 구현 완료 | `server/admin.ts` |
 | 비동기 Veo 영상 작업 관리자 | ✅ 구현 완료 | `server/jobs/videoJob.ts` |
 | 세션 인증 + 레이트 리밋 (10 req/min) | ✅ 구현 완료 | `server/auth.ts`, `server/rateLimit.ts` |
@@ -36,6 +32,7 @@
 
 ## 최근 변경 이력
 
+- 2026-04-19 feat: Stripe Webhook dedup 구현 (stripe_events 테이블 + INSERT OR IGNORE)
 - 2026-04-17 docs: 레이어드 아키텍처 리팩터 설계 스펙 추가
 - 2026-04-17 chore: 빌링 테스트 DB를 gitignore에 추가
 - 2026-04-17 feat: Admin CLI에 Stripe 통합 + balance/tier 명령 추가
@@ -45,7 +42,6 @@
 - 2026-04-17 feat: Stripe SDK 래퍼 추가 (customer/checkout/recharge)
 - 2026-04-17 feat: deduct-first 패턴 기반 빌링 서비스 + 환불 로직 추가
 - 2026-04-17 feat: DB 스키마에 balance/recharge/status 컬럼 추가
-- 2026-04-17 chore: Stripe SDK 의존성 추가
 
 <!--
 업데이트 규칙:

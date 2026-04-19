@@ -353,3 +353,17 @@ npm run admin -- add-balance --key=AD-AI-XXXX-YYYY --amount=10
 - 자동 충전은 비동기 (PaymentIntent + Webhook) — 동기 결제 아님
 - `pending_payment` 상태에서는 CLI 사용 불가
 - Owner 모드는 이 변경에 영향 없음
+
+---
+
+## Addendum 2026-04-19 — Webhook Idempotency (Stripe retry dedup)
+
+**배경:** 본 스펙 177줄의 "Webhook 중복 방지"는 *동일 결제*에서 발생하는 `checkout.session.completed`와 `payment_intent.succeeded` 두 이벤트를 `metadata.type`으로 분리하는 설계였다. 그러나 Stripe가 네트워크 실패 시 **같은 `event.id`를 재전송**하는 경우는 별도 처리가 필요하다. 이 addendum은 후자를 다룬다.
+
+**구현:**
+- 신규 테이블 `stripe_events (event_id TEXT PRIMARY KEY, processed_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+- `server/webhookDedup.ts`의 `markEventProcessed(db, eventId)` — `INSERT OR IGNORE` 후 `changes === 1`이면 `true`, `0`이면 중복.
+- Webhook 핸들러는 서명 검증 직후 dedup 체크. 중복이면 `200 { received: true, duplicate: true }`만 반환.
+- 같은 플랜에서 `express.raw({ type: "application/json" })` 미들웨어 누락(SP3 구현 결함)도 함께 수정.
+
+**구현 계획:** `docs/superpowers/plans/2026-04-19-webhook-dedup.md`
