@@ -33,7 +33,7 @@ const app = express();
 // Stripe webhook must be registered BEFORE express.json() — needs raw body
 if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) {
   const stripe = createStripeClient();
-  app.use(createStripeWebhookRouter(stripe, process.env.STRIPE_WEBHOOK_SECRET, billing));
+  app.use(createStripeWebhookRouter(stripe, process.env.STRIPE_WEBHOOK_SECRET, billing, db));
 }
 
 app.use(express.json({ limit: "10mb" }));

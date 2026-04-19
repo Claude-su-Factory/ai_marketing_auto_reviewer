@@ -1,11 +1,14 @@
 import express, { Router } from "express";
 import Stripe from "stripe";
 import type { BillingService } from "../billing.js";
+import type { AppDb } from "../db.js";
+import { markEventProcessed } from "../webhookDedup.js";
 
 export function createStripeWebhookRouter(
   stripe: Stripe,
   webhookSecret: string,
-  billing: BillingService
+  billing: BillingService,
+  db: AppDb
 ) {
   const router = Router();
 
@@ -18,6 +21,12 @@ export function createStripeWebhookRouter(
     } catch (e) {
       console.error("[Webhook] Signature verification failed:", e);
       res.status(400).json({ error: "Webhook signature failed" });
+      return;
+    }
+
+    if (!markEventProcessed(db, event.id)) {
+      console.log(`[Webhook] Duplicate event ignored: ${event.id}`);
+      res.json({ received: true, duplicate: true });
       return;
     }
 
