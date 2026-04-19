@@ -1,6 +1,6 @@
 import type { Report } from "../types.js";
 
-const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
+export const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
 
 export function shouldTriggerImprovement(report: Report): boolean {
   return report.ctr < CTR_THRESHOLD;

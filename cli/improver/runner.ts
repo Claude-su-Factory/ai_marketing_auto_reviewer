@@ -3,9 +3,11 @@ import { readFile, writeFile } from "fs/promises";
 import { execFileSync } from "child_process";
 import type { Report, Improvement, ImprovementChange } from "../../core/types.js";
 import { appendJson } from "../../core/storage.js";
-import { buildImprovementPrompt, parseImprovements } from "../../core/improver/index.js";
-
-const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
+import {
+  CTR_THRESHOLD,
+  buildImprovementPrompt,
+  parseImprovements,
+} from "../../core/improver/index.js";
 
 export function filterSafeImprovementFiles(files: string[]): string[] {
   return files.filter((f) => /^(core|cli|server)\/[\w./-]+\.ts$/.test(f));
