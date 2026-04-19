@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { generateCopy, createAnthropicClient } from "../generator/copy.js";
-import { generateImage } from "../generator/image.js";
-import { generateVideo } from "../generator/video.js";
+import { generateCopy, createAnthropicClient } from "../../core/creative/copy.js";
+import { generateImage } from "../../core/creative/image.js";
+import { generateVideo } from "../../core/creative/video.js";
 import { readJson, writeJson } from "../../core/storage.js";
 import type { Product, Creative } from "../../core/types.js";
 import { randomUUID } from "crypto";

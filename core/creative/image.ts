@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import type { Product } from "../../core/types.js";
+import type { Product } from "../types.js";
 
 export function buildImagePrompt(product: Product): string {
   return `Instagram advertisement image for a product or service.

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
-import { generateCopy } from "../../src/generator/copy.js";
+import { generateCopy } from "../../core/creative/copy.js";
 import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../../core/billing/pricing.js";

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
-import { buildImagePrompt } from "../../src/generator/image.js";
+import { buildImagePrompt } from "../../core/creative/image.js";
 import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../../core/billing/pricing.js";
