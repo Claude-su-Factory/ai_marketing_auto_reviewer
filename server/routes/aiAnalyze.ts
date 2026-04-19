@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { computeStats, buildAnalysisPrompt } from "../../src/monitor/index.js";
 import type { Report } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export function createAiAnalyzeRouter(billing: BillingService) {

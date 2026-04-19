@@ -1,7 +1,8 @@
 import "dotenv/config";
 import { createDb } from "./db.js";
 import { createBillingService } from "./billing.js";
-import { createStripeClient, createStripeCustomer, createCheckoutSession, getTierAmount } from "./stripe.js";
+import { createStripeClient, createStripeCustomer, createCheckoutSession } from "./stripe.js";
+import { getTierAmount } from "../core/billing/tiers.js";
 import { randomUUID } from "crypto";
 import { generateKey, getFlag as getFlagUtil } from "./adminUtils.js";
 

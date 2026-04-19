@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getTierAmount, RECHARGE_TIERS } from "./stripe.js";
+import { getTierAmount, RECHARGE_TIERS } from "./tiers.js";
 
 describe("RECHARGE_TIERS", () => {
   it("has basic, standard, pro tiers", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createDb, type AppDb } from "../db.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 import { randomUUID } from "crypto";
 import { unlinkSync, existsSync } from "fs";
 

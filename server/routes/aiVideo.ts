@@ -2,7 +2,7 @@ import { Router } from "express";
 import { startVideoJob, getJob } from "../jobs/videoJob.js";
 import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 
 export function createAiVideoRouter(billing: BillingService, serverBaseUrl: string) {
   const router = Router();

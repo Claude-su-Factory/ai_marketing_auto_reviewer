@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "../../src/generator/video.js";
 import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export interface VideoJob {

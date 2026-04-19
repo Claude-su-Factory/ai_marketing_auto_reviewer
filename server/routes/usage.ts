@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { AppDb } from "../db.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 import { randomUUID } from "crypto";
 
 export function createUsageRouter(db: AppDb) {

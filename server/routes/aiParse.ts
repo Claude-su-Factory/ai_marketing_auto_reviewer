@@ -2,7 +2,7 @@ import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { parseProductWithGemini } from "../../src/scraper/index.js";
 import type { BillingService } from "../billing.js";
-import { PRICING } from "../pricing.js";
+import { PRICING } from "../../core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export function createAiParseRouter(billing: BillingService) {
