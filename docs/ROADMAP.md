@@ -24,7 +24,6 @@
 - 고객 셀프서비스 페이지 (결제 URL 외에 사용량/잔액 확인 대시보드)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
-- SP4 후속 정리 (CTR_THRESHOLD 중복 제거, `cli/improver/runner.ts`의 `/^src\//` 경로 regex 현대화, `.DS_Store` gitignore 추가)
 
 ---
 

@@ -32,6 +32,7 @@
 
 ## 최근 변경 이력
 
+- 2026-04-19 fix: 자율 개선 루프의 src/ 경로 화이트리스트 regex를 core/cli/server로 현대화 + CTR_THRESHOLD 단일 출처화
 - 2026-04-19 refactor: SP4 레이어드 리팩터 완료 (`src/` 제거, `core/` + `cli/`로 분리, 127 테스트 유지)
 - 2026-04-19 feat: Stripe Webhook dedup 구현 (stripe_events 테이블 + INSERT OR IGNORE)
 - 2026-04-17 docs: 레이어드 아키텍처 리팩터 설계 스펙 추가
@@ -41,7 +42,6 @@
 - 2026-04-17 feat: 전체 AI 라우트에 deduct-first 빌링 패턴 적용
 - 2026-04-17 feat: Stripe Webhook 핸들러 추가 (dedup + 자동 충전)
 - 2026-04-17 feat: Stripe SDK 래퍼 추가 (customer/checkout/recharge)
-- 2026-04-17 feat: deduct-first 패턴 기반 빌링 서비스 + 환불 로직 추가
 
 <!--
 업데이트 규칙:
