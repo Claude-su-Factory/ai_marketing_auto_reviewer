@@ -1,6 +1,6 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
-import { computeStats, buildAnalysisPrompt } from "../../src/monitor/index.js";
+import { computeStats, buildAnalysisPrompt } from "../../core/campaign/monitor.js";
 import type { Report } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../../core/billing/pricing.js";

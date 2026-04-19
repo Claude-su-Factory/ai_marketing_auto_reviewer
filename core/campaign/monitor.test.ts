@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { computeStats, buildAnalysisPrompt } from "./index.js";
-import type { Report } from "../../core/types.js";
+import { computeStats, buildAnalysisPrompt } from "./monitor.js";
+import type { Report } from "../types.js";
 
 const mockReports: Report[] = [
   {

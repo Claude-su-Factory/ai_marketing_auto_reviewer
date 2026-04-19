@@ -4,7 +4,7 @@ import { generateCopy, createAnthropicClient } from "../../core/creative/copy.js
 import { generateImage } from "../../core/creative/image.js";
 import { generateVideo } from "../../core/creative/video.js";
 import { parseProductWithGemini } from "../../core/product/parser.js";
-import { computeStats, buildAnalysisPrompt } from "../monitor/index.js";
+import { computeStats, buildAnalysisPrompt } from "../../core/campaign/monitor.js";
 import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
 import { serverFetch, serverGet } from "./usageServer.js";

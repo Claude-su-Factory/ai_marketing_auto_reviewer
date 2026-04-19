@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { collectDailyReports, generateWeeklyAnalysis, startCronScheduler } from "../monitor/index.js";
+import { collectDailyReports, generateWeeklyAnalysis } from "../../core/campaign/monitor.js";
+import { startCronScheduler } from "../monitor/index.js";
 
 const mode = process.argv[2] ?? "cron";
 if (mode === "daily") {

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { launchCampaign } from "../launcher/index.js";
+import { launchCampaign } from "../../core/campaign/launcher.js";
 import { readJson, listJson } from "../../core/storage.js";
 import type { Creative, Product } from "../../core/types.js";
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildCampaignName, buildAdSetTargeting, buildAdConfig } from "./index.js";
-import type { Product } from "../../core/types.js";
+import { buildCampaignName, buildAdSetTargeting, buildAdConfig } from "./launcher.js";
+import type { Product } from "../types.js";
 
 const mockProduct: Product = {
   id: "product-1", name: "Docker 기초", description: "컨테이너 기술",
