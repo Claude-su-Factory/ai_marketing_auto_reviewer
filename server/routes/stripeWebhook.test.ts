@@ -51,7 +51,7 @@ async function postWebhook(body: Buffer, signature: string): Promise<{ status: n
       fetch(`http://127.0.0.1:${port}/stripe/webhook`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "stripe-signature": signature },
-        body,
+        body: new Uint8Array(body),
       })
         .then(async (r) => {
           const b = await r.json();

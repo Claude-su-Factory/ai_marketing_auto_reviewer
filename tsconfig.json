@@ -7,9 +7,8 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "."
+    "outDir": "dist"
   },
-  "include": ["src/**/*", "core/**/*", "cli/**/*"],
+  "include": ["core/**/*", "cli/**/*", "server/**/*"],
   "exclude": ["node_modules", "dist"]
 }
