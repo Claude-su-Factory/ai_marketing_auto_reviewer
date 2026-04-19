@@ -15,9 +15,9 @@ import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 import type { Creative, Product } from "../../core/types.js";
 import { randomUUID } from "crypto";
-import { detectMode, type ModeConfig } from "../mode.js";
-import { createAiProxy, type AiProxy } from "../client/aiProxy.js";
-import { validateLicense } from "../client/usageServer.js";
+import { detectMode, type ModeConfig } from "../../cli/mode.js";
+import { createAiProxy, type AiProxy } from "../../cli/client/aiProxy.js";
+import { validateLicense } from "../../cli/client/usageServer.js";
 
 type FormStep = "name" | "description" | "targetUrl" | "price";
 

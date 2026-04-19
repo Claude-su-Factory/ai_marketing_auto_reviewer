@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { AiProxy } from "../client/aiProxy.js";
+import type { AiProxy } from "../../cli/client/aiProxy.js";
 import { launchCampaign } from "../../core/campaign/launcher.js";
 import { collectDailyReports } from "../../core/campaign/monitor.js";
 import { runImprovementCycle } from "../improver/index.js";

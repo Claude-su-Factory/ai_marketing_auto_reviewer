@@ -1,8 +1,8 @@
 import { chromium } from "playwright";
 import { GoogleGenAI } from "@google/genai";
-import type { Product } from "../../core/types.js";
-import { writeJson } from "../../core/storage.js";
-import { parseProductWithGemini } from "../../core/product/parser.js";
+import type { Product } from "../core/types.js";
+import { writeJson } from "../core/storage.js";
+import { parseProductWithGemini } from "../core/product/parser.js";
 
 export async function scrapeProduct(url: string): Promise<Product> {
   const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
