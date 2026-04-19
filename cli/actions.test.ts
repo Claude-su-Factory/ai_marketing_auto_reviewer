@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildOverallProgress, validateMonitorMode } from "./actions.js";
-import type { TaskProgress } from "./AppTypes.js";
+import type { TaskProgress } from "./tui/AppTypes.js";
 
 describe("buildOverallProgress", () => {
   it("returns 0 when all tasks are 0", () => {

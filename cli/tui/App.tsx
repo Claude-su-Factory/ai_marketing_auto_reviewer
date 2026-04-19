@@ -10,14 +10,14 @@ import { ReviewScreen } from "./ReviewScreen.js";
 import {
   runScrape, runGenerate, runLaunch, runMonitor,
   runImprove, runPipelineAction, validateMonitorMode,
-} from "./actions.js";
+} from "../actions.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 import type { Creative, Product } from "../../core/types.js";
 import { randomUUID } from "crypto";
-import { detectMode, type ModeConfig } from "../../cli/mode.js";
-import { createAiProxy, type AiProxy } from "../../cli/client/aiProxy.js";
-import { validateLicense } from "../../cli/client/usageServer.js";
+import { detectMode, type ModeConfig } from "../mode.js";
+import { createAiProxy, type AiProxy } from "../client/aiProxy.js";
+import { validateLicense } from "../client/usageServer.js";
 
 type FormStep = "name" | "description" | "targetUrl" | "price";
 

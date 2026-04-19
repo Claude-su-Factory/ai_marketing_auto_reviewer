@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "ink";
 import type { Creative, Product } from "../../core/types.js";
-import { ReviewScreen } from "../tui/ReviewScreen.js";
+import { ReviewScreen } from "../../cli/tui/ReviewScreen.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 

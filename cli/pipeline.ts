@@ -1,8 +1,8 @@
 import "dotenv/config";
 import React from "react";
 import { render } from "ink";
-import type { PipelineStep, StepStatus } from "../src/tui/PipelineProgress.js";
-import { PipelineProgress } from "../src/tui/PipelineProgress.js";
+import type { PipelineStep, StepStatus } from "./tui/PipelineProgress.js";
+import { PipelineProgress } from "./tui/PipelineProgress.js";
 import { scrapeProduct } from "./scraper.js";
 import { generateCopy, createAnthropicClient } from "../core/creative/copy.js";
 import { generateImage } from "../core/creative/image.js";
