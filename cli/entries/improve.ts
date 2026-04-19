@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { readJson, listJson } from "../../core/storage.js";
-import { runImprovementCycle } from "../../cli/improver/runner.js";
+import { runImprovementCycle } from "../improver/runner.js";
 import { shouldTriggerImprovement } from "../../core/improver/index.js";
 import type { Report } from "../../core/types.js";
 

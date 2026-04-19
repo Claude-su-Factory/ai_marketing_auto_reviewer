@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { scrapeProduct } from "../../cli/scraper.js";
+import { scrapeProduct } from "../scraper.js";
 
 const url = process.argv[2];
 if (!url) { console.error("Usage: npm run scrape <URL>"); process.exit(1); }
