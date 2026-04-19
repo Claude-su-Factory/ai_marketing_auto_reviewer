@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildImagePrompt, saveBase64Image } from "./image.js";
-import type { Product } from "../types.js";
+import type { Product } from "../../core/types.js";
 import { existsSync, unlinkSync } from "fs";
 
 const mockProduct: Product = {

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { launchCampaign } from "../launcher/index.js";
-import { readJson, listJson } from "../storage.js";
-import type { Creative, Product } from "../types.js";
+import { readJson, listJson } from "../../core/storage.js";
+import type { Creative, Product } from "../../core/types.js";
 
 const creativePaths = await listJson("data/creatives");
 for (const p of creativePaths) {

@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "../../src/generator/video.js";
-import type { Product } from "../../src/types.js";
+import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";

@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { readFile, writeFile } from "fs/promises";
 import { execFileSync } from "child_process";
-import type { Report, Improvement, ImprovementChange } from "../types.js";
-import { appendJson } from "../storage.js";
+import type { Report, Improvement, ImprovementChange } from "../../core/types.js";
+import { appendJson } from "../../core/storage.js";
 
 const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
 

@@ -1,5 +1,5 @@
 import type { ModeConfig } from "../mode.js";
-import type { Product, Creative, Report } from "../types.js";
+import type { Product, Creative, Report } from "../../core/types.js";
 import { generateCopy, createAnthropicClient } from "../generator/copy.js";
 import { generateImage } from "../generator/image.js";
 import { generateVideo } from "../generator/video.js";

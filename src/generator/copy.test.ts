@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { generateCopy, COPY_SYSTEM_PROMPT } from "./copy.js";
-import type { Product } from "../types.js";
+import type { Product } from "../../core/types.js";
 
 const mockProduct: Product = {
   id: "test-id", name: "React 완전정복", description: "React를 처음부터 배웁니다",

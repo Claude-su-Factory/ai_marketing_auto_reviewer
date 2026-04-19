@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { readJson, listJson } from "../storage.js";
+import { readJson, listJson } from "../../core/storage.js";
 import { runImprovementCycle, shouldTriggerImprovement } from "../improver/index.js";
-import type { Report } from "../types.js";
+import type { Report } from "../../core/types.js";
 
 const reportPaths = await listJson("data/reports");
 const allReports: Report[] = [];

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildImprovementPrompt, parseImprovements, shouldTriggerImprovement } from "./index.js";
-import type { Report } from "../types.js";
+import type { Report } from "../../core/types.js";
 
 const lowPerformanceReport: Report = {
   id: "r1", campaignId: "c1", productId: "product-1", date: "2026-04-15",

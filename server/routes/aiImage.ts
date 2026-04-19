@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { buildImagePrompt } from "../../src/generator/image.js";
-import type { Product } from "../../src/types.js";
+import type { Product } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";

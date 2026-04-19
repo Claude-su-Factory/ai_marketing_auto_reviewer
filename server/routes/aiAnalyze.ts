@@ -1,7 +1,7 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { computeStats, buildAnalysisPrompt } from "../../src/monitor/index.js";
-import type { Report } from "../../src/types.js";
+import type { Report } from "../../core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "../pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";

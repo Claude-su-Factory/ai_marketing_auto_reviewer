@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import type { Product } from "../types.js";
+import type { Product } from "../../core/types.js";
 
 export function buildVideoPrompt(product: Product): string {
   return `Short Instagram Reels advertisement (15 seconds), vertical 9:16 format.

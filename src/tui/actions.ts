@@ -3,8 +3,8 @@ import type { AiProxy } from "../client/aiProxy.js";
 import { launchCampaign } from "../launcher/index.js";
 import { collectDailyReports } from "../monitor/index.js";
 import { runImprovementCycle, shouldTriggerImprovement } from "../improver/index.js";
-import { readJson, writeJson, listJson } from "../storage.js";
-import type { Product, Creative, Report } from "../types.js";
+import { readJson, writeJson, listJson } from "../../core/storage.js";
+import type { Product, Creative, Report } from "../../core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./AppTypes.js";
 import { randomUUID } from "crypto";
 

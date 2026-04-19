@@ -1,7 +1,7 @@
 import bizSdk from "facebook-nodejs-business-sdk";
 import { readFile } from "fs/promises";
-import type { Product, Creative, Campaign } from "../types.js";
-import { writeJson } from "../storage.js";
+import type { Product, Creative, Campaign } from "../../core/types.js";
+import { writeJson } from "../../core/storage.js";
 import { randomUUID } from "crypto";
 
 const { AdAccount } = bizSdk as any;

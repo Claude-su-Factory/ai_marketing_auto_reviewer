@@ -2,8 +2,8 @@ import "dotenv/config";
 import { generateCopy, createAnthropicClient } from "../generator/copy.js";
 import { generateImage } from "../generator/image.js";
 import { generateVideo } from "../generator/video.js";
-import { readJson, writeJson } from "../storage.js";
-import type { Product, Creative } from "../types.js";
+import { readJson, writeJson } from "../../core/storage.js";
+import type { Product, Creative } from "../../core/types.js";
 import { randomUUID } from "crypto";
 
 const productId = process.argv[2];

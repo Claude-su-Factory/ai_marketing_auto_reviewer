@@ -11,9 +11,9 @@ import {
   runScrape, runGenerate, runLaunch, runMonitor,
   runImprove, runPipelineAction, validateMonitorMode,
 } from "./actions.js";
-import { readJson, writeJson, listJson } from "../storage.js";
+import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../reviewer/index.js";
-import type { Creative, Product } from "../types.js";
+import type { Creative, Product } from "../../core/types.js";
 import { randomUUID } from "crypto";
 import { detectMode, type ModeConfig } from "../mode.js";
 import { createAiProxy, type AiProxy } from "../client/aiProxy.js";

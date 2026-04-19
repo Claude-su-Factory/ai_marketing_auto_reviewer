@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import { GoogleGenAI } from "@google/genai";
-import type { Product } from "../types.js";
-import { writeJson } from "../storage.js";
+import type { Product } from "../../core/types.js";
+import { writeJson } from "../../core/storage.js";
 import { randomUUID } from "crypto";
 
 export function detectCategory(url: string): string {

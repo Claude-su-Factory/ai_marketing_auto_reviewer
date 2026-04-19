@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
-import type { Creative, Product } from "../types.js";
+import type { Creative, Product } from "../../core/types.js";
 
 interface Props {
   creatives: Array<{ creative: Creative; product: Product }>;

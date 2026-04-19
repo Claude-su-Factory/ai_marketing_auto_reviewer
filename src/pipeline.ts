@@ -7,8 +7,8 @@ import { scrapeProduct } from "./scraper/index.js";
 import { generateCopy, createAnthropicClient } from "./generator/copy.js";
 import { generateImage } from "./generator/image.js";
 import { generateVideo } from "./generator/video.js";
-import { writeJson } from "./storage.js";
-import type { Product, Creative } from "./types.js";
+import { writeJson } from "../core/storage.js";
+import type { Product, Creative } from "../core/types.js";
 import { randomUUID } from "crypto";
 
 export async function runPipeline(urls: string[]): Promise<void> {

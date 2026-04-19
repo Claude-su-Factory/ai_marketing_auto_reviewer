@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildVideoPrompt } from "./video.js";
-import type { Product } from "../types.js";
+import type { Product } from "../../core/types.js";
 
 const mockProduct: Product = {
   id: "test-id", name: "TypeScript 입문", description: "타입스크립트를 배웁니다",

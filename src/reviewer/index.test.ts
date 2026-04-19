@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { applyReviewDecision } from "./index.js";
-import type { Creative } from "../types.js";
+import type { Creative } from "../../core/types.js";
 
 let mockCreative: Creative;
 

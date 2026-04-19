@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Product, Creative } from "../types.js";
+import type { Product, Creative } from "../../core/types.js";
 
 export const COPY_SYSTEM_PROMPT = `당신은 Meta(Instagram/Facebook) 광고 카피라이터입니다.
 모든 종류의 제품·서비스 광고에 최적화된 카피를 작성합니다.

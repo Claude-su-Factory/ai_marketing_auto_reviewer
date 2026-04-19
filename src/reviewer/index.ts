@@ -1,8 +1,8 @@
 import React from "react";
 import { render } from "ink";
-import type { Creative, Product } from "../types.js";
+import type { Creative, Product } from "../../core/types.js";
 import { ReviewScreen } from "../tui/ReviewScreen.js";
-import { readJson, writeJson, listJson } from "../storage.js";
+import { readJson, writeJson, listJson } from "../../core/storage.js";
 
 export type ReviewAction =
   | { action: "approve" }
