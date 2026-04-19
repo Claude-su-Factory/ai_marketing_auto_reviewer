@@ -7,6 +7,10 @@ import { buildImprovementPrompt, parseImprovements } from "../../core/improver/i
 
 const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
 
+export function filterSafeImprovementFiles(files: string[]): string[] {
+  return files.filter((f) => /^(core|cli|server)\/[\w./-]+\.ts$/.test(f));
+}
+
 async function applyCodeChange(
   filePath: string,
   oldCode: string,
@@ -86,11 +90,7 @@ export async function runImprovementCycle(
   // 변경 사항 git 커밋
   try {
     const changedFiles = improvements.map((c) => c.file);
-
-    // Validate each file path (only allow src/*.ts files)
-    const safeFiles = changedFiles.filter((f) =>
-      /^src\/[\w./-]+\.ts$/.test(f)
-    );
+    const safeFiles = filterSafeImprovementFiles(changedFiles);
     if (safeFiles.length === 0) return;
 
     const dataFile = `data/improvements/${dateKey}.json`;
