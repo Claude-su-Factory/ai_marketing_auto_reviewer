@@ -3,7 +3,7 @@ import type { Product, Creative, Report } from "../../core/types.js";
 import { generateCopy, createAnthropicClient } from "../generator/copy.js";
 import { generateImage } from "../generator/image.js";
 import { generateVideo } from "../generator/video.js";
-import { parseProductWithGemini } from "../scraper/index.js";
+import { parseProductWithGemini } from "../../core/product/parser.js";
 import { computeStats, buildAnalysisPrompt } from "../monitor/index.js";
 import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseProductWithGemini, detectCategory } from "./index.js";
+import { parseProductWithGemini, detectCategory } from "./parser.js";
 
 describe("detectCategory", () => {
   it("detects course from inflearn URL", () => {
