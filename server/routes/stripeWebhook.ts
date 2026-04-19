@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import Stripe from "stripe";
 import type { BillingService } from "../billing.js";
 
@@ -9,7 +9,7 @@ export function createStripeWebhookRouter(
 ) {
   const router = Router();
 
-  router.post("/stripe/webhook", (req, res) => {
+  router.post("/stripe/webhook", express.raw({ type: "application/json" }), (req, res) => {
     const sig = req.headers["stripe-signature"] as string;
     let event: Stripe.Event;
 
