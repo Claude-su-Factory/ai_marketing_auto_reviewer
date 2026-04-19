@@ -44,4 +44,18 @@ describe("createDb", () => {
     const row = db.prepare("SELECT status FROM usage_events WHERE id = ?").get("ev1") as any;
     expect(row.status).toBe("pending");
   });
+
+  it("creates stripe_events table with event_id primary key", () => {
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
+    expect(tables.map((t) => t.name)).toContain("stripe_events");
+
+    const info = db.prepare("PRAGMA table_info(stripe_events)").all() as Array<{ name: string; pk: number }>;
+    const pk = info.find((c) => c.pk === 1);
+    expect(pk?.name).toBe("event_id");
+  });
+
+  it("stripe_events rejects duplicate event_id", () => {
+    db.prepare("INSERT INTO stripe_events (event_id) VALUES (?)").run("evt_123");
+    expect(() => db.prepare("INSERT INTO stripe_events (event_id) VALUES (?)").run("evt_123")).toThrow(/UNIQUE/);
+  });
 });

@@ -43,6 +43,11 @@ export function createDb(path = "server/data.db"): AppDb {
       status TEXT NOT NULL DEFAULT 'open',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS stripe_events (
+      event_id TEXT PRIMARY KEY,
+      processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   const safeAlter = (sql: string) => { try { db.exec(sql); } catch {} };
