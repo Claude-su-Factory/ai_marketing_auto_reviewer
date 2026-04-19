@@ -140,3 +140,4 @@ import { CTR_THRESHOLD } from "../../core/improver/index.js";
 
 - 2026-04-19 초안 작성
 - 2026-04-19 자체 검토: Fix 1 테스트 케이스의 path traversal 관련 오해 소지 정정. regex의 의도는 레이어 화이트리스트이며 path traversal 방어는 비범위임을 명시.
+- 2026-04-19 구현 완료: Fix 1 (d2aec79) regex 확장 + 10 테스트 신규 추가, Fix 2 (f098383) CTR_THRESHOLD core export/cli import, Fix 3 (cdc2c24) ROADMAP/STATUS 갱신. 137 테스트 통과, tsc 클린.
