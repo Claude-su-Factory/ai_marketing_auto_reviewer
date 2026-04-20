@@ -6,7 +6,7 @@
 
 ## 현재 추천 다음 작업
 
-**Plan B — Variant 생성 파이프라인 시작** — Plan A 완료, 스펙 `docs/superpowers/specs/2026-04-20-winner-db-variant-orchestration-design.md` §Section 6 참조.
+**Plan C — Winner DB + Voyage RAG** — Plan B 완료. 이제 launch된 creative의 CTR/CVR을 winner DB(`data/creatives.db`)로 수집하고, Voyage RAG로 승자 카피를 few-shot 예시에 공급해 `generateCopy`의 `fewShot` 인자를 실데이터로 채운다. 스펙 `docs/superpowers/specs/2026-04-20-winner-db-variant-orchestration-design.md` §Section 7 이후 참조.
 
 ---
 
