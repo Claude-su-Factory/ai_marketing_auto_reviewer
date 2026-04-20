@@ -15,11 +15,14 @@ export interface Product {
 export interface Creative {
   id: string;
   productId: string;
+  variantGroupId: string;                   // Plan A 신규 — 같은 제품의 variant 공유 ID
   copy: {
     headline: string;
     body: string;
     cta: string;
     hashtags: string[];
+    variantLabel: "emotional" | "numerical" | "urgency"; // Plan A 신규 (Plan A는 "emotional" 기본값)
+    metaAssetLabel: string;                 // Plan A 신규 — e.g. "variant-<uuid>"
   };
   imageLocalPath: string;
   videoLocalPath: string;
@@ -30,13 +33,15 @@ export interface Creative {
 
 export interface Campaign {
   id: string;
-  creativeId: string;
+  variantGroupId: string;                   // Plan A 신규 — creativeId 대체
   productId: string;
+  platform: string;                         // Plan A 신규 — "meta"
   metaCampaignId: string;
   metaAdSetId: string;
-  metaAdIds: string[];
+  metaAdId: string;                         // Plan A 신규 — DCO Ad 1개 (기존 metaAdIds[] 폐기)
   launchedAt: string;
-  status: "active" | "paused" | "completed";
+  status: "active" | "paused" | "completed" | "launch_failed" | "externally_modified";
+  orphans: { type: "campaign" | "adset" | "ad"; id: string }[];
 }
 
 export interface Report {
