@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.adai.worker</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__TSX_PATH__</string>
+    <string>cli/entries/worker.ts</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>WorkingDirectory</key><string>__PROJECT_ROOT__</string>
+  <key>StandardOutPath</key><string>__PROJECT_ROOT__/logs/worker.log</string>
+  <key>StandardErrorPath</key><string>__PROJECT_ROOT__/logs/worker.err</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>META_ACCESS_TOKEN</key><string>__INJECT__</string>
+    <key>META_AD_ACCOUNT_ID</key><string>__INJECT__</string>
+    <key>ANTHROPIC_API_KEY</key><string>__INJECT__</string>
+    <key>PATH</key><string>/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
