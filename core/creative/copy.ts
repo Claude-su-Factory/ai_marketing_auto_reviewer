@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Product, Creative } from "../types.js";
+import { buildCopyPrompt, type FewShotExample, type VariantLabel } from "./prompt.js";
 
 export const COPY_SYSTEM_PROMPT = `당신은 Meta(Instagram/Facebook) 광고 카피라이터입니다.
 모든 종류의 제품·서비스 광고에 최적화된 카피를 작성합니다.
@@ -15,32 +16,27 @@ export const COPY_SYSTEM_PROMPT = `당신은 Meta(Instagram/Facebook) 광고 카
 
 export async function generateCopy(
   client: Anthropic,
-  product: Product
+  product: Product,
+  fewShot: FewShotExample[] = [],
+  variantLabel: VariantLabel = "emotional",
 ): Promise<Creative["copy"]> {
-  const priceText = product.price
-    ? `${product.currency} ${product.price.toLocaleString()}`
-    : "가격 미정";
+  const userPrompt = buildCopyPrompt(product, fewShot, variantLabel);
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 512,
     system: [{ type: "text", text: COPY_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-    messages: [{
-      role: "user",
-      content: `다음 제품/서비스에 대한 Instagram 광고 카피를 작성해주세요.
-
-제품명: ${product.name}
-설명: ${product.description}
-가격: ${priceText}
-카테고리: ${product.category ?? "기타"}
-태그: ${product.tags.join(", ")}
-링크: ${product.targetUrl}`,
-    }],
+    messages: [{ role: "user", content: userPrompt }],
   });
 
   const text = response.content[0].type === "text" ? response.content[0].text : "{}";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  return JSON.parse(jsonMatch?.[0] ?? "{}");
+  const parsed = JSON.parse(jsonMatch?.[0] ?? "{}");
+  return {
+    ...parsed,
+    variantLabel,
+    metaAssetLabel: "", // 호출자가 Creative를 조립할 때 채움
+  };
 }
 
 export function createAnthropicClient(): Anthropic {
