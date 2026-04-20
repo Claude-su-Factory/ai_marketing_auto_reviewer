@@ -23,6 +23,7 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | 카피 생성, 성과 분석 | Scrape/Generate/Monitor 사용 시 |
 | `GOOGLE_AI_API_KEY` | HTML 파싱, 이미지/영상 생성 | Scrape/Generate 사용 시 |
 | `META_ACCESS_TOKEN` 외 5개 | 광고 게재 및 성과 수집 | Launch/Monitor 사용 시 |
+| `AD_PLATFORMS` | 활성 광고 플랫폼 (기본값 `meta`) | Launch/Monitor 사용 시 |
 
 Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_KEY`만 있으면 된다. Meta 관련 키 없이도 소재 생성까지는 동작한다.
 

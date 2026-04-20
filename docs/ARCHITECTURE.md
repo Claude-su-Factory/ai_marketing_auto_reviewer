@@ -41,7 +41,8 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 | `core/storage.ts` | `data/` 아래 JSON 파일 I/O |
 | `core/product/` | 제품 정보 파싱 순수 함수 (Playwright 호출은 cli/ 쪽) |
 | `core/creative/` | 카피(Claude), 이미지(Imagen 3), 영상(Veo 3.1) 생성 로직 |
-| `core/campaign/` | Meta Ads 게재(launcher) + 성과 수집(monitor) 순수 로직 |
+| `core/campaign/` | 성과 수집 오케스트레이션 + 주간 분석 (런칭은 `core/platform/`로 이관됨) |
+| `core/platform/` | 플랫폼 어댑터: `AdPlatform` interface, `registry`, Meta DCO 어댑터 (`meta/`) |
 | `core/billing/` | 가격/티어 계산 |
 | `core/reviewer/` | 검토 결정 적용 함수 (승인/거절/수정) |
 | `core/improver/` | 성과 분석 + 개선 프롬프트 구성 순수 함수 |
@@ -161,6 +162,14 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewe
 - `server/scheduler.ts` — `server/index.ts`가 기동 직후 fire-and-forget으로 `startScheduler().catch(...)` 호출. SERVER_CADENCE(24h/7d). 스케줄러 실패가 HTTP 가용성을 막지 않도록 `app.listen` 이후에 실행.
 - `data/worker-state.json` — `lastCollect`, `lastAnalyze` 타임스탬프. 기동 시 `shouldCatchup`으로 밀린 작업 재실행 (Mac 슬립 대응)
 - 프로세스 내 async 직렬화는 `core/scheduler/mutex.ts`의 promise-chain 뮤텍스로 보장. 프로세스 간 중복은 launchd 단일 인스턴스 보증
+
+### 10. Platform Adapter 패턴 (2026-04-20)
+
+**Why:** Meta 외 플랫폼 (TikTok, Google Ads 등) 확장 가능성을 준비하되, 현재는 Meta만 구현. 플랫폼별 로직이 `cli/entries/launch.ts`나 `core/campaign/`에 섞여있으면 확장 시 코드 수정 범위가 커진다.
+
+**How:** `core/platform/types.ts`의 `AdPlatform` interface (launch/fetchReports/cleanup). `core/platform/registry.ts`가 `.env`의 `AD_PLATFORMS=meta,tiktok` csv를 파싱해 활성 어댑터 배열을 반환. 각 어댑터는 `core/platform/<name>/` 하위에 자체 logic. 어댑터별 credential env prefix 강제 (`META_*`, 추후 `TIKTOK_*`).
+
+**Trade-off:** 현재는 어댑터 1개라 과도한 추상화처럼 보이지만, Plan B의 multi-variant 런칭과 Plan C의 Winner DB에서 플랫폼 중립 흐름을 요구하므로 지금 도입하는 것이 합리적.
 
 ---
 

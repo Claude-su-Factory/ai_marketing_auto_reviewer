@@ -12,6 +12,10 @@
 - [x] SP2 — CLI 모드 분리 (Owner/Customer) + Usage API Server (Express + SQLite)
 - [x] SP3 — Stripe 빌링 (deduct-first 패턴 + 자동 충전 + Webhook dedup)
 - [x] SP4 — 레이어드 아키텍처 리팩터 (`core/` + `cli/` + `server/` 분리 완료)
+- ✅ Platform Adapter 추상화 (`core/platform/`, `AdPlatform` interface)
+- ✅ Meta Advantage+ Creative (DCO) 런칭 경로
+- ✅ Rollback + orphans 기록 (`data/orphans.json`)
+- ✅ 외부 수정 자동 감지 (`externally_modified` 상태)
 
 ---
 
@@ -34,6 +38,7 @@
 
 ## 최근 변경 이력
 
+- 2026-04-20: Plan A 완료 — Platform Adapter 패턴 도입, Meta 런칭을 DCO `asset_feed_spec`으로 전환, 기존 Creative/Campaign 마이그레이션 스크립트 추가
 - 2026-04-20 feat: 자율 자기학습 루프 launchd worker 구축 (core/scheduler 공유 모듈 + Owner 6h/2d, Server 24h/7d cadence + catch-up)
 - 2026-04-20 fix: 자율 개선 루프 복구 완료 — monitor.ts의 분석 프롬프트 예시 경로를 core/creative로 갱신 (Claude가 src/ 응답 → readFile 실패 → 루프 스킵되던 문제 해결)
 - 2026-04-19 fix: 자율 개선 루프의 src/ 경로 화이트리스트 regex를 core/cli/server로 현대화 + CTR_THRESHOLD 단일 출처화

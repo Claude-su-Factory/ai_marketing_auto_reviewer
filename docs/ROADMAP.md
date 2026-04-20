@@ -6,7 +6,7 @@
 
 ## 현재 추천 다음 작업
 
-**사용자 확정 필요** — SP4 리팩터가 완료되어 Tier 1이 비었다. Tier 2 후보 중 하나를 선정하거나 새 방향을 제시한다.
+**Plan B — Variant 생성 파이프라인 시작** — Plan A 완료, 스펙 `docs/superpowers/specs/2026-04-20-winner-db-variant-orchestration-design.md` §Section 6 참조.
 
 ---
 
