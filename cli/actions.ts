@@ -1,6 +1,7 @@
 import "dotenv/config";
 import type { AiProxy } from "./client/aiProxy.js";
-import { launchCampaign } from "../core/campaign/launcher.js";
+import { activePlatforms } from "../core/platform/registry.js";
+import type { VariantGroup } from "../core/platform/types.js";
 import { collectDailyReports } from "../core/campaign/monitor.js";
 import { runImprovementCycle } from "../core/improver/runner.js";
 import { shouldTriggerImprovement } from "../core/improver/index.js";
@@ -147,6 +148,15 @@ export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback):
 
 export async function runLaunch(proxy: AiProxy, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
+    const platforms = await activePlatforms();
+    if (platforms.length === 0) {
+      return {
+        success: false,
+        message: "Launch 실패",
+        logs: ["활성화된 플랫폼이 없습니다. .env의 AD_PLATFORMS 또는 credential을 확인하세요."],
+      };
+    }
+
     const creativePaths = await listJson("data/creatives");
     const logs: string[] = [];
 
@@ -156,10 +166,19 @@ export async function runLaunch(proxy: AiProxy, onProgress: ProgressCallback): P
       const product = await readJson<Product>(`data/products/${creative.productId}.json`);
       if (!product) continue;
 
+      const group: VariantGroup = {
+        variantGroupId: creative.variantGroupId,
+        product,
+        creatives: [creative],
+        assets: { image: creative.imageLocalPath, video: creative.videoLocalPath },
+      };
+
       onProgress({ message: `게재 중: ${product.name}` });
-      const campaign = await launchCampaign(product, creative);
-      await proxy.reportUsage("campaign_launch", { campaignId: campaign.id });
-      logs.push(`${product.name} → ${campaign.metaCampaignId}`);
+      for (const platform of platforms) {
+        const result = await platform.launch(group);
+        await proxy.reportUsage("campaign_launch", { campaignId: result.campaignId });
+        logs.push(`${product.name} → ${result.externalIds.campaign} (${platform.name})`);
+      }
     }
 
     if (logs.length === 0) {
