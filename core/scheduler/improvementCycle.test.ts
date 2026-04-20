@@ -10,6 +10,9 @@ vi.mock("../improver/runner.js", () => ({
 vi.mock("../improver/index.js", () => ({
   shouldTriggerImprovement: vi.fn((r: { ctr: number }) => r.ctr < 1.5),
 }));
+vi.mock("../campaign/monitor.js", () => ({
+  variantReportsToReports: vi.fn((vrs: any[]) => vrs),
+}));
 
 describe("runScheduledImprovementCycle", () => {
   beforeEach(() => {
