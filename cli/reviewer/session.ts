@@ -1,22 +1,31 @@
 import React from "react";
 import { render } from "ink";
 import type { Creative, Product } from "../../core/types.js";
-import { ReviewScreen } from "../tui/ReviewScreen.js";
+import { ReviewScreen, type ReviewGroup } from "../tui/ReviewScreen.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
+import { groupCreativesByVariantGroup } from "../../core/launch/groupApproval.js";
 
 export async function runReviewSession(): Promise<void> {
   const creativePaths = await listJson("data/creatives");
-  const items: Array<{ creative: Creative; product: Product }> = [];
-
+  const allCreatives: Creative[] = [];
   for (const p of creativePaths) {
-    const creative = await readJson<Creative>(p);
-    if (!creative || creative.status !== "pending") continue;
-    const product = await readJson<Product>(`data/products/${creative.productId}.json`);
-    if (product) items.push({ creative, product });
+    const c = await readJson<Creative>(p);
+    if (c) allCreatives.push(c);
   }
 
-  if (items.length === 0) {
+  const grouped = groupCreativesByVariantGroup(allCreatives);
+  const pendingGroups: ReviewGroup[] = [];
+
+  for (const [variantGroupId, members] of grouped.entries()) {
+    const hasPending = members.some((c) => c.status === "pending");
+    if (!hasPending) continue;
+    const product = await readJson<Product>(`data/products/${members[0].productId}.json`);
+    if (!product) continue;
+    pendingGroups.push({ variantGroupId, product, creatives: members });
+  }
+
+  if (pendingGroups.length === 0) {
     console.log("검토 대기 항목이 없습니다.");
     return;
   }
@@ -24,35 +33,41 @@ export async function runReviewSession(): Promise<void> {
   await new Promise<void>((resolve) => {
     const { unmount } = render(
       React.createElement(ReviewScreen, {
-        creatives: items,
-        onApprove: async (id) => {
-          const item = items.find((i) => i.creative.id === id);
-          if (!item) return;
-          const updated = applyReviewDecision(item.creative, { action: "approve" });
-          item.creative = updated;  // update in-memory reference
-          await writeJson(`data/creatives/${id}.json`, updated);
-          if (items.every((i) => i.creative.status !== "pending")) {
+        groups: pendingGroups,
+        onApprove: async (variantGroupId, creativeId) => {
+          const group = pendingGroups.find((g) => g.variantGroupId === variantGroupId);
+          if (!group) return;
+          const idx = group.creatives.findIndex((c) => c.id === creativeId);
+          if (idx < 0) return;
+          const updated = applyReviewDecision(group.creatives[idx], { action: "approve" });
+          group.creatives[idx] = updated;
+          await writeJson(`data/creatives/${creativeId}.json`, updated);
+          if (pendingGroups.every((g) => g.creatives.every((c) => c.status !== "pending"))) {
             unmount();
             resolve();
           }
         },
-        onReject: async (id, note) => {
-          const item = items.find((i) => i.creative.id === id);
-          if (!item) return;
-          const updated = applyReviewDecision(item.creative, { action: "reject", note });
-          item.creative = updated;  // update in-memory reference
-          await writeJson(`data/creatives/${id}.json`, updated);
+        onReject: async (variantGroupId, creativeId, note) => {
+          const group = pendingGroups.find((g) => g.variantGroupId === variantGroupId);
+          if (!group) return;
+          const idx = group.creatives.findIndex((c) => c.id === creativeId);
+          if (idx < 0) return;
+          const updated = applyReviewDecision(group.creatives[idx], { action: "reject", note });
+          group.creatives[idx] = updated;
+          await writeJson(`data/creatives/${creativeId}.json`, updated);
         },
-        onEdit: async (id, field, value) => {
-          const item = items.find((i) => i.creative.id === id);
-          if (!item) return;
-          const updated = applyReviewDecision(item.creative, {
+        onEdit: async (variantGroupId, creativeId, field, value) => {
+          const group = pendingGroups.find((g) => g.variantGroupId === variantGroupId);
+          if (!group) return;
+          const idx = group.creatives.findIndex((c) => c.id === creativeId);
+          if (idx < 0) return;
+          const updated = applyReviewDecision(group.creatives[idx], {
             action: "edit",
             field,
             value,
           });
-          item.creative = updated;  // update in-memory reference
-          await writeJson(`data/creatives/${id}.json`, updated);
+          group.creatives[idx] = updated;
+          await writeJson(`data/creatives/${creativeId}.json`, updated);
         },
       })
     );

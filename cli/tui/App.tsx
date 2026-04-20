@@ -6,7 +6,7 @@ import { MenuScreen } from "./MenuScreen.js";
 import { DoneScreen } from "./DoneScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
-import { ReviewScreen } from "./ReviewScreen.js";
+import { ReviewScreen, type ReviewGroup } from "./ReviewScreen.js";
 import {
   runScrape, runGenerate, runLaunch, runMonitor,
   runImprove, runPipelineAction, validateMonitorMode,
@@ -14,6 +14,7 @@ import {
 import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 import type { Creative, Product } from "../../core/types.js";
+import { groupCreativesByVariantGroup } from "../../core/launch/groupApproval.js";
 import { randomUUID } from "crypto";
 import { detectMode, type ModeConfig } from "../mode.js";
 import { createAiProxy, type AiProxy } from "../client/aiProxy.js";
@@ -54,7 +55,7 @@ export function App() {
   const [currentAction, setCurrentAction] = useState<ActionKey | null>(null);
   const [runProgress, setRunProgress] = useState<RunProgress>({ message: "" });
   const [doneResult, setDoneResult] = useState<DoneResult | null>(null);
-  const [reviewItems, setReviewItems] = useState<Array<{ creative: Creative; product: Product }>>([]);
+  const [reviewGroups, setReviewGroups] = useState<ReviewGroup[]>([]);
   const [formStep, setFormStep] = useState<FormStep>("name");
   const [formData, setFormData] = useState<Partial<Product>>({});
 
@@ -121,23 +122,29 @@ export function App() {
     setAppState("done");
   }, [handleProgressUpdate]);
 
-  const loadReviewItems = useCallback(async () => {
+  const loadReviewGroups = useCallback(async () => {
     const creativePaths = await listJson("data/creatives");
-    const items: Array<{ creative: Creative; product: Product }> = [];
+    const allCreatives: Creative[] = [];
     for (const p of creativePaths) {
-      const creative = await readJson<Creative>(p);
-      if (!creative || creative.status !== "pending") continue;
-      const product = await readJson<Product>(`data/products/${creative.productId}.json`);
-      if (product) items.push({ creative, product });
+      const c = await readJson<Creative>(p);
+      if (c) allCreatives.push(c);
     }
-    setReviewItems(items);
+    const grouped = groupCreativesByVariantGroup(allCreatives);
+    const pending: ReviewGroup[] = [];
+    for (const [variantGroupId, members] of grouped.entries()) {
+      if (!members.some((c) => c.status === "pending")) continue;
+      const product = await readJson<Product>(`data/products/${members[0].productId}.json`);
+      if (!product) continue;
+      pending.push({ variantGroupId, product, creatives: members });
+    }
+    setReviewGroups(pending);
   }, []);
 
   useEffect(() => {
     if (appState === "review") {
-      loadReviewItems();
+      loadReviewGroups();
     }
-  }, [appState, loadReviewItems]);
+  }, [appState, loadReviewGroups]);
 
   useInput((input, key) => {
     // running/review 상태에서는 해당 컴포넌트가 직접 입력을 처리
@@ -277,35 +284,41 @@ export function App() {
 
   if (appState === "review") {
     return React.createElement(ReviewScreen, {
-      creatives: reviewItems,
-      onApprove: async (id) => {
-        const item = reviewItems.find((i) => i.creative.id === id);
-        if (!item) return;
-        const updated = applyReviewDecision(item.creative, { action: "approve" });
-        item.creative = updated;
-        await writeJson(`data/creatives/${id}.json`, updated);
-        if (reviewItems.every((i) => i.creative.status !== "pending")) {
+      groups: reviewGroups,
+      onApprove: async (variantGroupId: string, creativeId: string) => {
+        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
+        if (!group) return;
+        const idx = group.creatives.findIndex((c) => c.id === creativeId);
+        if (idx < 0) return;
+        const updated = applyReviewDecision(group.creatives[idx], { action: "approve" });
+        group.creatives[idx] = updated;
+        await writeJson(`data/creatives/${creativeId}.json`, updated);
+        if (reviewGroups.every((g) => g.creatives.every((c) => c.status !== "pending"))) {
           setDoneResult({
             success: true,
             message: "Review 완료",
-            logs: [`${reviewItems.length}개 검토 완료`],
+            logs: [`${reviewGroups.length}개 그룹 검토 완료`],
           });
           setAppState("done");
         }
       },
-      onReject: async (id, note) => {
-        const item = reviewItems.find((i) => i.creative.id === id);
-        if (!item) return;
-        const updated = applyReviewDecision(item.creative, { action: "reject", note });
-        item.creative = updated;
-        await writeJson(`data/creatives/${id}.json`, updated);
+      onReject: async (variantGroupId: string, creativeId: string, note: string) => {
+        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
+        if (!group) return;
+        const idx = group.creatives.findIndex((c) => c.id === creativeId);
+        if (idx < 0) return;
+        const updated = applyReviewDecision(group.creatives[idx], { action: "reject", note });
+        group.creatives[idx] = updated;
+        await writeJson(`data/creatives/${creativeId}.json`, updated);
       },
-      onEdit: async (id, field, value) => {
-        const item = reviewItems.find((i) => i.creative.id === id);
-        if (!item) return;
-        const updated = applyReviewDecision(item.creative, { action: "edit", field, value });
-        item.creative = updated;
-        await writeJson(`data/creatives/${id}.json`, updated);
+      onEdit: async (variantGroupId: string, creativeId: string, field: keyof Creative["copy"], value: string) => {
+        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
+        if (!group) return;
+        const idx = group.creatives.findIndex((c) => c.id === creativeId);
+        if (idx < 0) return;
+        const updated = applyReviewDecision(group.creatives[idx], { action: "edit", field, value });
+        group.creatives[idx] = updated;
+        await writeJson(`data/creatives/${creativeId}.json`, updated);
       },
     });
   }

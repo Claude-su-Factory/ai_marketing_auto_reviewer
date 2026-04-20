@@ -2,43 +2,72 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import type { Creative, Product } from "../../core/types.js";
 
-interface Props {
-  creatives: Array<{ creative: Creative; product: Product }>;
-  onApprove: (creativeId: string) => void;
-  onReject: (creativeId: string, note: string) => void;
-  onEdit: (creativeId: string, field: keyof Creative["copy"], value: string) => void;
+export interface ReviewGroup {
+  variantGroupId: string;
+  product: Product;
+  creatives: Creative[];
 }
 
-export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+interface Props {
+  groups: ReviewGroup[];
+  onApprove: (variantGroupId: string, creativeId: string) => void;
+  onReject: (variantGroupId: string, creativeId: string, note: string) => void;
+  onEdit: (
+    variantGroupId: string,
+    creativeId: string,
+    field: keyof Creative["copy"],
+    value: string,
+  ) => void;
+}
+
+export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
+  const [groupIndex, setGroupIndex] = useState(0);
+  const [variantIndex, setVariantIndex] = useState(0);
   const [mode, setMode] = useState<"browse" | "edit" | "reject">("browse");
   const [inputValue, setInputValue] = useState("");
 
-  const pending = creatives.filter((c) => c.creative.status === "pending");
-  const current = pending[selectedIndex];
+  const currentGroup = groups[groupIndex];
+  const currentVariant = currentGroup?.creatives[variantIndex];
 
   useInput((input, key) => {
     if (mode === "browse") {
-      if (key.upArrow) setSelectedIndex((i) => Math.max(0, i - 1));
-      if (key.downArrow) setSelectedIndex((i) => Math.min(pending.length - 1, i + 1));
-      if (input === "a" && current) onApprove(current.creative.id);
-      if (input === "r" && current) { setMode("reject"); setInputValue(""); }
-      if (input === "e" && current) { setMode("edit"); setInputValue(""); }
+      if (key.upArrow) {
+        setGroupIndex((i) => Math.max(0, i - 1));
+        setVariantIndex(0);
+      }
+      if (key.downArrow) {
+        setGroupIndex((i) => Math.min(groups.length - 1, i + 1));
+        setVariantIndex(0);
+      }
+      if (input >= "1" && input <= "9" && currentGroup) {
+        const n = Number(input) - 1;
+        if (n < currentGroup.creatives.length) setVariantIndex(n);
+      }
+      if (input === "a" && currentGroup && currentVariant && currentVariant.status === "pending") {
+        onApprove(currentGroup.variantGroupId, currentVariant.id);
+      }
+      if (input === "r" && currentGroup && currentVariant && currentVariant.status === "pending") {
+        setMode("reject");
+        setInputValue("");
+      }
+      if (input === "e" && currentGroup && currentVariant && currentVariant.status === "pending") {
+        setMode("edit");
+        setInputValue("");
+      }
       return;
     }
 
-    // reject/edit mode: handle text input, Enter to confirm, Escape to cancel
     if (key.escape) {
       setMode("browse");
       setInputValue("");
       return;
     }
     if (key.return) {
-      if (mode === "reject" && current) {
-        onReject(current.creative.id, inputValue);
+      if (mode === "reject" && currentGroup && currentVariant) {
+        onReject(currentGroup.variantGroupId, currentVariant.id, inputValue);
       }
-      if (mode === "edit" && current) {
-        onEdit(current.creative.id, "headline", inputValue);
+      if (mode === "edit" && currentGroup && currentVariant) {
+        onEdit(currentGroup.variantGroupId, currentVariant.id, "headline", inputValue);
       }
       setMode("browse");
       setInputValue("");
@@ -53,7 +82,7 @@ export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) 
     }
   });
 
-  if (!current) {
+  if (!currentGroup || !currentVariant) {
     return (
       <Box>
         <Text color="green">모든 검토 완료!</Text>
@@ -61,32 +90,50 @@ export function ReviewScreen({ creatives, onApprove, onReject, onEdit }: Props) 
     );
   }
 
+  const statusColor = (s: Creative["status"]) =>
+    s === "approved" || s === "edited" ? "green" : s === "rejected" ? "red" : "yellow";
+
   return (
-    <Box borderStyle="round" padding={1} width={70}>
-      <Box flexDirection="column" width={20} marginRight={2}>
-        <Text bold>검토 대기: {pending.length}개</Text>
-        {pending.map((item, i) => (
-          <Text key={item.creative.id} color={i === selectedIndex ? "cyan" : "white"}>
-            {i === selectedIndex ? "▶ " : "  "}
-            {item.product.name.slice(0, 16)}
-          </Text>
-        ))}
+    <Box borderStyle="round" padding={1} width={90}>
+      <Box flexDirection="column" width={24} marginRight={2}>
+        <Text bold>그룹: {groupIndex + 1}/{groups.length}</Text>
+        {groups.map((g, i) => {
+          const approved = g.creatives.filter((c) => c.status === "approved" || c.status === "edited").length;
+          return (
+            <Text key={g.variantGroupId} color={i === groupIndex ? "cyan" : "white"}>
+              {i === groupIndex ? "▶ " : "  "}
+              {g.product.name.slice(0, 14)} ({approved}/{g.creatives.length})
+            </Text>
+          );
+        })}
       </Box>
       <Box flexDirection="column" flexGrow={1}>
-        <Text bold>미리보기</Text>
-        <Text dimColor>이미지: {current.creative.imageLocalPath}</Text>
-        <Text dimColor>영상: {current.creative.videoLocalPath}</Text>
+        <Text bold>Variants (1/2/3 선택)</Text>
+        {currentGroup.creatives.map((c, i) => (
+          <Text key={c.id} color={i === variantIndex ? "cyan" : "white"}>
+            {i === variantIndex ? "▶ " : "  "}[{i + 1}] {c.copy.variantLabel}{" "}
+            <Text color={statusColor(c.status)}>({c.status})</Text>
+          </Text>
+        ))}
         <Box marginTop={1} flexDirection="column">
-          <Text>헤드라인: {current.creative.copy.headline}</Text>
-          <Text>본문: {current.creative.copy.body}</Text>
-          <Text>CTA: {current.creative.copy.cta}</Text>
-          <Text>태그: {current.creative.copy.hashtags.join(" ")}</Text>
+          <Text dimColor>이미지(공유): {currentVariant.imageLocalPath}</Text>
+          <Text dimColor>영상(공유): {currentVariant.videoLocalPath}</Text>
+          <Text>헤드라인: {currentVariant.copy.headline}</Text>
+          <Text>본문: {currentVariant.copy.body}</Text>
+          <Text>CTA: {currentVariant.copy.cta}</Text>
+          <Text>태그: {currentVariant.copy.hashtags.join(" ")}</Text>
         </Box>
-        {mode === "browse" && (
+        {mode === "browse" && currentVariant.status === "pending" && (
           <Box marginTop={1}>
             <Text color="green">[A] 승인  </Text>
             <Text color="red">[R] 거절  </Text>
-            <Text color="yellow">[E] 수정</Text>
+            <Text color="yellow">[E] 수정  </Text>
+            <Text dimColor>↑↓ 그룹 이동 / 1-3 variant 선택</Text>
+          </Box>
+        )}
+        {mode === "browse" && currentVariant.status !== "pending" && (
+          <Box marginTop={1}>
+            <Text dimColor>이 variant는 이미 처리됨. 다른 variant(1-3) 또는 그룹(↑↓) 선택.</Text>
           </Box>
         )}
         {mode === "reject" && (
