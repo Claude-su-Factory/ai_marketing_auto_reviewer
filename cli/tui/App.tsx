@@ -283,42 +283,47 @@ export function App() {
   }
 
   if (appState === "review") {
+    const applyReview = async (
+      variantGroupId: string,
+      creativeId: string,
+      decision: Parameters<typeof applyReviewDecision>[1],
+    ) => {
+      let updated: Creative | null = null;
+      const next = reviewGroups.map((g) => {
+        if (g.variantGroupId !== variantGroupId) return g;
+        return {
+          ...g,
+          creatives: g.creatives.map((c) => {
+            if (c.id !== creativeId || c.status !== "pending") return c;
+            updated = applyReviewDecision(c, decision);
+            return updated;
+          }),
+        };
+      });
+      if (!updated) return next;
+      await writeJson(`data/creatives/${creativeId}.json`, updated);
+      setReviewGroups(next);
+      return next;
+    };
+
     return React.createElement(ReviewScreen, {
       groups: reviewGroups,
       onApprove: async (variantGroupId: string, creativeId: string) => {
-        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
-        if (!group) return;
-        const idx = group.creatives.findIndex((c) => c.id === creativeId);
-        if (idx < 0) return;
-        const updated = applyReviewDecision(group.creatives[idx], { action: "approve" });
-        group.creatives[idx] = updated;
-        await writeJson(`data/creatives/${creativeId}.json`, updated);
-        if (reviewGroups.every((g) => g.creatives.every((c) => c.status !== "pending"))) {
+        const next = await applyReview(variantGroupId, creativeId, { action: "approve" });
+        if (next.every((g) => g.creatives.every((c) => c.status !== "pending"))) {
           setDoneResult({
             success: true,
             message: "Review 완료",
-            logs: [`${reviewGroups.length}개 그룹 검토 완료`],
+            logs: [`${next.length}개 그룹 검토 완료`],
           });
           setAppState("done");
         }
       },
       onReject: async (variantGroupId: string, creativeId: string, note: string) => {
-        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
-        if (!group) return;
-        const idx = group.creatives.findIndex((c) => c.id === creativeId);
-        if (idx < 0) return;
-        const updated = applyReviewDecision(group.creatives[idx], { action: "reject", note });
-        group.creatives[idx] = updated;
-        await writeJson(`data/creatives/${creativeId}.json`, updated);
+        await applyReview(variantGroupId, creativeId, { action: "reject", note });
       },
       onEdit: async (variantGroupId: string, creativeId: string, field: keyof Creative["copy"], value: string) => {
-        const group = reviewGroups.find((g) => g.variantGroupId === variantGroupId);
-        if (!group) return;
-        const idx = group.creatives.findIndex((c) => c.id === creativeId);
-        if (idx < 0) return;
-        const updated = applyReviewDecision(group.creatives[idx], { action: "edit", field, value });
-        group.creatives[idx] = updated;
-        await writeJson(`data/creatives/${creativeId}.json`, updated);
+        await applyReview(variantGroupId, creativeId, { action: "edit", field, value });
       },
     });
   }
