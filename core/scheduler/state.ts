@@ -19,23 +19,26 @@ export interface SchedulerDeps {
   runImprovementCycle: () => Promise<unknown>;
 }
 
+function ageOrInfinity(iso: string | null, now: number): number {
+  if (!iso) return Infinity;
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? Infinity : now - t;
+}
+
 export function shouldCatchup(
   state: WorkerState,
   cadence: Cadence,
   now: number,
 ): CatchupDecision {
-  const collectAge = state.lastCollect
-    ? now - Date.parse(state.lastCollect)
-    : Infinity;
-  const analyzeAge = state.lastAnalyze
-    ? now - Date.parse(state.lastAnalyze)
-    : Infinity;
+  const collectAge = ageOrInfinity(state.lastCollect, now);
+  const analyzeAge = ageOrInfinity(state.lastAnalyze, now);
   return {
     collect: collectAge >= cadence.catchupCollectMs,
     analyze: analyzeAge >= cadence.catchupAnalyzeMs,
   };
 }
 
+// readJson returns null for both missing and corrupt JSON; both treated as first-boot.
 async function readState(): Promise<WorkerState> {
   return (
     (await readJson<WorkerState>(WORKER_STATE_PATH)) ?? {

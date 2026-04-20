@@ -54,4 +54,11 @@ describe("shouldCatchup", () => {
     expect(shouldCatchup(state, OWNER_CADENCE, oneDay).analyze).toBe(false);
     expect(shouldCatchup(state, OWNER_CADENCE, twoDays).analyze).toBe(true);
   });
+
+  it("손상된 ISO 문자열은 Infinity 취급 → catch-up 강제 실행", () => {
+    const state = { lastCollect: "garbage", lastAnalyze: "not-a-date" };
+    const result = shouldCatchup(state, OWNER_CADENCE, Date.now());
+    expect(result.collect).toBe(true);
+    expect(result.analyze).toBe(true);
+  });
 });
