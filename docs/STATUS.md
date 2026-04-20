@@ -36,8 +36,20 @@
 
 ---
 
+## 알려진 결함 / 미구현 이슈
+
+Plan A 리뷰에서 식별된 Minor 항목 중 이번 수정 플랜 범위 밖으로 미룬 것. Plan B 이후 cleanup 경로를 실제로 호출하게 되는 시점에 재검토.
+
+- **deleteMetaResource 중복** — `core/platform/meta/launcher.ts:59-65`와 `core/platform/meta/adapter.ts:8-11`에 동일 함수. 나중에 공유 모듈로 추출.
+- **failedRecord의 이미 삭제된 ID** — `launch_failed` Campaign 레코드는 rollback이 성공시킨 ID까지 그대로 담는다. 현재 cleanup()은 launch_failed에 호출되지 않으므로 문제 없지만, cleanup 경로 활성화 시점에 `cleanupResult.orphans`만 보존하도록 변경 필요.
+- **cli/actions.ts의 미사용 Report import** — Task 3 이후 `Report` 타입이 쓰이지 않지만 import 유지. 다음 cli/actions.ts 수정 시 함께 제거.
+- **ad_formats 명시, README 경고 문구, `assembleAssetFeedSpec` 에러 메시지 regex 강화** — 1차 리뷰에서 Minor로 분류된 나머지 항목.
+
+---
+
 ## 최근 변경 이력
 
+- 2026-04-20 fix: Plan A 리뷰 결함 수정 — `classifyMetaError` SDK shape 인식(C1), 일별 리포트 소비자 3곳을 VariantReport 포맷으로 정합화(C2), AdCreative를 rollback·cleanup·Campaign.metaAdCreativeId에 추적(C3), `launch_failed` Campaign JSON 기록(I1), `assembleAssetFeedSpec` 중복 body text 방지(I2). 테스트 183 통과
 - 2026-04-20: Plan A 완료 — Platform Adapter 패턴 도입, Meta 런칭을 DCO `asset_feed_spec`으로 전환, 기존 Creative/Campaign 마이그레이션 스크립트 추가
 - 2026-04-20 feat: 자율 자기학습 루프 launchd worker 구축 (core/scheduler 공유 모듈 + Owner 6h/2d, Server 24h/7d cadence + catch-up)
 - 2026-04-20 fix: 자율 개선 루프 복구 완료 — monitor.ts의 분석 프롬프트 예시 경로를 core/creative로 갱신 (Claude가 src/ 응답 → readFile 실패 → 루프 스킵되던 문제 해결)
