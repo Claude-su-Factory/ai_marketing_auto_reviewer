@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { executeRollback } from "./rollback.js";
 
 describe("executeRollback", () => {
-  it("deletes in reverse order and returns all deleted on success", async () => {
+  it("deletes in reverse order including creative and returns all deleted on success", async () => {
     const calls: string[] = [];
     const deleter = vi.fn(async (type: string, id: string) => {
       calls.push(`${type}:${id}`);
@@ -12,18 +12,38 @@ describe("executeRollback", () => {
       created: [
         { type: "campaign", id: "c1" },
         { type: "adset", id: "as1" },
+        { type: "creative", id: "cr1" },
         { type: "ad", id: "ad1" },
       ],
       deleter,
     });
 
-    expect(calls).toEqual(["ad:ad1", "adset:as1", "campaign:c1"]);
-    expect(result.deleted).toEqual(["ad1", "as1", "c1"]);
+    expect(calls).toEqual(["ad:ad1", "creative:cr1", "adset:as1", "campaign:c1"]);
+    expect(result.deleted).toEqual(["ad1", "cr1", "as1", "c1"]);
     expect(result.orphans).toEqual([]);
   });
 
+  it("collects creative as orphan when its delete throws", async () => {
+    const deleter = vi.fn(async (type: string, _id: string) => {
+      if (type === "creative") throw new Error("meta API failed");
+    });
+
+    const result = await executeRollback({
+      created: [
+        { type: "campaign", id: "c1" },
+        { type: "adset", id: "as1" },
+        { type: "creative", id: "cr1" },
+        { type: "ad", id: "ad1" },
+      ],
+      deleter,
+    });
+
+    expect(result.deleted).toEqual(["ad1", "as1", "c1"]);
+    expect(result.orphans).toEqual([{ type: "creative", id: "cr1" }]);
+  });
+
   it("collects orphans when a delete throws and continues", async () => {
-    const deleter = vi.fn(async (type: string, id: string) => {
+    const deleter = vi.fn(async (type: string, _id: string) => {
       if (type === "adset") throw new Error("meta API failed");
     });
 

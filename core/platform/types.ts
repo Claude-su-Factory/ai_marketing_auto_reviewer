@@ -19,7 +19,7 @@ export interface LaunchResult {
 
 export interface CleanupResult {
   deleted: string[];
-  orphans: { type: "campaign" | "adset" | "ad"; id: string }[];
+  orphans: { type: "campaign" | "adset" | "ad" | "creative"; id: string }[];
 }
 
 export interface VariantReport {

@@ -5,7 +5,7 @@ import { executeRollback, appendOrphansToDisk } from "./rollback.js";
 import { readJson, writeJson } from "../../storage.js";
 import bizSdk from "facebook-nodejs-business-sdk";
 
-async function deleteMetaResource(type: "campaign" | "adset" | "ad", id: string): Promise<void> {
+async function deleteMetaResource(type: "campaign" | "adset" | "ad" | "creative", id: string): Promise<void> {
   const api = (bizSdk as any).FacebookAdsApi.getDefaultApi();
   await api.call("DELETE", [id]);
 }

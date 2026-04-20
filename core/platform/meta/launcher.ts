@@ -57,7 +57,7 @@ async function uploadVideo(account: any, videoPath: string): Promise<string> {
 }
 
 async function deleteMetaResource(
-  type: "campaign" | "adset" | "ad",
+  type: "campaign" | "adset" | "ad" | "creative",
   id: string,
 ): Promise<void> {
   const api = (bizSdk as any).FacebookAdsApi.getDefaultApi();

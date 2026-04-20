@@ -1,6 +1,6 @@
 import type { CleanupResult } from "../types.js";
 
-export type MetaResourceType = "campaign" | "adset" | "ad";
+export type MetaResourceType = "campaign" | "adset" | "ad" | "creative";
 
 export interface CreatedResource {
   type: MetaResourceType;
