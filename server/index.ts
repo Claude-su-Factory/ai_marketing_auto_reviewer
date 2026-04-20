@@ -90,10 +90,12 @@ app.use(createUsageRouter(db));
 setInterval(cleanupOldFiles, 60 * 60 * 1000);
 cleanupOldFiles();
 
-// Start self-learning scheduler (Server cadence)
-await startScheduler();
-
 app.listen(PORT, () => {
   console.log(`[Usage Server] Running on ${SERVER_URL}`);
   console.log(`[Usage Server] DB: server/data.db`);
+});
+
+// Scheduler runs opportunistically; server availability must not depend on it.
+startScheduler().catch((err) => {
+  console.error("[scheduler] failed to start, continuing without it:", err);
 });
