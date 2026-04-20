@@ -78,10 +78,16 @@ export async function runPipeline(urls: string[]): Promise<void> {
       update("generate", "running", msg, product.name, i + 1)
     );
 
+    const variantGroupId = randomUUID();
     const creative: Creative = {
       id: randomUUID(),
       productId: product.id,
-      copy,
+      variantGroupId,
+      copy: {
+        ...copy,
+        variantLabel: "emotional",
+        metaAssetLabel: `variant-${variantGroupId}`,
+      },
       imageLocalPath,
       videoLocalPath,
       status: "pending",

@@ -20,9 +20,19 @@ const imageLocalPath = await generateImage(product);
 console.log("영상 생성 중... (최대 10분 소요)");
 const videoLocalPath = await generateVideo(product, console.log);
 
+const variantGroupId = randomUUID();
 const creative: Creative = {
-  id: randomUUID(), productId: product.id, copy,
-  imageLocalPath, videoLocalPath, status: "pending",
+  id: randomUUID(),
+  productId: product.id,
+  variantGroupId,
+  copy: {
+    ...copy,
+    variantLabel: "emotional",
+    metaAssetLabel: `variant-${variantGroupId}`,
+  },
+  imageLocalPath,
+  videoLocalPath,
+  status: "pending",
   createdAt: new Date().toISOString(),
 };
 await writeJson(`data/creatives/${creative.id}.json`, creative);

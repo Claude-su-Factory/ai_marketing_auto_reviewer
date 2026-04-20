@@ -116,10 +116,16 @@ export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback):
         taskProgress: { ...taskProgress },
       });
 
+      const variantGroupId = randomUUID();
       const creative: Creative = {
         id: randomUUID(),
         productId: product.id,
-        copy,
+        variantGroupId,
+        copy: {
+          ...copy,
+          variantLabel: "emotional",
+          metaAssetLabel: `variant-${variantGroupId}`,
+        },
         imageLocalPath,
         videoLocalPath,
         status: "pending",
