@@ -1,6 +1,6 @@
 # 아키텍처
 
-마지막 업데이트: 2026-04-19
+마지막 업데이트: 2026-04-20
 
 ---
 
@@ -49,7 +49,7 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 | `cli/tui/` | Ink 기반 TUI 화면 (메뉴, 리뷰, 진행 바) |
 | `cli/scraper.ts` | Playwright 런타임 + `core/product` 조합 |
 | `cli/reviewer/session.ts` | 실제 리뷰 세션 실행 (Ink 상호작용) |
-| `cli/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) |
+| `core/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) — §8 예외 |
 | `cli/monitor/scheduler.ts` | `node-cron` 기반 주기 실행 |
 | `cli/client/` | Usage Server HTTP 클라이언트 + AI 프록시 추상화 |
 | `cli/mode.ts` | Owner/Customer 모드 감지 |
@@ -131,7 +131,9 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 - `server/` → `core/` : Express/Stripe/better-sqlite3 포함
 - `cli/` ↔ `server/` 상호 import 금지 (HTTP 경계로만 통신)
 
-Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewer/decisions.ts`의 `applyReviewDecision()`은 pure, `cli/reviewer/session.ts`의 `runReviewSession()`은 Ink 의존. `core/improver/index.ts`의 프롬프트 구성은 pure, `cli/improver/runner.ts`의 파일 패치 사이클은 fs 의존.
+Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewer/decisions.ts`의 `applyReviewDecision()`은 pure, `cli/reviewer/session.ts`의 `runReviewSession()`은 Ink 의존.
+
+**`core/improver/runner.ts` 예외:** 원칙적으로 I/O 러너는 cli/에 두지만, `runImprovementCycle`은 Owner(CLI)와 Customer(Server) 양쪽 스케줄러에서 재사용되어야 하므로 core에 둔다. 파일 I/O(`fs/promises`), 서브프로세스(`git commit`), Anthropic SDK 호출을 포함하며 이는 core 레이어의 "외부 의존 금지" 원칙에 대한 **의도된 예외**다. cli↔server 교차 import 금지 규칙이 우선하기 때문. 향후 순수 코어(플래닝·프롬프트) + 얇은 cli/server 래퍼(I/O)로 재분할할 여지가 있으나 현재는 YAGNI.
 
 자세한 이력과 task 단위 변경 내역은 [`docs/superpowers/specs/2026-04-17-layered-architecture-refactor-design.md`](superpowers/specs/2026-04-17-layered-architecture-refactor-design.md) 참조.
 
