@@ -3,6 +3,10 @@ import { readJson, listJson } from "../../core/storage.js";
 import type { Creative, Product } from "../../core/types.js";
 import { activePlatforms } from "../../core/platform/registry.js";
 import type { VariantGroup } from "../../core/platform/types.js";
+import {
+  groupCreativesByVariantGroup,
+  groupApprovalCheck,
+} from "../../core/launch/groupApproval.js";
 
 const platforms = await activePlatforms();
 if (platforms.length === 0) {
@@ -12,24 +16,40 @@ if (platforms.length === 0) {
 console.log(`활성 플랫폼: ${platforms.map((p) => p.name).join(", ")}`);
 
 const creativePaths = await listJson("data/creatives");
+const allCreatives: Creative[] = [];
 for (const p of creativePaths) {
-  const creative = await readJson<Creative>(p);
-  if (!creative) continue;
-  if (creative.status !== "approved" && creative.status !== "edited") continue;
+  const c = await readJson<Creative>(p);
+  if (c) allCreatives.push(c);
+}
 
-  const product = await readJson<Product>(`data/products/${creative.productId}.json`);
-  if (!product) continue;
+const groups = groupCreativesByVariantGroup(allCreatives);
+
+for (const [groupId, members] of groups.entries()) {
+  const { launch, approved } = groupApprovalCheck(members);
+  if (!launch) {
+    console.log(`skip group ${groupId.slice(0, 8)}… (approved ${approved.length}/3, 필요 ≥ 2)`);
+    continue;
+  }
+
+  const product = await readJson<Product>(`data/products/${approved[0].productId}.json`);
+  if (!product) {
+    console.log(`skip group ${groupId.slice(0, 8)}… (product 없음)`);
+    continue;
+  }
 
   const group: VariantGroup = {
-    variantGroupId: creative.variantGroupId,
+    variantGroupId: groupId,
     product,
-    creatives: [creative],
-    assets: { image: creative.imageLocalPath, video: creative.videoLocalPath },
+    creatives: approved,
+    assets: {
+      image: approved[0].imageLocalPath,
+      video: approved[0].videoLocalPath,
+    },
   };
 
   for (const platform of platforms) {
     try {
-      console.log(`${platform.name} 런칭: ${product.name}`);
+      console.log(`${platform.name} 런칭: ${product.name} (${approved.length} variants)`);
       const result = await platform.launch(group);
       console.log(`  ✓ ${platform.name} campaign=${result.externalIds.campaign} ad=${result.externalIds.ad}`);
     } catch (err) {

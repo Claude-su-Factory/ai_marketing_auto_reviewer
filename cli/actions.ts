@@ -2,6 +2,10 @@ import "dotenv/config";
 import type { AiProxy } from "./client/aiProxy.js";
 import { activePlatforms } from "../core/platform/registry.js";
 import type { VariantGroup } from "../core/platform/types.js";
+import {
+  groupCreativesByVariantGroup,
+  groupApprovalCheck,
+} from "../core/launch/groupApproval.js";
 import { collectDailyReports, variantReportsToReports } from "../core/campaign/monitor.js";
 import type { VariantReport } from "../core/platform/types.js";
 import { runImprovementCycle } from "../core/improver/runner.js";
@@ -154,37 +158,60 @@ export async function runLaunch(proxy: AiProxy, onProgress: ProgressCallback): P
     }
 
     const creativePaths = await listJson("data/creatives");
+    const allCreatives: Creative[] = [];
+    for (const p of creativePaths) {
+      const c = await readJson<Creative>(p);
+      if (c) allCreatives.push(c);
+    }
+
+    const groups = groupCreativesByVariantGroup(allCreatives);
     const logs: string[] = [];
 
-    for (const p of creativePaths) {
-      const creative = await readJson<Creative>(p);
-      if (!creative || (creative.status !== "approved" && creative.status !== "edited")) continue;
-      const product = await readJson<Product>(`data/products/${creative.productId}.json`);
-      if (!product) continue;
+    for (const [groupId, members] of groups.entries()) {
+      const { launch, approved } = groupApprovalCheck(members);
+      if (!launch) {
+        logs.push(`skip group ${groupId.slice(0, 8)}… (approved ${approved.length}/3, 필요 ≥ 2)`);
+        continue;
+      }
+
+      const product = await readJson<Product>(`data/products/${approved[0].productId}.json`);
+      if (!product) {
+        logs.push(`skip group ${groupId.slice(0, 8)}… (product 없음)`);
+        continue;
+      }
 
       const group: VariantGroup = {
-        variantGroupId: creative.variantGroupId,
+        variantGroupId: groupId,
         product,
-        creatives: [creative],
-        assets: { image: creative.imageLocalPath, video: creative.videoLocalPath },
+        creatives: approved,
+        assets: {
+          image: approved[0].imageLocalPath,
+          video: approved[0].videoLocalPath,
+        },
       };
 
-      onProgress({ message: `게재 중: ${product.name}` });
+      onProgress({ message: `게재 중: ${product.name} (${approved.length} variants)` });
       for (const platform of platforms) {
         const result = await platform.launch(group);
         await proxy.reportUsage("campaign_launch", { campaignId: result.campaignId });
-        logs.push(`${product.name} → ${result.externalIds.campaign} (${platform.name})`);
+        logs.push(
+          `${product.name} → ${result.externalIds.campaign} (${platform.name}, ${approved.length} variants)`,
+        );
       }
     }
 
-    if (logs.length === 0) {
+    if (logs.every((l) => l.startsWith("skip"))) {
       return {
         success: false,
         message: "Launch 실패",
-        logs: ["승인된 소재가 없습니다. Review를 먼저 실행하세요."],
+        logs: logs.length > 0 ? logs : ["승인된 variantGroup이 없습니다. Review를 먼저 실행하세요."],
       };
     }
-    return { success: true, message: `Launch 완료 — ${logs.length}개 게재`, logs };
+    return {
+      success: true,
+      message: `Launch 완료 — ${logs.filter((l) => !l.startsWith("skip")).length}개 게재`,
+      logs,
+    };
   } catch (e) {
     return { success: false, message: "Launch 실패", logs: [String(e)] };
   }
