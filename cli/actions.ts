@@ -10,6 +10,7 @@ import { readJson, writeJson, listJson } from "../core/storage.js";
 import type { Product, Creative, Report } from "../core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./tui/AppTypes.js";
 import { randomUUID } from "crypto";
+import { VARIANT_LABELS } from "../core/creative/prompt.js";
 
 export function buildOverallProgress(p: TaskProgress): number {
   return Math.round((p.copy + p.image + p.video) / 3);
@@ -69,16 +70,6 @@ export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback):
       const taskProgress: TaskProgress = { copy: 0, image: 0, video: 0 };
 
       onProgress({
-        message: "카피 생성 중...",
-        currentCourse: product.name,
-        courseIndex: i + 1,
-        totalCourses: productPaths.length,
-        taskProgress: { ...taskProgress },
-      });
-      const copy = await proxy.generateCopy(product, [], "emotional");
-      taskProgress.copy = 100;
-
-      onProgress({
         message: "이미지 생성 중...",
         currentCourse: product.name,
         courseIndex: i + 1,
@@ -110,31 +101,35 @@ export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback):
       });
       taskProgress.video = 100;
 
-      onProgress({
-        message: "저장 중...",
-        currentCourse: product.name,
-        courseIndex: i + 1,
-        totalCourses: productPaths.length,
-        taskProgress: { ...taskProgress },
-      });
-
       const variantGroupId = randomUUID();
-      const creative: Creative = {
-        id: randomUUID(),
-        productId: product.id,
-        variantGroupId,
-        copy: {
-          ...copy,
-          variantLabel: "emotional",
-          metaAssetLabel: `variant-${variantGroupId}`,
-        },
-        imageLocalPath,
-        videoLocalPath,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-      await writeJson(`data/creatives/${creative.id}.json`, creative);
-      logs.push(`${product.name} ✓`);
+      for (let v = 0; v < VARIANT_LABELS.length; v++) {
+        const label = VARIANT_LABELS[v];
+        onProgress({
+          message: `카피 ${v + 1}/3 생성 중 (${label})...`,
+          currentCourse: product.name,
+          courseIndex: i + 1,
+          totalCourses: productPaths.length,
+          taskProgress: { copy: Math.round(((v + 1) / 3) * 100), image: 100, video: 100 },
+        });
+        const copy = await proxy.generateCopy(product, [], label);
+
+        const creative: Creative = {
+          id: randomUUID(),
+          productId: product.id,
+          variantGroupId,
+          copy: {
+            ...copy,
+            variantLabel: label,
+            metaAssetLabel: `${variantGroupId}::${label}`,
+          },
+          imageLocalPath,
+          videoLocalPath,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        };
+        await writeJson(`data/creatives/${creative.id}.json`, creative);
+      }
+      logs.push(`${product.name} ✓ (3 variants)`);
     }
 
     return {

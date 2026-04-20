@@ -10,6 +10,7 @@ import { generateVideo } from "../core/creative/video.js";
 import { writeJson } from "../core/storage.js";
 import type { Product, Creative } from "../core/types.js";
 import { randomUUID } from "crypto";
+import { VARIANT_LABELS } from "../core/creative/prompt.js";
 
 export async function runPipeline(urls: string[]): Promise<void> {
   const stepStatuses: Record<PipelineStep, StepStatus> = {
@@ -65,11 +66,9 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
   // Step 2: Generate
   update("generate", "running", "소재 생성 시작...");
+
   for (let i = 0; i < products.length; i++) {
     const product = products[i];
-    update("generate", "running", `카피 생성 중...`, product.name, i + 1);
-    const copy = await generateCopy(client, product, [], "emotional");
-
     update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
     const imageLocalPath = await generateImage(product);
 
@@ -79,21 +78,27 @@ export async function runPipeline(urls: string[]): Promise<void> {
     );
 
     const variantGroupId = randomUUID();
-    const creative: Creative = {
-      id: randomUUID(),
-      productId: product.id,
-      variantGroupId,
-      copy: {
-        ...copy,
-        variantLabel: "emotional",
-        metaAssetLabel: `variant-${variantGroupId}`,
-      },
-      imageLocalPath,
-      videoLocalPath,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-    await writeJson(`data/creatives/${creative.id}.json`, creative);
+
+    for (const label of VARIANT_LABELS) {
+      update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
+      const copy = await generateCopy(client, product, [], label);
+
+      const creative: Creative = {
+        id: randomUUID(),
+        productId: product.id,
+        variantGroupId,
+        copy: {
+          ...copy,
+          variantLabel: label,
+          metaAssetLabel: `${variantGroupId}::${label}`,
+        },
+        imageLocalPath,
+        videoLocalPath,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      await writeJson(`data/creatives/${creative.id}.json`, creative);
+    }
   }
   update("generate", "done", "소재 생성 완료 — 검토 대기 중");
 
