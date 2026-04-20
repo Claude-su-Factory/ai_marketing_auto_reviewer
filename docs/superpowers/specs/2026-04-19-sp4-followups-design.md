@@ -136,8 +136,65 @@ import { CTR_THRESHOLD } from "../../core/improver/index.js";
 
 ---
 
+## Addendum 2026-04-20 — Fix 4: Improver 분석 프롬프트 예시 경로 갱신
+
+### 배경
+
+Fix 1·2·3 완료 후 최종 리뷰에서 추가 발견: 자율 개선 루프가 Fix 1로 마지막 필터는 복구되었지만, **그 앞단에서 여전히 막혀있음**.
+
+`core/campaign/monitor.ts:51`의 `buildAnalysisPrompt()`가 Claude에게 전송하는 JSON 스키마 예시:
+
+```
+"targetFile": "수정할 파일 경로 (예: src/generator/copy.ts)"
+```
+
+Claude는 이 예시를 따라 `src/...` 경로를 응답 → `cli/improver/runner.ts:41`의 `readFile(item.targetFile)` 실패 → `catch` → `continue` → 모든 개선 아이템 스킵 → `improvements.length === 0` → Fix 1의 `filterSafeImprovementFiles`는 실행조차 안 됨.
+
+즉 Fix 1만으로는 루프가 여전히 실질적으로 사망 상태. 원래 스펙의 "자율 개선 루프 복구" 목표 달성을 위해 프롬프트 예시도 현대화 필요.
+
+### 변경
+
+#### (a) `core/campaign/monitor.ts:51`
+
+Before:
+```
+"targetFile": "수정할 파일 경로 (예: src/generator/copy.ts)",
+```
+
+After:
+```
+"targetFile": "수정할 파일 경로 (예: core/creative/copy.ts)",
+```
+
+경로 선택 근거: `core/creative/copy.ts`는 SP4 이후 카피 생성 로직이 실제로 있는 위치. 자율 개선이 가장 자주 건드릴 파일 중 하나라 예시로 적합.
+
+#### (b) `core/improver/index.test.ts`의 src/ fixture 갱신
+
+4곳의 `"src/generator/copy.ts"` 문자열을 `"core/creative/copy.ts"`로 치환:
+- line 30 (buildImprovementPrompt 호출 인자)
+- line 43 (Claude 응답 JSON fixture)
+- line 48 (expect 값)
+- line 56 (safety test 호출 인자)
+
+이 테스트들은 프롬프트 구성/파싱만 검증하므로 경로 문자열은 순수 fixture다. 동작 영향 없음, 다만 stale 경로가 미래 읽는 사람을 혼란시키지 않도록 정리.
+
+### 비범위
+
+- 다른 파일의 stale `src/` 참조 전수 조사 — grep으로 production 코드는 이 두 곳만 확인됨. 문서 내 언급은 보존 (spec/plan은 frozen history).
+- 프롬프트 품질 개선 (예: 변경 타입 가이드 강화) — 별건.
+- 실제 end-to-end 자율 개선 실행 테스트 — owner 모드에서 수동 확인 사안.
+
+### 성공 판정
+
+- `grep -rn 'src/generator\|src/creative\|/^src\\/' core/ cli/ server/` → 0 hits (production code)
+- 137 테스트 유지 (테스트 fixture 문자열만 바뀌므로 테스트 수 불변)
+- tsc clean
+
+---
+
 ## 검토 이력
 
 - 2026-04-19 초안 작성
 - 2026-04-19 자체 검토: Fix 1 테스트 케이스의 path traversal 관련 오해 소지 정정. regex의 의도는 레이어 화이트리스트이며 path traversal 방어는 비범위임을 명시.
 - 2026-04-19 구현 완료: Fix 1 (d2aec79) regex 확장 + 10 테스트 신규 추가, Fix 2 (f098383) CTR_THRESHOLD core export/cli import, Fix 3 (cdc2c24) ROADMAP/STATUS 갱신. 137 테스트 통과, tsc 클린.
+- 2026-04-20 최종 리뷰에서 발견: Fix 1만으로는 루프 복구 미완성. Addendum Fix 4 추가 (monitor.ts 프롬프트 예시 + test fixture 경로 갱신).
