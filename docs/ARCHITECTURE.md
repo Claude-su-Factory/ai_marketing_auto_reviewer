@@ -50,14 +50,18 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 | `cli/scraper.ts` | Playwright 런타임 + `core/product` 조합 |
 | `cli/reviewer/session.ts` | 실제 리뷰 세션 실행 (Ink 상호작용) |
 | `core/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) — §8 예외 |
-| `cli/monitor/scheduler.ts` | `node-cron` 기반 주기 실행 |
+| `core/scheduler/` | 공유 스케줄러: mutex, cadence, state, registerJobs |
 | `cli/client/` | Usage Server HTTP 클라이언트 + AI 프록시 추상화 |
 | `cli/mode.ts` | Owner/Customer 모드 감지 |
 | `cli/pipeline.ts` | 파이프라인 전체 실행 오케스트레이션 |
 | `cli/actions.ts` | TUI 메뉴에서 호출되는 액션 핸들러 |
+| `cli/entries/worker.ts` | launchd 자기학습 daemon 진입점 |
 | `server/` | Express 서버 진입점 및 DB/인증/빌링 |
 | `server/routes/` | AI 프록시 라우트 + 라이선스/사용량/Webhook |
 | `server/jobs/` | 비동기 작업 (Veo 영상 폴링) |
+| `server/scheduler.ts` | 서버 기동 시 공유 스케줄러 hook |
+| `scripts/com.adai.worker.plist` | launchd LaunchAgent 템플릿 |
+| `scripts/install-worker.sh` | worker 설치 스크립트 |
 | `data/` | 제품/소재/캠페인/리포트 JSON |
 | `docs/superpowers/specs/` | 기능별 상세 설계 문서 |
 | `docs/superpowers/plans/` | 기능별 구현 계획 |
@@ -136,6 +140,22 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewe
 **`core/improver/runner.ts` 예외:** 원칙적으로 I/O 러너는 cli/에 두지만, `runImprovementCycle`은 Owner(CLI)와 Customer(Server) 양쪽 스케줄러에서 재사용되어야 하므로 core에 둔다. 파일 I/O(`fs/promises`), 서브프로세스(`git commit`), Anthropic SDK 호출을 포함하며 이는 core 레이어의 "외부 의존 금지" 원칙에 대한 **의도된 예외**다. cli↔server 교차 import 금지 규칙이 우선하기 때문. 향후 순수 코어(플래닝·프롬프트) + 얇은 cli/server 래퍼(I/O)로 재분할할 여지가 있으나 현재는 YAGNI.
 
 자세한 이력과 task 단위 변경 내역은 [`docs/superpowers/specs/2026-04-17-layered-architecture-refactor-design.md`](superpowers/specs/2026-04-17-layered-architecture-refactor-design.md) 참조.
+
+### 9. 자율 자기학습 워커 (launchd daemon + 공유 스케줄러)
+
+**결정**: 자기학습 루프는 TUI/터미널 수명과 독립된 프로세스로 실행하며, Owner 모드(개인 Mac)는 launchd LaunchAgent, Customer 모드(API 서버)는 `server/index.ts` 기동 훅으로 동일 `core/scheduler/` 모듈을 재사용한다.
+
+**Why**:
+- TUI 내부 cron은 터미널 닫으면 죽어 학습이 중단됨
+- Owner 모드만 따로 서버를 띄우는 건 과잉 (Stripe/auth/rate-limit 서비스 불필요)
+- `core/scheduler/`를 pure 모듈로 두면 두 entry가 동일 로직을 공유
+
+**How**:
+- `core/scheduler/{index,cadence,state,mutex}.ts` — pure. registerJobs는 CronLike + Deps + Cadence + mutex + onComplete를 주입받음
+- `cli/entries/worker.ts` — launchd가 프로젝트 내 `node_modules/.bin/tsx`로 실행. OWNER_CADENCE(6h/2d)
+- `server/scheduler.ts` — `server/index.ts`가 기동 직후 fire-and-forget으로 `startScheduler().catch(...)` 호출. SERVER_CADENCE(24h/7d). 스케줄러 실패가 HTTP 가용성을 막지 않도록 `app.listen` 이후에 실행.
+- `data/worker-state.json` — `lastCollect`, `lastAnalyze` 타임스탬프. 기동 시 `shouldCatchup`으로 밀린 작업 재실행 (Mac 슬립 대응)
+- 프로세스 내 async 직렬화는 `core/scheduler/mutex.ts`의 promise-chain 뮤텍스로 보장. 프로세스 간 중복은 launchd 단일 인스턴스 보증
 
 ---
 

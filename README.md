@@ -146,6 +146,46 @@ npm run pipeline <URL1> [URL2] ...     # 스크래핑 + 소재 생성 일괄 실
 
 ---
 
+## 자기학습 워커 설치 (Owner 모드, macOS)
+
+자율 개선 루프를 터미널과 무관하게 상시 실행하려면 launchd daemon으로 워커를 등록합니다.
+
+```bash
+npm install                           # tsx 등 의존성 설치 확인
+bash scripts/install-worker.sh
+```
+
+설치 후 `~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 3개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
+
+- `META_ACCESS_TOKEN`
+- `META_AD_ACCOUNT_ID`
+- `ANTHROPIC_API_KEY`
+
+재로드:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.adai.worker.plist
+launchctl load ~/Library/LaunchAgents/com.adai.worker.plist
+```
+
+로그 확인:
+
+```bash
+tail -f logs/worker.log
+tail -f logs/worker.err
+```
+
+워커는 6시간마다 일간 성과를 수집하고 2일마다 주간 분석 + 자동 개선 사이클을 실행합니다. Mac이 슬립이었다면 깨어난 직후 밀린 작업을 자동으로 catch-up합니다.
+
+제거:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.adai.worker.plist
+rm ~/Library/LaunchAgents/com.adai.worker.plist
+```
+
+---
+
 ## 기존 데이터 마이그레이션
 
 이전 버전(`data/courses/`)의 데이터가 있으면 `data/products/`로 변환한다.
