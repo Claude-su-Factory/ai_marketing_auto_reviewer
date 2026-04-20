@@ -1,10 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import bizSdk from "facebook-nodejs-business-sdk";
 import type { Report, Campaign } from "../types.js";
+import type { VariantReport } from "../platform/types.js";
 import { readJson, writeJson, appendJson, listJson } from "../storage.js";
+import { activePlatforms } from "../platform/registry.js";
 import { randomUUID } from "crypto";
-
-const { AdAccount } = bizSdk as any;
 
 export interface PerformanceStats {
   top: Report[];
@@ -55,53 +54,59 @@ ${reports.map((r) => `캠페인 ${r.campaignId}: CTR ${r.ctr}%, CPC ₩${r.cpc},
 }`;
 }
 
-async function fetchInsights(campaignId: string, date: string): Promise<Report | null> {
-  try {
-    (bizSdk as any).FacebookAdsApi.init(process.env.META_ACCESS_TOKEN!);
-    const account = new AdAccount(process.env.META_AD_ACCOUNT_ID!);
-    const insights = await account.getInsights(
-      ["impressions", "clicks", "ctr", "spend", "cpc", "reach", "frequency"],
-      {
-        time_range: { since: date, until: date },
-        filtering: [{ field: "campaign.id", operator: "EQUAL", value: campaignId }],
-      }
-    );
-    if (!insights[0]) return null;
-    const d = insights[0];
-    return {
-      id: randomUUID(),
-      campaignId,
-      productId: "",
-      date,
-      impressions: Number(d.impressions ?? 0),
-      clicks: Number(d.clicks ?? 0),
-      ctr: Number(d.ctr ?? 0),
-      spend: Number(d.spend ?? 0),
-      cpc: Number(d.cpc ?? 0),
-      reach: Number(d.reach ?? 0),
-      frequency: Number(d.frequency ?? 0),
-    };
-  } catch {
-    return null;
-  }
-}
-
-export async function collectDailyReports(): Promise<Report[]> {
+export async function collectDailyReports(): Promise<VariantReport[]> {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const platforms = await activePlatforms();
   const campaignPaths = await listJson("data/campaigns");
-  const reports: Report[] = [];
+  const all: VariantReport[] = [];
 
   for (const p of campaignPaths) {
     const campaign = await readJson<Campaign>(p);
-    if (!campaign || campaign.status === "completed") continue;
-    const report = await fetchInsights(campaign.metaCampaignId, yesterday);
-    if (report) {
-      report.productId = campaign.productId;
-      await appendJson(`data/reports/${yesterday}.json`, report);
-      reports.push(report);
+    if (!campaign) continue;
+    if (
+      campaign.status === "completed" ||
+      campaign.status === "externally_modified" ||
+      campaign.status === "launch_failed"
+    ) {
+      continue;
+    }
+    const platform = platforms.find((pl) => pl.name === campaign.platform);
+    if (!platform) continue;
+
+    const reports = await platform.fetchReports(campaign.id, yesterday);
+    for (const r of reports) {
+      await appendJson(`data/reports/${yesterday}.json`, r);
+      all.push(r);
     }
   }
 
+  return all;
+}
+
+function variantReportsToReports(vrs: VariantReport[]): Report[] {
+  const byCampaign = new Map<string, { imp: number; cl: number; date: string; productId: string }>();
+  for (const v of vrs) {
+    const cur = byCampaign.get(v.campaignId) ?? { imp: 0, cl: 0, date: v.date, productId: v.productId };
+    cur.imp += v.impressions;
+    cur.cl += v.clicks;
+    byCampaign.set(v.campaignId, cur);
+  }
+  const reports: Report[] = [];
+  for (const [campaignId, agg] of byCampaign) {
+    reports.push({
+      id: randomUUID(),
+      campaignId,
+      productId: agg.productId,
+      date: agg.date,
+      impressions: agg.imp,
+      clicks: agg.cl,
+      ctr: agg.imp === 0 ? 0 : (agg.cl / agg.imp) * 100,
+      spend: 0,
+      cpc: 0,
+      reach: 0,
+      frequency: 0,
+    });
+  }
   return reports;
 }
 
@@ -109,17 +114,17 @@ export async function generateWeeklyAnalysis(): Promise<string> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const reportPaths = (await listJson("data/reports"))
     .filter((p) => !p.includes("weekly-analysis"));
-  const allReports: Report[] = [];
+  const allVariants: VariantReport[] = [];
 
   for (const p of reportPaths.slice(-7)) {
-    const daily = await readJson<Report[]>(p);
-    if (daily) allReports.push(...daily);
+    const daily = await readJson<VariantReport[]>(p);
+    if (daily) allVariants.push(...daily);
   }
+  if (allVariants.length === 0) return "성과 데이터 없음";
 
-  if (allReports.length === 0) return "성과 데이터 없음";
-
-  const stats = computeStats(allReports);
-  const prompt = buildAnalysisPrompt(allReports, stats);
+  const reports = variantReportsToReports(allVariants);
+  const stats = computeStats(reports);
+  const prompt = buildAnalysisPrompt(reports, stats);
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
@@ -131,7 +136,7 @@ export async function generateWeeklyAnalysis(): Promise<string> {
   const jsonMatch = text.match(/\{[\s\S]*\}/)?.[0] ?? "{}";
   await writeJson(
     `data/reports/weekly-analysis-${new Date().toISOString().split("T")[0]}.json`,
-    JSON.parse(jsonMatch)
+    JSON.parse(jsonMatch),
   );
   return text;
 }
