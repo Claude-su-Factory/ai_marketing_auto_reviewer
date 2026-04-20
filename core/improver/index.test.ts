@@ -27,7 +27,7 @@ describe("shouldTriggerImprovement", () => {
 describe("buildImprovementPrompt", () => {
   it("includes file content and performance context", () => {
     const prompt = buildImprovementPrompt(
-      "src/generator/copy.ts",
+      "core/creative/copy.ts",
       "const prompt = 'old prompt';",
       "CTR 0.8% — 임계값 1.5% 미달",
       "카피 헤드라인이 너무 추상적"
@@ -40,12 +40,12 @@ describe("buildImprovementPrompt", () => {
 describe("parseImprovements", () => {
   it("extracts file edits from Claude response", () => {
     const response = `{
-      "file": "src/generator/copy.ts",
+      "file": "core/creative/copy.ts",
       "oldCode": "const a = 1;",
       "newCode": "const a = 2;"
     }`;
     const result = parseImprovements(response);
-    expect(result.file).toBe("src/generator/copy.ts");
+    expect(result.file).toBe("core/creative/copy.ts");
     expect(result.newCode).toBe("const a = 2;");
   });
 });
@@ -53,7 +53,7 @@ describe("parseImprovements", () => {
 describe("buildImprovementPrompt safety", () => {
   it("explicitly prohibits modifying external platform pages", () => {
     const prompt = buildImprovementPrompt(
-      "src/generator/copy.ts",
+      "core/creative/copy.ts",
       "const x = 1;",
       "CTR 0.5%",
       "카피가 약함"

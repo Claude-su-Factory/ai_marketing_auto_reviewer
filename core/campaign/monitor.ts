@@ -48,7 +48,7 @@ ${reports.map((r) => `캠페인 ${r.campaignId}: CTR ${r.ctr}%, CPC ₩${r.cpc},
       "campaignId": "",
       "issue": "문제점",
       "suggestion": "개선 제안",
-      "targetFile": "수정할 파일 경로 (예: src/generator/copy.ts)",
+      "targetFile": "수정할 파일 경로 (예: core/creative/copy.ts)",
       "changeType": "prompt_update | param_update | bug_fix"
     }
   ]
