@@ -1,13 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { readFile, writeFile } from "fs/promises";
 import { execFileSync } from "child_process";
-import type { Report, Improvement, ImprovementChange } from "../../core/types.js";
-import { appendJson } from "../../core/storage.js";
+import type { Report, Improvement, ImprovementChange } from "../types.js";
+import { appendJson } from "../storage.js";
 import {
   CTR_THRESHOLD,
   buildImprovementPrompt,
   parseImprovements,
-} from "../../core/improver/index.js";
+} from "./index.js";
 
 export function filterSafeImprovementFiles(files: string[]): string[] {
   return files.filter((f) => /^(core|cli|server)\/[\w./-]+\.ts$/.test(f));
