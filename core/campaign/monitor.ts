@@ -83,7 +83,7 @@ export async function collectDailyReports(): Promise<VariantReport[]> {
   return all;
 }
 
-function variantReportsToReports(vrs: VariantReport[]): Report[] {
+export function variantReportsToReports(vrs: VariantReport[]): Report[] {
   const byCampaign = new Map<string, { imp: number; cl: number; date: string; productId: string }>();
   for (const v of vrs) {
     const cur = byCampaign.get(v.campaignId) ?? { imp: 0, cl: 0, date: v.date, productId: v.productId };
