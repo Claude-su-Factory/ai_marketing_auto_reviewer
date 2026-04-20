@@ -10,32 +10,14 @@ import {
   collectDailyReports,
   generateWeeklyAnalysis,
 } from "../core/campaign/monitor.js";
-import { runImprovementCycle as runCycle } from "../core/improver/runner.js";
-import { readJson, listJson } from "../core/storage.js";
-import { shouldTriggerImprovement } from "../core/improver/index.js";
-import type { Report } from "../core/types.js";
-
-async function runImprovementCycle(): Promise<void> {
-  const reportPaths = await listJson("data/reports");
-  const allReports: Report[] = [];
-  for (const p of reportPaths.slice(-3)) {
-    const daily = await readJson<Report[]>(p);
-    if (daily) allReports.push(...daily);
-  }
-  const weeklyPaths = reportPaths.filter((p) => p.includes("weekly-analysis"));
-  const latest = weeklyPaths[weeklyPaths.length - 1];
-  if (!latest) return;
-  const analysis = await readJson<object>(latest);
-  const weak = allReports.filter(shouldTriggerImprovement);
-  await runCycle(weak, JSON.stringify(analysis));
-}
+import { runScheduledImprovementCycle } from "../core/scheduler/improvementCycle.js";
 
 export async function startScheduler(): Promise<void> {
   const mutex = createMutex();
   const deps = {
     collectDailyReports,
     generateWeeklyAnalysis,
-    runImprovementCycle,
+    runImprovementCycle: runScheduledImprovementCycle,
   };
   registerJobs(cron, deps, SERVER_CADENCE, mutex, updateStateField);
   console.log("[scheduler] registered (Server cadence)");

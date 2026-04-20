@@ -11,10 +11,7 @@ import {
   collectDailyReports,
   generateWeeklyAnalysis,
 } from "../../core/campaign/monitor.js";
-import { runImprovementCycle as runCycle } from "../../core/improver/runner.js";
-import { readJson, listJson } from "../../core/storage.js";
-import { shouldTriggerImprovement } from "../../core/improver/index.js";
-import type { Report } from "../../core/types.js";
+import { runScheduledImprovementCycle } from "../../core/scheduler/improvementCycle.js";
 
 const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY"];
 for (const key of required) {
@@ -25,26 +22,11 @@ for (const key of required) {
   }
 }
 
-async function runImprovementCycle(): Promise<void> {
-  const reportPaths = await listJson("data/reports");
-  const allReports: Report[] = [];
-  for (const p of reportPaths.slice(-3)) {
-    const daily = await readJson<Report[]>(p);
-    if (daily) allReports.push(...daily);
-  }
-  const weeklyPaths = reportPaths.filter((p) => p.includes("weekly-analysis"));
-  const latest = weeklyPaths[weeklyPaths.length - 1];
-  if (!latest) return;
-  const analysis = await readJson<object>(latest);
-  const weak = allReports.filter(shouldTriggerImprovement);
-  await runCycle(weak, JSON.stringify(analysis));
-}
-
 const mutex = createMutex();
 const deps = {
   collectDailyReports,
   generateWeeklyAnalysis,
-  runImprovementCycle,
+  runImprovementCycle: runScheduledImprovementCycle,
 };
 
 registerJobs(cron, deps, OWNER_CADENCE, mutex, updateStateField);

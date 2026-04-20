@@ -50,7 +50,7 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 | `cli/scraper.ts` | Playwright 런타임 + `core/product` 조합 |
 | `cli/reviewer/session.ts` | 실제 리뷰 세션 실행 (Ink 상호작용) |
 | `core/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) — §8 예외 |
-| `core/scheduler/` | 공유 스케줄러: mutex, cadence, state, registerJobs |
+| `core/scheduler/` | 공유 스케줄러: mutex, cadence, state, registerJobs, improvementCycle |
 | `cli/client/` | Usage Server HTTP 클라이언트 + AI 프록시 추상화 |
 | `cli/mode.ts` | Owner/Customer 모드 감지 |
 | `cli/pipeline.ts` | 파이프라인 전체 실행 오케스트레이션 |
@@ -137,7 +137,12 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용하고, 
 
 Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewer/decisions.ts`의 `applyReviewDecision()`은 pure, `cli/reviewer/session.ts`의 `runReviewSession()`은 Ink 의존.
 
-**`core/improver/runner.ts` 예외:** 원칙적으로 I/O 러너는 cli/에 두지만, `runImprovementCycle`은 Owner(CLI)와 Customer(Server) 양쪽 스케줄러에서 재사용되어야 하므로 core에 둔다. 파일 I/O(`fs/promises`), 서브프로세스(`git commit`), Anthropic SDK 호출을 포함하며 이는 core 레이어의 "외부 의존 금지" 원칙에 대한 **의도된 예외**다. cli↔server 교차 import 금지 규칙이 우선하기 때문. 향후 순수 코어(플래닝·프롬프트) + 얇은 cli/server 래퍼(I/O)로 재분할할 여지가 있으나 현재는 YAGNI.
+**core 레이어 I/O 예외:** 원칙적으로 I/O 러너는 cli/에 두지만, Owner(CLI worker)와 Customer(Server) 양쪽 스케줄러에서 재사용되어야 하는 코드는 core에 둔다. cli↔server 교차 import 금지 규칙이 우선하기 때문. 현재 **의도된 예외**는 세 파일이다.
+- `core/improver/runner.ts` — 파일 I/O(`fs/promises`), 서브프로세스(`git commit`), Anthropic SDK 호출을 포함하는 자율 개선 러너.
+- `core/scheduler/state.ts` — `data/worker-state.json`에 `lastCollect`/`lastAnalyze` 타임스탬프를 영속화하는 스케줄러 상태 파일.
+- `core/scheduler/improvementCycle.ts` — `data/reports/` JSON을 읽어 weak reports를 추려 `improver/runner`로 넘기는 컴포지션 래퍼. worker/서버 양쪽에서 동일하게 호출된다.
+
+향후 순수 코어(플래닝·프롬프트) + 얇은 cli/server 래퍼(I/O)로 재분할할 여지가 있으나 현재는 YAGNI.
 
 자세한 이력과 task 단위 변경 내역은 [`docs/superpowers/specs/2026-04-17-layered-architecture-refactor-design.md`](superpowers/specs/2026-04-17-layered-architecture-refactor-design.md) 참조.
 
@@ -151,7 +156,7 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewe
 - `core/scheduler/`를 pure 모듈로 두면 두 entry가 동일 로직을 공유
 
 **How**:
-- `core/scheduler/{index,cadence,state,mutex}.ts` — pure. registerJobs는 CronLike + Deps + Cadence + mutex + onComplete를 주입받음
+- `core/scheduler/{index,cadence,mutex}.ts` pure primitives; `state.ts`는 `data/worker-state.json`을 영속화하고 `improvementCycle.ts`는 report 파일을 읽어 improver runner로 합성 (둘 다 §8의 의도된 I/O 예외). registerJobs는 CronLike + Deps + Cadence + mutex + onComplete를 주입받음
 - `cli/entries/worker.ts` — launchd가 프로젝트 내 `node_modules/.bin/tsx`로 실행. OWNER_CADENCE(6h/2d)
 - `server/scheduler.ts` — `server/index.ts`가 기동 직후 fire-and-forget으로 `startScheduler().catch(...)` 호출. SERVER_CADENCE(24h/7d). 스케줄러 실패가 HTTP 가용성을 막지 않도록 `app.listen` 이후에 실행.
 - `data/worker-state.json` — `lastCollect`, `lastAnalyze` 타임스탬프. 기동 시 `shouldCatchup`으로 밀린 작업 재실행 (Mac 슬립 대응)
