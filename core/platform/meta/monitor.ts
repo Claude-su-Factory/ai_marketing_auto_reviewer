@@ -10,8 +10,10 @@ export type MetaErrorClass = "externally_modified" | "transient";
 
 export function classifyMetaError(err: unknown): MetaErrorClass {
   const anyErr = err as any;
-  const status = anyErr?.response?.status;
-  const code = anyErr?.response?.data?.error?.code;
+  // SDK FacebookRequestError: status at top-level, already-extracted body at err.response.
+  // Axios-style (defensive fallback): response.status / response.data.error.code.
+  const status = anyErr?.status ?? anyErr?.response?.status;
+  const code = anyErr?.response?.code ?? anyErr?.response?.data?.error?.code;
   if (status === 404 || status === 403) return "externally_modified";
   if (code === 100 || code === 803) return "externally_modified";
   return "transient";
