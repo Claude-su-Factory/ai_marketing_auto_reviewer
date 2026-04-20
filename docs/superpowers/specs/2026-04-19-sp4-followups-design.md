@@ -198,3 +198,4 @@ After:
 - 2026-04-19 자체 검토: Fix 1 테스트 케이스의 path traversal 관련 오해 소지 정정. regex의 의도는 레이어 화이트리스트이며 path traversal 방어는 비범위임을 명시.
 - 2026-04-19 구현 완료: Fix 1 (d2aec79) regex 확장 + 10 테스트 신규 추가, Fix 2 (f098383) CTR_THRESHOLD core export/cli import, Fix 3 (cdc2c24) ROADMAP/STATUS 갱신. 137 테스트 통과, tsc 클린.
 - 2026-04-20 최종 리뷰에서 발견: Fix 1만으로는 루프 복구 미완성. Addendum Fix 4 추가 (monitor.ts 프롬프트 예시 + test fixture 경로 갱신).
+- 2026-04-20 Fix 4 구현 완료 (1653aeb): monitor.ts 예시를 core/creative/copy.ts로, index.test.ts의 stale fixture 4곳 정리. 137 테스트 유지, tsc 클린. 루프 end-to-end 복구 완료.

@@ -1,6 +1,6 @@
 # 프로젝트 상태
 
-마지막 업데이트: 2026-04-19
+마지막 업데이트: 2026-04-20
 
 ---
 
@@ -32,6 +32,7 @@
 
 ## 최근 변경 이력
 
+- 2026-04-20 fix: 자율 개선 루프 복구 완료 — monitor.ts의 분석 프롬프트 예시 경로를 core/creative로 갱신 (Claude가 src/ 응답 → readFile 실패 → 루프 스킵되던 문제 해결)
 - 2026-04-19 fix: 자율 개선 루프의 src/ 경로 화이트리스트 regex를 core/cli/server로 현대화 + CTR_THRESHOLD 단일 출처화
 - 2026-04-19 refactor: SP4 레이어드 리팩터 완료 (`src/` 제거, `core/` + `cli/`로 분리, 127 테스트 유지)
 - 2026-04-19 feat: Stripe Webhook dedup 구현 (stripe_events 테이블 + INSERT OR IGNORE)
@@ -41,7 +42,6 @@
 - 2026-04-17 feat: Express 서버에 빌링 + Webhook 통합
 - 2026-04-17 feat: 전체 AI 라우트에 deduct-first 빌링 패턴 적용
 - 2026-04-17 feat: Stripe Webhook 핸들러 추가 (dedup + 자동 충전)
-- 2026-04-17 feat: Stripe SDK 래퍼 추가 (customer/checkout/recharge)
 
 <!--
 업데이트 규칙:
