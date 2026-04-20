@@ -39,6 +39,7 @@ export interface Campaign {
   metaCampaignId: string;
   metaAdSetId: string;
   metaAdId: string;                         // Plan A 신규 — DCO Ad 1개 (기존 metaAdIds[] 폐기)
+  metaAdCreativeId?: string;                // Plan A review fix — for cleanup rollback
   launchedAt: string;
   status: "active" | "paused" | "completed" | "launch_failed" | "externally_modified";
   orphans: { type: "campaign" | "adset" | "ad" | "creative"; id: string }[];

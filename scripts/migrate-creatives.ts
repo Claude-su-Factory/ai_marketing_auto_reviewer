@@ -70,7 +70,7 @@ async function migrateCampaigns(creativeToGroup: Map<string, string>): Promise<v
   for (const file of files) {
     const p = path.join(CAMPAIGNS_DIR, file);
     const old = JSON.parse(await readFile(p, "utf-8")) as OldCampaign;
-    if ("variantGroupId" in old && "platform" in old && "metaAdId" in old) {
+    if ("variantGroupId" in old && "platform" in old && "metaAdId" in old && "metaAdCreativeId" in old) {
       console.log(`✓ ${file} (이미 마이그레이션됨)`);
       continue;
     }
@@ -85,6 +85,7 @@ async function migrateCampaigns(creativeToGroup: Map<string, string>): Promise<v
       metaCampaignId: old.metaCampaignId,
       metaAdSetId: old.metaAdSetId,
       metaAdId,
+      metaAdCreativeId: "",
       launchedAt: old.launchedAt,
       status: old.status,
       orphans: [],
