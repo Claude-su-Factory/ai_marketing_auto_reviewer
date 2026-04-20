@@ -75,7 +75,7 @@ export async function runGenerate(proxy: AiProxy, onProgress: ProgressCallback):
         totalCourses: productPaths.length,
         taskProgress: { ...taskProgress },
       });
-      const copy = await proxy.generateCopy(product);
+      const copy = await proxy.generateCopy(product, [], "emotional");
       taskProgress.copy = 100;
 
       onProgress({

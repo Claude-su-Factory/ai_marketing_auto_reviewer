@@ -14,7 +14,7 @@ if (!product) { console.error("제품을 찾을 수 없습니다:", productId); 
 
 const client = createAnthropicClient();
 console.log("카피 생성 중...");
-const copy = await generateCopy(client, product);
+const copy = await generateCopy(client, product, [], "emotional");
 console.log("이미지 생성 중...");
 const imageLocalPath = await generateImage(product);
 console.log("영상 생성 중... (최대 10분 소요)");

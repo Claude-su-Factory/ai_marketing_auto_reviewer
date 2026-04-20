@@ -1,6 +1,7 @@
 import type { ModeConfig } from "../mode.js";
 import type { Product, Creative, Report } from "../../core/types.js";
 import { generateCopy, createAnthropicClient } from "../../core/creative/copy.js";
+import type { FewShotExample, VariantLabel } from "../../core/creative/prompt.js";
 import { generateImage } from "../../core/creative/image.js";
 import { generateVideo } from "../../core/creative/video.js";
 import { parseProductWithGemini } from "../../core/product/parser.js";
@@ -15,7 +16,7 @@ import path from "path";
 export type UsageType = "copy_gen" | "image_gen" | "video_gen" | "parse" | "analyze" | "campaign_launch";
 
 export interface AiProxy {
-  generateCopy(product: Product): Promise<Creative["copy"]>;
+  generateCopy(product: Product, fewShot: FewShotExample[], variantLabel: VariantLabel): Promise<Creative["copy"]>;
   generateImage(product: Product): Promise<string>;
   generateVideo(product: Product, onProgress?: (msg: string) => void): Promise<string>;
   parseProduct(url: string, html: string): Promise<Product>;
@@ -27,7 +28,7 @@ function createOwnerProxy(): AiProxy {
   const anthropic = createAnthropicClient();
 
   return {
-    generateCopy: (product) => generateCopy(anthropic, product),
+    generateCopy: (product, fewShot, variantLabel) => generateCopy(anthropic, product, fewShot, variantLabel),
     generateImage: (product) => generateImage(product),
     generateVideo: (product, onProgress) => generateVideo(product, onProgress),
     parseProduct: async (url, html) => {
@@ -56,8 +57,8 @@ function createCustomerProxy(config: ModeConfig): AiProxy {
   }
 
   return {
-    generateCopy: async (product) => {
-      const res = await serverFetch(config, "/ai/copy", { product });
+    generateCopy: async (product, fewShot, variantLabel) => {
+      const res = await serverFetch(config, "/ai/copy", { product, fewShot, variantLabel });
       if (!res.ok) throw new Error(`AI copy failed: ${res.status}`);
       return res.json() as Promise<Creative["copy"]>;
     },

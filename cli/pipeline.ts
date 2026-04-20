@@ -68,7 +68,7 @@ export async function runPipeline(urls: string[]): Promise<void> {
   for (let i = 0; i < products.length; i++) {
     const product = products[i];
     update("generate", "running", `카피 생성 중...`, product.name, i + 1);
-    const copy = await generateCopy(client, product);
+    const copy = await generateCopy(client, product, [], "emotional");
 
     update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
     const imageLocalPath = await generateImage(product);
