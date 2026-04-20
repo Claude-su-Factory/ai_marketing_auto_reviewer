@@ -14,24 +14,26 @@ fi
 mkdir -p "$PROJECT_ROOT/logs"
 mkdir -p "$HOME/Library/LaunchAgents"
 
-sed -e "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" \
-    -e "s|__TSX_PATH__|$TSX_PATH|g" \
-    "$PLIST_SRC" > "$PLIST_DST"
+if [ -f "$PLIST_DST" ]; then
+  echo "plist already exists at $PLIST_DST; keeping existing file (edit it and re-run to load)."
+else
+  sed -e "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" \
+      -e "s|__TSX_PATH__|$TSX_PATH|g" \
+      "$PLIST_SRC" > "$PLIST_DST"
+  echo "Generated $PLIST_DST from template."
+fi
 
 if grep -q '__INJECT__' "$PLIST_DST"; then
-  echo "Refusing to load: $PLIST_DST still contains __INJECT__ placeholders." >&2
-  echo "Edit the plist to set real values for META_ACCESS_TOKEN, META_AD_ACCOUNT_ID," >&2
-  echo "and ANTHROPIC_API_KEY, then re-run this script (or manually: launchctl load $PLIST_DST)." >&2
-  exit 3
+  echo ""
+  echo "NEXT STEP: Edit $PLIST_DST and replace __INJECT__ with real token"
+  echo "  values (META_ACCESS_TOKEN, META_AD_ACCOUNT_ID, ANTHROPIC_API_KEY)."
+  echo "Then re-run this script to load the worker:"
+  echo "  bash scripts/install-worker.sh"
+  exit 0
 fi
 
 launchctl unload "$PLIST_DST" 2>/dev/null || true
 launchctl load "$PLIST_DST"
 
-echo "Worker installed: $PLIST_DST"
+echo "Worker loaded: $PLIST_DST"
 echo "Logs: $PROJECT_ROOT/logs/worker.{log,err}"
-echo ""
-echo "NEXT STEP: Edit $PLIST_DST and replace __INJECT__ with real token"
-echo "  values (META_ACCESS_TOKEN, META_AD_ACCOUNT_ID, ANTHROPIC_API_KEY)."
-echo "Then reload:"
-echo "  launchctl unload $PLIST_DST && launchctl load $PLIST_DST"

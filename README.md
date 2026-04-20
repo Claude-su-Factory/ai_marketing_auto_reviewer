@@ -152,20 +152,19 @@ npm run pipeline <URL1> [URL2] ...     # 스크래핑 + 소재 생성 일괄 실
 
 ```bash
 npm install                           # tsx 등 의존성 설치 확인
-bash scripts/install-worker.sh
+bash scripts/install-worker.sh        # plist 생성 (토큰은 __INJECT__ 자리표시자 상태)
 ```
 
-설치 후 `~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 3개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
+`~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 3개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
 
 - `META_ACCESS_TOKEN`
 - `META_AD_ACCOUNT_ID`
 - `ANTHROPIC_API_KEY`
 
-재로드:
+그런 다음 다시 실행해서 로드:
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.adai.worker.plist
-launchctl load ~/Library/LaunchAgents/com.adai.worker.plist
+bash scripts/install-worker.sh        # 이번엔 __INJECT__가 없으므로 launchctl load 까지 실행됨
 ```
 
 로그 확인:
