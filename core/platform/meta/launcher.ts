@@ -116,6 +116,7 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       },
       asset_feed_spec: assetFeedSpec,
     });
+    created.push({ type: "creative", id: adCreative.id });
 
     // 6. Create DCO ad (1 ad per group)
     const ad = await account.createAd([], {
@@ -156,6 +157,24 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       created,
       deleter: deleteMetaResource,
     });
+
+    // Persist a launch_failed Campaign record so operators can audit orphans.
+    const idOf = (t: CreatedResource["type"]): string =>
+      created.find((r) => r.type === t)?.id ?? "";
+    const failedRecord = {
+      id: randomUUID(),
+      variantGroupId: group.variantGroupId,
+      productId: group.product.id,
+      platform: "meta" as const,
+      metaCampaignId: idOf("campaign"),
+      metaAdSetId: idOf("adset"),
+      metaAdId: idOf("ad"),
+      launchedAt: new Date().toISOString(),
+      status: "launch_failed" as const,
+      orphans: cleanupResult.orphans,
+    };
+    await writeJson(`data/campaigns/${failedRecord.id}.json`, failedRecord);
+
     await appendOrphansToDisk(cleanupResult.orphans, writeJson, readJson);
     throw err;
   }
