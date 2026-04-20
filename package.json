@@ -12,6 +12,7 @@
     "pipeline": "tsx cli/entries/pipeline.ts",
     "improve": "tsx cli/entries/improve.ts",
     "migrate": "tsx scripts/migrate.ts",
+    "migrate:creatives": "tsx scripts/migrate-creatives.ts",
     "server": "tsx server/index.ts",
     "admin": "tsx server/admin.ts",
     "test": "vitest run",
