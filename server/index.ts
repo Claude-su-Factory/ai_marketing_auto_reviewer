@@ -15,6 +15,7 @@ import { createAiAnalyzeRouter } from "./routes/aiAnalyze.js";
 import { createUsageRouter } from "./routes/usage.js";
 import { createStripeWebhookRouter } from "./routes/stripeWebhook.js";
 import { cleanupOldFiles } from "./jobs/videoJob.js";
+import { startScheduler } from "./scheduler.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 3000);
 const SERVER_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`;
@@ -88,6 +89,9 @@ app.use(createUsageRouter(db));
 // Cleanup old video files
 setInterval(cleanupOldFiles, 60 * 60 * 1000);
 cleanupOldFiles();
+
+// Start self-learning scheduler (Server cadence)
+await startScheduler();
 
 app.listen(PORT, () => {
   console.log(`[Usage Server] Running on ${SERVER_URL}`);
