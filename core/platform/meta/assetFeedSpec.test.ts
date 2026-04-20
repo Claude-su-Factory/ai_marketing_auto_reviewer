@@ -68,4 +68,83 @@ describe("assembleAssetFeedSpec", () => {
       }),
     ).toThrow(/at least one creative/i);
   });
+
+  it("throws when two creatives produce identical normalized body text", () => {
+    const product: Product = {
+      id: "p1",
+      name: "Test Product",
+      description: "d",
+      currency: "KRW",
+      targetUrl: "https://example.com",
+      tags: [],
+      inputMethod: "manual",
+      createdAt: "2026-04-20T00:00:00Z",
+    };
+    const mkCreative = (id: string, body: string, hashtags: string[]): Creative => ({
+      id,
+      productId: "p1",
+      variantGroupId: "g1",
+      copy: {
+        headline: "h",
+        body,
+        cta: "SHOP_NOW",
+        hashtags,
+        variantLabel: "emotional",
+        metaAssetLabel: `variant-${id}`,
+      },
+      imageLocalPath: "/tmp/a.jpg",
+      videoLocalPath: "/tmp/a.mp4",
+      status: "approved",
+      createdAt: "2026-04-20T00:00:00Z",
+    });
+
+    // same body and same hashtags → same submitted text → collision
+    const creatives = [
+      mkCreative("c1", "Same body", ["tag"]),
+      mkCreative("c2", "Same body", ["tag"]),
+    ];
+
+    expect(() =>
+      assembleAssetFeedSpec({ product, creatives, imageHash: "h", videoId: "v" }),
+    ).toThrow(/duplicate body text/i);
+  });
+
+  it("throws when CRLF/whitespace normalization collapses distinct raw bodies", () => {
+    const product: Product = {
+      id: "p1",
+      name: "Test Product",
+      description: "d",
+      currency: "KRW",
+      targetUrl: "https://example.com",
+      tags: [],
+      inputMethod: "manual",
+      createdAt: "2026-04-20T00:00:00Z",
+    };
+    const mkCreative = (id: string, body: string): Creative => ({
+      id,
+      productId: "p1",
+      variantGroupId: "g1",
+      copy: {
+        headline: "h",
+        body,
+        cta: "SHOP_NOW",
+        hashtags: [],
+        variantLabel: "emotional",
+        metaAssetLabel: `variant-${id}`,
+      },
+      imageLocalPath: "/tmp/a.jpg",
+      videoLocalPath: "/tmp/a.mp4",
+      status: "approved",
+      createdAt: "2026-04-20T00:00:00Z",
+    });
+
+    const creatives = [
+      mkCreative("c1", "Body  "),       // trailing whitespace
+      mkCreative("c2", "Body"),         // clean
+    ];
+
+    expect(() =>
+      assembleAssetFeedSpec({ product, creatives, imageHash: "h", videoId: "v" }),
+    ).toThrow(/duplicate body text/i);
+  });
 });
