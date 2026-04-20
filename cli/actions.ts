@@ -2,7 +2,8 @@ import "dotenv/config";
 import type { AiProxy } from "./client/aiProxy.js";
 import { activePlatforms } from "../core/platform/registry.js";
 import type { VariantGroup } from "../core/platform/types.js";
-import { collectDailyReports } from "../core/campaign/monitor.js";
+import { collectDailyReports, variantReportsToReports } from "../core/campaign/monitor.js";
+import type { VariantReport } from "../core/platform/types.js";
 import { runImprovementCycle } from "../core/improver/runner.js";
 import { shouldTriggerImprovement } from "../core/improver/index.js";
 import { readJson, writeJson, listJson } from "../core/storage.js";
@@ -211,15 +212,16 @@ export async function runMonitor(
     } else {
       onProgress({ message: "주간 분석 중... (Claude 분석 포함)" });
       const reportPaths = (await listJson("data/reports")).filter(f => !f.includes("weekly-analysis"));
-      const allReports: Report[] = [];
+      const allVariants: VariantReport[] = [];
       for (const p of reportPaths.slice(-7)) {
-        const daily = await readJson<Report[]>(p);
-        if (daily) allReports.push(...daily);
+        const daily = await readJson<VariantReport[]>(p);
+        if (daily) allVariants.push(...daily);
       }
-      if (allReports.length === 0) {
+      if (allVariants.length === 0) {
         return { success: true, message: "Monitor (weekly) 완료", logs: ["성과 데이터 없음"] };
       }
-      const analysis = await proxy.analyzePerformance(allReports);
+      const aggregated = variantReportsToReports(allVariants);
+      const analysis = await proxy.analyzePerformance(aggregated);
       await writeJson(
         `data/reports/weekly-analysis-${new Date().toISOString().split("T")[0]}.json`,
         JSON.parse(analysis.match(/\{[\s\S]*\}/)?.[0] ?? "{}")
@@ -238,11 +240,11 @@ export async function runMonitor(
 export async function runImprove(proxy: AiProxy, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
     const reportPaths = await listJson("data/reports");
-    const allReports: Report[] = [];
+    const allVariants: VariantReport[] = [];
 
     for (const p of reportPaths.filter((f) => !f.includes("weekly-analysis")).slice(-3)) {
-      const daily = await readJson<Report[]>(p);
-      if (daily) allReports.push(...daily);
+      const daily = await readJson<VariantReport[]>(p);
+      if (daily) allVariants.push(...daily);
     }
 
     const weeklyPaths = reportPaths.filter((p) => p.includes("weekly-analysis"));
@@ -257,7 +259,8 @@ export async function runImprove(proxy: AiProxy, onProgress: ProgressCallback): 
     }
 
     const analysis = await readJson<object>(weeklyPath);
-    const weakReports = allReports.filter(shouldTriggerImprovement);
+    const aggregated = variantReportsToReports(allVariants);
+    const weakReports = aggregated.filter(shouldTriggerImprovement);
 
     onProgress({ message: `개선 대상 ${weakReports.length}개 캠페인 분석 중...` });
     await runImprovementCycle(weakReports, JSON.stringify(analysis));
