@@ -18,6 +18,13 @@ sed -e "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" \
     -e "s|__TSX_PATH__|$TSX_PATH|g" \
     "$PLIST_SRC" > "$PLIST_DST"
 
+if grep -q '__INJECT__' "$PLIST_DST"; then
+  echo "Refusing to load: $PLIST_DST still contains __INJECT__ placeholders." >&2
+  echo "Edit the plist to set real values for META_ACCESS_TOKEN, META_AD_ACCOUNT_ID," >&2
+  echo "and ANTHROPIC_API_KEY, then re-run this script (or manually: launchctl load $PLIST_DST)." >&2
+  exit 3
+fi
+
 launchctl unload "$PLIST_DST" 2>/dev/null || true
 launchctl load "$PLIST_DST"
 

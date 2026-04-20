@@ -16,6 +16,15 @@ import { readJson, listJson } from "../../core/storage.js";
 import { shouldTriggerImprovement } from "../../core/improver/index.js";
 import type { Report } from "../../core/types.js";
 
+const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY"];
+for (const key of required) {
+  const v = process.env[key];
+  if (!v || v === "__INJECT__") {
+    console.error(`[worker] ${key} is missing or still set to placeholder "__INJECT__". Refusing to start.`);
+    process.exit(2);
+  }
+}
+
 async function runImprovementCycle(): Promise<void> {
   const reportPaths = await listJson("data/reports");
   const allReports: Report[] = [];
