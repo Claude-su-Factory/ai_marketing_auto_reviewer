@@ -1,15 +1,55 @@
-.DS_Store
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+build/
+*.tsbuildinfo
+
+# Environment (never commit real secrets)
 .env
 .env.*
 !.env.example
+
+# Runtime data (user-specific, includes scraped content, generated media, campaigns)
 data/
+logs/
+
+# Generated media
 *.jpg
+*.jpeg
+*.png
 *.mp4
-.superpowers/
+*.mov
+*.webm
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 server/data.db
-server/tmp/
 server/test.db
 server/test-billing.db
-logs/
+server/tmp/
+
+# launchd / local worker (installed plist lives at ~/Library/LaunchAgents/, never in repo)
+# The template scripts/com.adai.worker.plist uses __INJECT__ placeholders and is safe to commit.
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Superpowers / Claude session artifacts
+.superpowers/
+.claude/cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
