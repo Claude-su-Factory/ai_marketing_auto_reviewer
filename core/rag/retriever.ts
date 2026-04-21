@@ -115,10 +115,9 @@ export async function retrieveFewShotForProduct(
   product: Product,
   deps: RetrieveDeps,
 ): Promise<FewShotExample[]> {
-  const allWinners = deps.loadAllWinners();
-  if (allWinners.length === 0) return [];
-
   try {
+    const allWinners = deps.loadAllWinners();
+    if (allWinners.length === 0) return [];
     const [queryEmbed] = await deps.embed([product.description]);
     const selected = selectFewShotWinners(queryEmbed, allWinners, product);
     return selected.map((w) => ({
@@ -127,7 +126,7 @@ export async function retrieveFewShotForProduct(
       cta: w.cta,
     }));
   } catch (e) {
-    console.warn("[retriever] Voyage embed failed, falling back to empty fewShot:", e);
+    console.warn("[retriever] RAG retrieval failed, falling back to empty fewShot:", e);
     return [];
   }
 }

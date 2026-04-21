@@ -236,6 +236,9 @@ describe("retrieveFewShotForProduct", () => {
     expect(result[0]).toHaveProperty("headline");
     expect(result[0]).toHaveProperty("body");
     expect(result[0]).toHaveProperty("cta");
+    expect(result[0].headline).toBe("H-A");
+    expect(result[0].body).toBe("B-A");
+    expect(result[0].cta).toBe("C-A");
   });
 
   it("returns [] when Winner DB is empty (no embed call)", async () => {
@@ -254,5 +257,15 @@ describe("retrieveFewShotForProduct", () => {
       loadAllWinners: () => [mkWinner("a", [1, 0, 0])],
     });
     expect(result).toEqual([]);
+  });
+
+  it("returns [] and warns when loadAllWinners throws (graceful degradation)", async () => {
+    const embedSpy = vi.fn();
+    const result = await retrieveFewShotForProduct(mkProduct({}), {
+      embed: embedSpy,
+      loadAllWinners: () => { throw new Error("db corrupt"); },
+    });
+    expect(result).toEqual([]);
+    expect(embedSpy).not.toHaveBeenCalled();
   });
 });

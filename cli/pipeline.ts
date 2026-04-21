@@ -85,12 +85,16 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
     const voyage = createVoyageClient();
     const creativesDb = createCreativesDb();
-    const winnerStore = new WinnerStore(creativesDb);
-    const fewShot = await retrieveFewShotForProduct(product, {
-      embed: (texts) => voyage.embed(texts),
-      loadAllWinners: () => winnerStore.loadAll(),
-    });
-    creativesDb.close();
+    let fewShot;
+    try {
+      const winnerStore = new WinnerStore(creativesDb);
+      fewShot = await retrieveFewShotForProduct(product, {
+        embed: (texts) => voyage.embed(texts),
+        loadAllWinners: () => winnerStore.loadAll(),
+      });
+    } finally {
+      creativesDb.close();
+    }
 
     for (const label of VARIANT_LABELS) {
       update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
