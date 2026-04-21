@@ -12,6 +12,7 @@ import {
   generateWeeklyAnalysis,
 } from "../../core/campaign/monitor.js";
 import { runScheduledImprovementCycle } from "../../core/scheduler/improvementCycle.js";
+import { createQualifyJob } from "../../core/rag/qualifyJob.js";
 
 const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY"];
 for (const key of required) {
@@ -23,13 +24,11 @@ for (const key of required) {
 }
 
 const mutex = createMutex();
-// TODO(plan-c-followup): wire real qualify deps — currently defaults to noop.
-// Winner DB won't populate until this passes { qualify: qualifyWinners(...) }.
-// See docs/superpowers/plans/2026-04-21-plan-c-winner-db-voyage-rag.md §2082-2083.
+const qualifyJob = createQualifyJob();
 const deps = {
   collectDailyReports,
   generateWeeklyAnalysis,
-  runImprovementCycle: runScheduledImprovementCycle,
+  runImprovementCycle: () => runScheduledImprovementCycle({ qualify: qualifyJob }),
 };
 
 registerJobs(cron, deps, OWNER_CADENCE, mutex, updateStateField);
