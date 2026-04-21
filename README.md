@@ -36,6 +36,19 @@ Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_K
 
 ---
 
+## Owner 모드 전체 흐름
+
+로컬에서 직접 광고를 돌리는 경우 아래 순서로 진행한다.
+
+1. **의존성 + 환경변수** — 위 "시작하기"에서 `.env.owner.example` → `.env` 복사 후 키 주입
+2. **수동 bootstrap (최초 1회)** — 아래 "빠른 테스트 가이드" 순서로 Scrape → Generate → Review → Launch 까지 1사이클 실행해 첫 캠페인을 Meta에 띄운다. 이 단계에서 `data/products/`, `data/creatives/`, `data/campaigns/` 가 시드된다.
+3. **자기학습 워커 등록** — 아래 "자기학습 워커 설치" 에 따라 launchd 데몬 기동. 이후 6시간마다 성과 수집, 2일마다 주간 분석 + 자기학습 사이클이 자동 실행된다.
+4. **운영 중** — 새 제품은 TUI로 등록·Generate·Review·Launch만 수동으로 하면 된다. 성과 수집 → Winner DB 적재 → 약한 variant 개선 루프는 워커가 알아서 돌린다.
+
+Service 모드(API 서버)는 `server/scheduler.ts` 가 Express 프로세스 안에서 node-cron으로 자동 실행되므로 별도 워커 설치가 필요 없다.
+
+---
+
 ## 통합 TUI 앱 (추천)
 
 ```bash
@@ -163,11 +176,12 @@ npm install                           # tsx 등 의존성 설치 확인
 bash scripts/install-worker.sh        # plist 생성 (토큰은 __INJECT__ 자리표시자 상태)
 ```
 
-`~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 3개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
+`~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 4개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
 
 - `META_ACCESS_TOKEN`
 - `META_AD_ACCOUNT_ID`
 - `ANTHROPIC_API_KEY`
+- `VOYAGE_API_KEY`  ← Winner DB embedding 용 (없으면 worker가 부팅 거부)
 
 그런 다음 다시 실행해서 로드:
 
@@ -209,9 +223,12 @@ npm run migrate
 data/
 ├── products/       # 등록된 제품 JSON
 ├── creatives/      # 생성된 소재 (카피 JSON + 이미지/영상 파일 경로)
+├── creatives.db    # Winner DB (SQLite). 성과 임계 통과한 variant + Voyage embedding.
+│                   # 다음 제품 생성 시 RAG few-shot으로 자동 주입.
 ├── campaigns/      # 게재된 캠페인 정보
 ├── reports/        # 일간/주간 성과 데이터
-└── improvements/   # 자율 개선 이력
+├── improvements/   # 자율 개선 이력
+└── worker-state.json  # 마지막 collect/analyze ISO 타임스탬프 (catchup용)
 ```
 
 ---

@@ -26,7 +26,7 @@ fi
 if grep -q '__INJECT__' "$PLIST_DST"; then
   echo ""
   echo "NEXT STEP: Edit $PLIST_DST and replace __INJECT__ with real token"
-  echo "  values (META_ACCESS_TOKEN, META_AD_ACCOUNT_ID, ANTHROPIC_API_KEY)."
+  echo "  values (META_ACCESS_TOKEN, META_AD_ACCOUNT_ID, ANTHROPIC_API_KEY, VOYAGE_API_KEY)."
   echo "Then re-run this script to load the worker:"
   echo "  bash scripts/install-worker.sh"
   exit 0
