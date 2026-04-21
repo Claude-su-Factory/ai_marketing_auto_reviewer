@@ -207,6 +207,7 @@ describe("qualifyWinners", () => {
 
     const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
     expect(res.inserted).toBe(1);
+    expect(res.skipped).toBe(1);
     expect(inserted[0].variantLabel).toBe("emotional");
     expect(inserted[0].embeddingProduct).toHaveLength(512);
     expect(inserted[0].embeddingCopy).toHaveLength(512);
@@ -256,5 +257,26 @@ describe("qualifyWinners", () => {
     const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
     expect(res.skipped).toBe(1);
     expect(res.inserted).toBe(0);
+  });
+
+  it("skips variants when loadCreative returns null", async () => {
+    const reports = [
+      mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04 }),
+    ];
+    const inserted: WinnerCreative[] = [];
+    const deps: QualifyDeps = {
+      loadCreative: async () => null,
+      loadProduct: async () => mkProd(),
+      embed: async (texts) => texts.map(() => Array.from({ length: 512 }, () => 0.5)),
+      store: {
+        hasCreative: () => false,
+        loadAll: () => [],
+        insert: (w) => inserted.push(w),
+      },
+    };
+    const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
+    expect(res.skipped).toBe(1);
+    expect(res.inserted).toBe(0);
+    expect(inserted).toHaveLength(0);
   });
 });
