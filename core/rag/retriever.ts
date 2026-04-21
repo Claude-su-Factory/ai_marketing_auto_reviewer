@@ -77,7 +77,7 @@ export function lexicalFallback(
 }
 
 const MIN_COSINE = 0.6;
-const DEDUP_COSINE = 0.95;
+export const DEDUP_COSINE = 0.95;
 const TOP_K = 3;
 
 export function selectFewShotWinners(

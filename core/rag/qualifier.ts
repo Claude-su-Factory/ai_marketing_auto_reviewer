@@ -1,6 +1,6 @@
 import type { VariantReport } from "../platform/types.js";
 import type { VariantAggregate, WinnerCreative } from "./types.js";
-import { cosineSimilarity } from "./retriever.js";
+import { cosineSimilarity, DEDUP_COSINE } from "./retriever.js";
 
 export function aggregateVariantReports(reports: VariantReport[]): VariantAggregate[] {
   const byKey = new Map<string, VariantAggregate>();
@@ -56,13 +56,11 @@ export function passesThreshold(
   return true;
 }
 
-const SKIP_SIMILARITY = 0.95;
-
 export function shouldSkipInsert(
   candidateEmbed: number[],
   existingWinners: WinnerCreative[],
 ): boolean {
   return existingWinners.some(
-    (w) => cosineSimilarity(candidateEmbed, w.embeddingProduct) > SKIP_SIMILARITY,
+    (w) => cosineSimilarity(candidateEmbed, w.embeddingProduct) > DEDUP_COSINE,
   );
 }
