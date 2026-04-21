@@ -88,15 +88,10 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
       const variantGroupId = randomUUID();
 
-      let fewShot: FewShotExample[] = [];
-      try {
-        fewShot = await retrieveFewShotForProduct(product, {
-          embed: (texts) => voyage.embed(texts),
-          loadAllWinners: () => winnerStore.loadAll(),
-        });
-      } catch (e) {
-        console.warn("[pipeline] RAG retrieval threw, falling back to empty fewShot:", e);
-      }
+      const fewShot: FewShotExample[] = await retrieveFewShotForProduct(product, {
+        embed: (texts) => voyage.embed(texts),
+        loadAllWinners: () => winnerStore.loadAll(),
+      });
 
       for (const label of VARIANT_LABELS) {
         update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
