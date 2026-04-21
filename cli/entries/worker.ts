@@ -23,6 +23,9 @@ for (const key of required) {
 }
 
 const mutex = createMutex();
+// TODO(plan-c-followup): wire real qualify deps — currently defaults to noop.
+// Winner DB won't populate until this passes { qualify: qualifyWinners(...) }.
+// See docs/superpowers/plans/2026-04-21-plan-c-winner-db-voyage-rag.md §2082-2083.
 const deps = {
   collectDailyReports,
   generateWeeklyAnalysis,

@@ -10,7 +10,7 @@ import { generateVideo } from "../core/creative/video.js";
 import { writeJson } from "../core/storage.js";
 import type { Product, Creative } from "../core/types.js";
 import { randomUUID } from "crypto";
-import { VARIANT_LABELS } from "../core/creative/prompt.js";
+import { VARIANT_LABELS, type FewShotExample } from "../core/creative/prompt.js";
 import { retrieveFewShotForProduct } from "../core/rag/retriever.js";
 import { createVoyageClient } from "../core/rag/voyage.js";
 import { createCreativesDb } from "../core/rag/db.js";
@@ -71,51 +71,56 @@ export async function runPipeline(urls: string[]): Promise<void> {
   // Step 2: Generate
   update("generate", "running", "소재 생성 시작...");
 
-  for (let i = 0; i < products.length; i++) {
-    const product = products[i];
-    update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
-    const imageLocalPath = await generateImage(product);
+  const voyage = createVoyageClient();
+  const creativesDb = createCreativesDb();
+  try {
+    const winnerStore = new WinnerStore(creativesDb);
 
-    update("generate", "running", `영상 생성 중... (최대 10분 소요)`, product.name, i + 1);
-    const videoLocalPath = await generateVideo(product, (msg) =>
-      update("generate", "running", msg, product.name, i + 1)
-    );
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
+      const imageLocalPath = await generateImage(product);
 
-    const variantGroupId = randomUUID();
+      update("generate", "running", `영상 생성 중... (최대 10분 소요)`, product.name, i + 1);
+      const videoLocalPath = await generateVideo(product, (msg) =>
+        update("generate", "running", msg, product.name, i + 1)
+      );
 
-    const voyage = createVoyageClient();
-    const creativesDb = createCreativesDb();
-    let fewShot;
-    try {
-      const winnerStore = new WinnerStore(creativesDb);
-      fewShot = await retrieveFewShotForProduct(product, {
-        embed: (texts) => voyage.embed(texts),
-        loadAllWinners: () => winnerStore.loadAll(),
-      });
-    } finally {
-      creativesDb.close();
+      const variantGroupId = randomUUID();
+
+      let fewShot: FewShotExample[] = [];
+      try {
+        fewShot = await retrieveFewShotForProduct(product, {
+          embed: (texts) => voyage.embed(texts),
+          loadAllWinners: () => winnerStore.loadAll(),
+        });
+      } catch (e) {
+        console.warn("[pipeline] RAG retrieval threw, falling back to empty fewShot:", e);
+      }
+
+      for (const label of VARIANT_LABELS) {
+        update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
+        const copy = await generateCopy(client, product, fewShot, label);
+
+        const creative: Creative = {
+          id: randomUUID(),
+          productId: product.id,
+          variantGroupId,
+          copy: {
+            ...copy,
+            variantLabel: label,
+            metaAssetLabel: `${variantGroupId}::${label}`,
+          },
+          imageLocalPath,
+          videoLocalPath,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        };
+        await writeJson(`data/creatives/${creative.id}.json`, creative);
+      }
     }
-
-    for (const label of VARIANT_LABELS) {
-      update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
-      const copy = await generateCopy(client, product, fewShot, label);
-
-      const creative: Creative = {
-        id: randomUUID(),
-        productId: product.id,
-        variantGroupId,
-        copy: {
-          ...copy,
-          variantLabel: label,
-          metaAssetLabel: `${variantGroupId}::${label}`,
-        },
-        imageLocalPath,
-        videoLocalPath,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-      await writeJson(`data/creatives/${creative.id}.json`, creative);
-    }
+  } finally {
+    creativesDb.close();
   }
   update("generate", "done", "소재 생성 완료 — 검토 대기 중");
 
