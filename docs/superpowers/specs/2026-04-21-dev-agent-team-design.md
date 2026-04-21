@@ -53,9 +53,9 @@ CLAUDE.md                       ← "Subagent 호출 규칙" 섹션 추가
 3. Meta API 오류 원인 파악이 필요할 때
 
 **입력 컨텍스트** (caller가 subagent dispatch 시 제공):
-- 변경 diff (`git diff BASE..HEAD -- core/platform/meta/`)
+- 변경 diff — caller가 비교 대상 두 commit SHA를 명시하여 `git diff <base_sha>..<head_sha> -- core/platform/meta/` 출력 전체를 넘긴다
 - 관련 파일 전체 경로 목록
-- (런칭 검토 시) 대상 Creative JSON과 Product JSON
+- (런칭 검토 시) 대상 Creative JSON과 Product JSON 원문
 - (오류 디버깅 시) 에러 메시지/스택 원문
 
 **읽어야 할 프로젝트 문서**:
@@ -63,7 +63,7 @@ CLAUDE.md                       ← "Subagent 호출 규칙" 섹션 추가
 - `core/platform/meta/` 디렉토리 전체
 - `core/platform/types.ts` — `AdPlatform` interface
 
-**출력 포맷** (`superpowers:code-reviewer`와 동일):
+**출력 포맷** (이 스펙에서 독립적으로 정의. 외부 템플릿을 참조하지 않음):
 
 ```
 Strengths:
@@ -145,7 +145,8 @@ description: Use when reviewing changes to core/platform/meta/* or debugging Met
 - 금지어/과장 표현 (사실 불명 최상급, 허위 약속)
 - CTA 문구가 Product `targetUrl`의 landing intent와 일치하는지
 - Variant 간 차별화 부족 (3개가 서로 거의 동일하면 DCO 효율 저하) — 지적
-- `metaAssetLabel` 포맷 (`<variantGroupId>::<label>`) 정합성 간단 확인
+
+> 주의: `metaAssetLabel` 포맷(`<variantGroupId>::<label>`)은 구조적 검증이므로 이 agent가 아니라 `meta-platform-expert` 또는 별도 schema validator의 책임이다.
 
 **frontmatter 예시**:
 
@@ -177,6 +178,54 @@ description: Use after generate/improve produces new Creative JSONs or when core
 - Subagent 호출은 caller가 필요 컨텍스트(diff, 대상 파일 경로, 관련 JSON)를 함께 전달해야 함 — subagent가 직접 전체 프로젝트를 탐색하지 않도록 함
 ```
 
+### 5.1 Dispatch 템플릿 예시
+
+`meta-platform-expert` 호출 예시:
+
+```
+[Task tool, subagent_type=meta-platform-expert]
+description: "Review Meta platform changes"
+prompt: |
+  `core/platform/meta/` 하위 변경을 검토해주세요.
+
+  비교 범위: <base_sha>..<head_sha>
+  변경 파일:
+  - core/platform/meta/launcher.ts
+  - core/platform/meta/adapter.ts
+
+  diff 전체:
+  ```
+  <git diff 출력 붙여넣기>
+  ```
+
+  프로젝트 컨텍스트:
+  - `docs/ARCHITECTURE.md`의 Platform Adapter 섹션을 참조
+  - 필요 시 `core/platform/types.ts`의 `AdPlatform` interface 참조
+
+  정의된 출력 포맷(Strengths/Critical/Important/Minor/Assessment)으로 응답해주세요.
+```
+
+`marketing-copy-reviewer` 호출 예시:
+
+```
+[Task tool, subagent_type=marketing-copy-reviewer]
+description: "Review generated ad copy variants"
+prompt: |
+  다음 Creative variants를 검토해주세요.
+
+  Product: data/products/<productId>.json
+  Variant group: <variantGroupId>
+  Creatives:
+  - data/creatives/<creativeId-emotional>.json
+  - data/creatives/<creativeId-numerical>.json
+  - data/creatives/<creativeId-urgency>.json
+
+  각 Creative의 copy 필드 전체:
+  <각 JSON의 copy 섹션 붙여넣기>
+
+  정의된 per-variant 포맷으로 응답해주세요. 개인화 표현 탐지 필수.
+```
+
 ## 6. 성공 기준
 
 - `.claude/agents/meta-platform-expert.md`, `.claude/agents/marketing-copy-reviewer.md` 파일 존재
@@ -203,12 +252,29 @@ description: Use after generate/improve produces new Creative JSONs or when core
 4. `docs/STATUS.md` — 서비스 컴포넌트 상태 표에 "Dev-time Subagent 팀" 항목 추가, 최근 변경 이력 추가
 5. `docs/ROADMAP.md` — Phase 1b/1c 항목을 Tier 2/3 후보로 명시
 
+### 8.1 구현 전 사전 검증 단계
+
+구현에 들어가기 전 플랜 Task 0으로 다음을 확인한다:
+
+- **Auto-routing 동작 확인**: `.claude/agents/<name>.md` 로 정의된 subagent가 `description` 기반 자동 라우팅되는지, 아니면 명시 `subagent_type` 지정이 필수인지 확인. 결과에 따라 CLAUDE.md 호출 규칙 문구를 조정.
+- **WebFetch 권한 확인**: subagent 정의에서 tool 접근 제한 여부 확인. §7에 언급된 "공식 문서 확인 시 WebFetch 사용" 지시가 실제로 동작하는지 간단한 검증 케이스로 확인.
+
+두 검증이 실패하면 스펙 조정 후 재검토.
+
 ## 9. 검토 이력
 
-- **Self-review (초안 직후)**:
+- **Self-review 1차 (초안 직후)** — 얕은 검토로 Critical/Important 모두 "없음"으로 보고. CLAUDE.md "스펙 작성 규칙" 강화 전이었음. 이후 2차 검토에서 Important 3건 발견하여 이 1차 결과는 폐기.
+
+- **Self-review 2차 (규칙 강화 후)** — CLAUDE.md의 "검토 깊이 요구사항"을 적용하여 재검토.
+
   - Critical: 없음
-  - Important: 없음
+  - Important:
+    - **I1**: §4.1 출력 포맷을 "`superpowers:code-reviewer`와 동일"로 기술했으나 해당 템플릿을 읽지 않고 추측으로 참조. → 패치: "이 스펙에서 독립적으로 정의. 외부 템플릿 참조 안 함"으로 변경.
+    - **I2**: §5의 "caller가 컨텍스트 전달" 규칙에 구체 dispatch 예시 없음. → 패치: §5.1에 두 agent 각각의 dispatch 템플릿 예시 추가.
+    - **I3**: Claude Code의 subagent auto-routing 동작 방식을 검증하지 않고 CLAUDE.md 규칙 문구를 작성. → 패치: §8.1에 구현 전 사전 검증 단계 추가 (auto-routing 동작 + WebFetch 권한).
   - Minor:
-    - §4.1/4.2 frontmatter `description`은 Claude Code가 subagent 선택 시 참조하는 필드. 현재 길이(~500자)는 허용 범위 내이지만 운영하며 조정 필요할 수 있음 — 문서화 완료
-    - §5의 "Subagent 호출은 caller가 필요 컨텍스트를 함께 전달" 규칙이 실제 dispatch 템플릿 형태로 존재하지 않음. 플랜 단계에서 `docs/` 하위에 호출 템플릿 스니펫을 포함할지 결정 필요 — 플랜에서 다룸
-  - 수정 사항: 없음 (Minor는 플랜 작성 시 반영)
+    - **M1**: §4.2 검토 초점에 `metaAssetLabel` 구조 검증이 포함되어 관심사 분리 위반. → 패치: 제거하고 `meta-platform-expert`/schema validator 책임임을 명시.
+    - **M2**: §4.1 `git diff BASE..HEAD` 표기에서 BASE/HEAD 의미가 subagent에게 불명확. → 패치: "caller가 두 commit SHA를 명시"로 구체화.
+    - **M3**: §7 "WebFetch 사용 지시"를 subagent 권한 확인 없이 기술. → 패치: §8.1 사전 검증 단계에 권한 확인 추가.
+
+  - 수정 사항: 위 I1~I3, M1~M3 모두 스펙에 반영 완료.
