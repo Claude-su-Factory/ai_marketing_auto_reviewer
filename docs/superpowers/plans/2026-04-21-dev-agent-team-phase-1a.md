@@ -521,11 +521,11 @@ If no fixes were needed, skip this commit.
 - Modify: `/Users/yuhojin/Desktop/ad_ai/docs/STATUS.md`
 - Modify: `/Users/yuhojin/Desktop/ad_ai/docs/ROADMAP.md`
 
-- [ ] **Step 1: Update STATUS.md — 마지막 업데이트 date**
+- [x] **Step 1: Update STATUS.md — 마지막 업데이트 date**
 
 Edit `docs/STATUS.md`. The file currently has `마지막 업데이트: 2026-04-20` near the top. Change to `마지막 업데이트: 2026-04-21`.
 
-- [ ] **Step 2: Update STATUS.md — 서비스 컴포넌트 상태 table**
+- [x] **Step 2: Update STATUS.md — 서비스 컴포넌트 상태 table**
 
 In the `## 서비스 컴포넌트 상태` table, add a new row directly below `| 테스트 (vitest) | ✅ 대부분 모듈에 .test.ts 존재 | 프로젝트 전반 |`:
 
@@ -533,7 +533,7 @@ In the `## 서비스 컴포넌트 상태` table, add a new row directly below `|
 | Dev-time Subagent 팀 (meta-platform-expert, marketing-copy-reviewer) | ✅ 구현 완료 | `.claude/agents/` |
 ```
 
-- [ ] **Step 3: Update STATUS.md — 최근 변경 이력**
+- [x] **Step 3: Update STATUS.md — 최근 변경 이력**
 
 Insert a new first bullet at the top of `## 최근 변경 이력`:
 
@@ -541,11 +541,11 @@ Insert a new first bullet at the top of `## 최근 변경 이력`:
 - 2026-04-21 feat: Dev-time Agent Team Phase 1a — meta-platform-expert, marketing-copy-reviewer subagent 2종 추가 및 CLAUDE.md "Subagent 호출 규칙" 통합 (Phase 1b/1c 유보)
 ```
 
-- [ ] **Step 4: Update ROADMAP.md — 마지막 업데이트 date**
+- [x] **Step 4: Update ROADMAP.md — 마지막 업데이트 date**
 
 Edit `docs/ROADMAP.md`. Change `마지막 업데이트: 2026-04-20` to `마지막 업데이트: 2026-04-21`.
 
-- [ ] **Step 5: Update ROADMAP.md — Tier 2 and Tier 3 additions**
+- [x] **Step 5: Update ROADMAP.md — Tier 2 and Tier 3 additions**
 
 In the `## Tier 2 — 후보 (사용자 확정 필요)` bulleted list, append:
 
@@ -559,7 +559,7 @@ In the `## Tier 3 — 장기 (사용자 확정 필요)` bulleted list, append:
 - Dev-time Agent Team Phase 1c — Architecture Steward subagent (대규모 리팩터 필요 시점에 도입)
 ```
 
-- [ ] **Step 6: Verify edits**
+- [x] **Step 6: Verify edits**
 
 Run:
 ```bash
@@ -571,7 +571,14 @@ grep -n "마지막 업데이트: 2026-04-21" /Users/yuhojin/Desktop/ad_ai/docs/S
 
 Expected: one match for each of the four greps.
 
-- [ ] **Step 7: Commit**
+<!-- Verification result: All four greps matched correctly:
+  - STATUS.md line 37: Dev-time Subagent 팀
+  - ROADMAP.md line 27: Phase 1b
+  - ROADMAP.md line 37: Phase 1c
+  - Both files: 마지막 업데이트: 2026-04-21 at line 3
+-->
+
+- [x] **Step 7: Commit**
 
 ```bash
 git add docs/STATUS.md docs/ROADMAP.md

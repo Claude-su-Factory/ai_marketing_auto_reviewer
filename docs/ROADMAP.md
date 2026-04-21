@@ -1,6 +1,6 @@
 # 로드맵
 
-마지막 업데이트: 2026-04-20
+마지막 업데이트: 2026-04-21
 
 ---
 
@@ -24,6 +24,7 @@
 - 고객 셀프서비스 페이지 (결제 URL 외에 사용량/잔액 확인 대시보드)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
+- Dev-time Agent Team Phase 1b — Performance Analyst subagent (Winner DB가 생기면 도입)
 
 ---
 
@@ -33,6 +34,7 @@
 - Meta 외 플랫폼 지원 (TikTok, YouTube Shorts)
 - 자율 개선 루프 강화 (launchd 인프라 구축 완료 — 2026-04-20. 추가 개선: 분석 히스토리 재주입, 개선 실패 알림 등)
 - 다국어 소재 생성 지원
+- Dev-time Agent Team Phase 1c — Architecture Steward subagent (대규모 리팩터 필요 시점에 도입)
 
 <!--
 업데이트 규칙:
