@@ -299,6 +299,7 @@ describe("qualifyWinners", () => {
     };
     const res = await qualifyWinners(reports, deps);
     expect(res.inserted).toBe(1);
+    expect(res.skipped).toBe(2);
     expect(inserted[0].variantLabel).toBe("numerical");
   });
 
@@ -320,6 +321,7 @@ describe("qualifyWinners", () => {
     };
     const res = await qualifyWinners(reports, deps);
     expect(res.inserted).toBe(1);
+    expect(res.skipped).toBe(1);
     expect(inserted[0].variantLabel).toBe("numerical");
   });
 });
