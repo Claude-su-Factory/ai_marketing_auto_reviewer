@@ -48,8 +48,11 @@ describe("WinnerStore", () => {
     expect(loaded.creativeId).toBe(winner.creativeId);
     expect(loaded.productTags).toEqual(winner.productTags);
     expect(loaded.embeddingProduct).toHaveLength(512);
-    expect(loaded.embeddingProduct[0]).toBeCloseTo(winner.embeddingProduct[0], 5);
     expect(loaded.embeddingCopy).toHaveLength(512);
+    for (const i of [0, 1, 42, 255, 511]) {
+      expect(loaded.embeddingProduct[i]).toBeCloseTo(winner.embeddingProduct[i], 5);
+      expect(loaded.embeddingCopy[i]).toBeCloseTo(winner.embeddingCopy[i], 5);
+    }
     db.close();
   });
 
