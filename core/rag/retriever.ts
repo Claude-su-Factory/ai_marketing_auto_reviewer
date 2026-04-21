@@ -1,5 +1,6 @@
 import type { WinnerCreative } from "./types.js";
 import type { Product } from "../types.js";
+import type { FewShotExample } from "../creative/prompt.js";
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
@@ -103,4 +104,30 @@ export function selectFewShotWinners(
   }
 
   return dedupByCosine(ranked, DEDUP_COSINE, "embeddingProduct");
+}
+
+export interface RetrieveDeps {
+  embed: (texts: string[]) => Promise<number[][]>;
+  loadAllWinners: () => WinnerCreative[];
+}
+
+export async function retrieveFewShotForProduct(
+  product: Product,
+  deps: RetrieveDeps,
+): Promise<FewShotExample[]> {
+  const allWinners = deps.loadAllWinners();
+  if (allWinners.length === 0) return [];
+
+  try {
+    const [queryEmbed] = await deps.embed([product.description]);
+    const selected = selectFewShotWinners(queryEmbed, allWinners, product);
+    return selected.map((w) => ({
+      headline: w.headline,
+      body: w.body,
+      cta: w.cta,
+    }));
+  } catch (e) {
+    console.warn("[retriever] Voyage embed failed, falling back to empty fewShot:", e);
+    return [];
+  }
 }

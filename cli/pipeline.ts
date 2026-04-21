@@ -11,6 +11,10 @@ import { writeJson } from "../core/storage.js";
 import type { Product, Creative } from "../core/types.js";
 import { randomUUID } from "crypto";
 import { VARIANT_LABELS } from "../core/creative/prompt.js";
+import { retrieveFewShotForProduct } from "../core/rag/retriever.js";
+import { createVoyageClient } from "../core/rag/voyage.js";
+import { createCreativesDb } from "../core/rag/db.js";
+import { WinnerStore } from "../core/rag/store.js";
 
 export async function runPipeline(urls: string[]): Promise<void> {
   const stepStatuses: Record<PipelineStep, StepStatus> = {
@@ -79,9 +83,18 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
     const variantGroupId = randomUUID();
 
+    const voyage = createVoyageClient();
+    const creativesDb = createCreativesDb();
+    const winnerStore = new WinnerStore(creativesDb);
+    const fewShot = await retrieveFewShotForProduct(product, {
+      embed: (texts) => voyage.embed(texts),
+      loadAllWinners: () => winnerStore.loadAll(),
+    });
+    creativesDb.close();
+
     for (const label of VARIANT_LABELS) {
       update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
-      const copy = await generateCopy(client, product, [], label);
+      const copy = await generateCopy(client, product, fewShot, label);
 
       const creative: Creative = {
         id: randomUUID(),

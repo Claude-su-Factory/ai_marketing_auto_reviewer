@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { cosineSimilarity, dedupByCosine, filterByCategory, retrieveTopK, lexicalFallback, selectFewShotWinners } from "./retriever.js";
 import type { WinnerCreative } from "./types.js";
 import type { Product } from "../types.js";
@@ -216,5 +216,43 @@ describe("selectFewShotWinners", () => {
   it("returns [] when Winner DB is empty", () => {
     const product = mkProduct({ category: "course", tags: [] });
     expect(selectFewShotWinners(queryEmbed, [], product)).toEqual([]);
+  });
+});
+
+import { retrieveFewShotForProduct } from "./retriever.js";
+
+describe("retrieveFewShotForProduct", () => {
+  it("returns FewShotExample[] from selected winners", async () => {
+    const winners = [
+      { ...mkWinner("a", [1, 0, 0]), productCategory: "course", headline: "H-A", body: "B-A", cta: "C-A" },
+      { ...mkWinner("b", [0.8, 0.6, 0]), productCategory: "course", headline: "H-B", body: "B-B", cta: "C-B" },
+    ];
+    const product = mkProduct({ category: "course", tags: [] });
+    const result = await retrieveFewShotForProduct(product, {
+      embed: async () => [[1, 0, 0]],
+      loadAllWinners: () => winners,
+    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]).toHaveProperty("headline");
+    expect(result[0]).toHaveProperty("body");
+    expect(result[0]).toHaveProperty("cta");
+  });
+
+  it("returns [] when Winner DB is empty (no embed call)", async () => {
+    const embedSpy = vi.fn();
+    const result = await retrieveFewShotForProduct(mkProduct({}), {
+      embed: embedSpy,
+      loadAllWinners: () => [],
+    });
+    expect(result).toEqual([]);
+    expect(embedSpy).not.toHaveBeenCalled();
+  });
+
+  it("returns [] and warns when embed throws (graceful degradation)", async () => {
+    const result = await retrieveFewShotForProduct(mkProduct({}), {
+      embed: async () => { throw new Error("voyage down"); },
+      loadAllWinners: () => [mkWinner("a", [1, 0, 0])],
+    });
+    expect(result).toEqual([]);
   });
 });
