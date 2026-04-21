@@ -6,13 +6,13 @@
 
 ## 현재 추천 다음 작업
 
-**Plan C — Winner DB + Voyage RAG** — Plan B 완료. 이제 launch된 creative의 CTR/CVR을 winner DB(`data/creatives.db`)로 수집하고, Voyage RAG로 승자 카피를 few-shot 예시에 공급해 `generateCopy`의 `fewShot` 인자를 실데이터로 채운다. 스펙 `docs/superpowers/specs/2026-04-20-winner-db-variant-orchestration-design.md` §Section 7 이후 참조.
+**Plan C 실운영 검증** — Plan C 구현 완료 (2026-04-21, 테스트 262 통과). 다음 세션에서 실제 `VOYAGE_API_KEY` 환경변수 + 실 런칭 variant report를 투입해 (1) qualifyWinners가 MIN_IMPRESSIONS=500 임계를 통과한 variant만 winner로 남기는지, (2) voyage-3-lite embedding이 `data/creatives.db`에 정상 저장되는지, (3) 새 제품 생성 시 retrieveFewShotForProduct가 유사 winner를 top-K=3으로 회수해 `generateCopy`에 주입하는지 확인한다. 병행 후보는 Tier 2 참조.
 
 ---
 
 ## Tier 1 — 바로 진행
 
-(없음 — 다음 작업 선정 대기)
+(없음 — 실운영 검증 외 Tier 2 후보 선정 대기)
 
 ---
 
@@ -21,10 +21,10 @@
 아래 항목들은 제안된 후보이며, 우선순위는 사용자와 상의 후 확정한다.
 
 - 프로덕션 배포 파이프라인 구축 (서버 호스팅, 도메인 연결, TLS 설정)
+- Dev-time Agent Team Phase 1b — Performance Analyst subagent (Winner DB 구축 완료 — 바로 도입 가능)
 - 고객 셀프서비스 페이지 (결제 URL 외에 사용량/잔액 확인 대시보드)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
-- Dev-time Agent Team Phase 1b — Performance Analyst subagent (Winner DB가 생기면 도입)
 
 ---
 
