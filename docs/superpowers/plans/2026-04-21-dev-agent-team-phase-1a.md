@@ -32,7 +32,7 @@ Nothing else created. No `docs/team/`, no Evolution Log, no test fixtures.
 - Read: existing subagent references in `~/.claude/plugins/` (superpowers:code-reviewer source)
 - Read: Claude Code docs via `WebFetch` if needed
 
-- [ ] **Step 1: Locate the superpowers:code-reviewer subagent source file**
+- [x] **Step 1: Locate the superpowers:code-reviewer subagent source file**
 
 Run:
 ```bash
@@ -46,14 +46,18 @@ If the find returns nothing, fall back to:
 find ~/.claude -type d -name agents 2>/dev/null
 ```
 
-- [ ] **Step 2: Read one existing subagent file to confirm frontmatter format**
+<!-- Findings Step 1: Found at ~/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/agents/code-reviewer.md -->
+
+- [x] **Step 2: Read one existing subagent file to confirm frontmatter format**
 
 Read the first result from Step 1. Record these specific facts inline in this plan (append as a comment below this step):
 - Exact frontmatter keys used (`name`, `description`, `model`, `tools`, etc.)
 - Whether `tools:` field restricts tool access (if present, what values it takes)
 - Approximate `description` length in the existing file (so our descriptions match convention)
 
-- [ ] **Step 3: Confirm auto-routing behavior**
+<!-- Findings Step 2: Frontmatter keys in code-reviewer.md: `name`, `description` (multiline `|` block, ~400 chars with embedded examples), `model: inherit`. No `tools:` field present — subagent inherits all tools by default. Description is verbose (includes example context + commentary blocks). Our descriptions at ~200–300 chars are within convention. -->
+
+- [x] **Step 3: Confirm auto-routing behavior**
 
 Use WebFetch to read the Claude Code subagents documentation:
 
@@ -64,11 +68,15 @@ WebFetch url="https://docs.claude.com/en/docs/claude-code/sub-agents" prompt="Ho
 
 Expected: Documentation confirms that `description` drives automatic selection, OR that explicit `subagent_type` naming is required. Record the answer inline below this step.
 
-- [ ] **Step 4: Confirm WebFetch access for user-defined subagents**
+<!-- Findings Step 3: Auto-routing is description-based. Official docs (code.claude.com/docs/en/sub-agents) state: "Claude uses each subagent's description to decide when to delegate tasks." and "Claude automatically delegates tasks based on the task description in your request, the `description` field in subagent configurations, and current context." Explicit @-mention or naming in prompt is also supported but not required — description alone drives automatic selection. Spec assumption CONFIRMED. -->
+
+- [x] **Step 4: Confirm WebFetch access for user-defined subagents**
 
 From the same docs (or `.claude/agents/*.md` examples found in Step 1), confirm: does a subagent defined in `.claude/agents/<name>.md` inherit all tools by default, or must tools be listed explicitly? Record the answer.
 
-- [ ] **Step 5: Adjust spec/plan wording based on findings**
+<!-- Findings Step 4: Tools are inherited by default. Official docs state in the frontmatter fields table: "`tools` — Tools the subagent can use. **Inherits all tools if omitted**." This means WebFetch is available to our subagents without listing it explicitly. The spec's "use WebFetch to check official Meta API docs" fallback is valid. Spec assumption CONFIRMED. -->
+
+- [x] **Step 5: Adjust spec/plan wording based on findings**
 
 If findings match spec assumptions (description-based auto-routing; tools inherited by default) → no change needed. Note "Findings match spec assumptions" inline.
 
@@ -76,7 +84,12 @@ If findings diverge:
 - Update `docs/superpowers/specs/2026-04-21-dev-agent-team-design.md` §7 risk wording and CLAUDE.md rule wording in Task 3 accordingly
 - If the spec needs structural changes (e.g., subagent cannot access WebFetch so fallback strategy must change), pause and report to user before continuing
 
-- [ ] **Step 6: Commit findings**
+<!-- Findings Step 5: Findings match spec assumptions. Both key assumptions confirmed:
+  (a) Description-based auto-routing: CONFIRMED
+  (b) Tools (including WebFetch) inherited by default: CONFIRMED
+  No spec or plan changes required. Proceed to Tasks 1–5 as written. -->
+
+- [x] **Step 6: Commit findings**
 
 ```bash
 git add docs/superpowers/plans/2026-04-21-dev-agent-team-phase-1a.md
