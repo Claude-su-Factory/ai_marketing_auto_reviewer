@@ -66,29 +66,28 @@ export function shouldSkipInsert(
   );
 }
 
-export interface QualifyOptions {
-  creativeIdResolver: (agg: VariantAggregate) => string;
-}
-
 export async function qualifyWinners(
   reports: VariantReport[],
   deps: QualifyDeps,
-  opts: QualifyOptions,
 ): Promise<{ inserted: number; skipped: number }> {
   const medianCtr = getMedianCtr(reports);
   const aggregates = aggregateVariantReports(reports);
+
+  const passing = aggregates.filter((a) => passesThreshold(a, medianCtr));
+  const failed = aggregates.length - passing.length;
+  const bests = pickBestPerVariantGroup(passing);
+  const droppedSiblings = passing.length - bests.length;
+
   let inserted = 0;
-  let skipped = 0;
+  let skipped = failed + droppedSiblings;
 
-  for (const agg of aggregates) {
-    if (!passesThreshold(agg, medianCtr)) { skipped++; continue; }
+  for (const agg of bests) {
+    const creative = await deps.findCreativeByVariant(agg.variantGroupId, agg.variantLabel);
+    if (!creative) { skipped++; continue; }
+    if (deps.store.hasCreative(creative.id)) { skipped++; continue; }
 
-    const creativeId = opts.creativeIdResolver(agg);
-    if (deps.store.hasCreative(creativeId)) { skipped++; continue; }
-
-    const creative = await deps.loadCreative(creativeId);
     const product = await deps.loadProduct(agg.productId);
-    if (!creative || !product) { skipped++; continue; }
+    if (!product) { skipped++; continue; }
 
     const [embedProduct, embedCopy] = await deps.embed([
       product.description,
@@ -100,7 +99,7 @@ export async function qualifyWinners(
 
     const winner: WinnerCreative = {
       id: randomUUID(),
-      creativeId,
+      creativeId: creative.id,
       productCategory: product.category ?? null,
       productTags: product.tags,
       productDescription: product.description,

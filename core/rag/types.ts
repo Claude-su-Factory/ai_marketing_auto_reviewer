@@ -32,7 +32,10 @@ export interface VariantAggregate {
 }
 
 export interface QualifyDeps {
-  loadCreative: (creativeId: string) => Promise<Creative | null>;
+  findCreativeByVariant: (
+    variantGroupId: string,
+    variantLabel: string,
+  ) => Promise<Creative | null>;
   loadProduct: (productId: string) => Promise<Product | null>;
   embed: (texts: string[]) => Promise<number[][]>;
   store: {

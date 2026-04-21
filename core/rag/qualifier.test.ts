@@ -4,9 +4,12 @@ import {
   getMedianCtr,
   passesThreshold,
   shouldSkipInsert,
+  qualifyWinners,
+  pickBestPerVariantGroup,
 } from "./qualifier.js";
 import type { VariantReport } from "../platform/types.js";
-import type { WinnerCreative } from "./types.js";
+import type { Creative, Product } from "../types.js";
+import type { WinnerCreative, QualifyDeps, VariantAggregate } from "./types.js";
 
 function mkReport(overrides: Partial<VariantReport>): VariantReport {
   return {
@@ -159,10 +162,6 @@ describe("shouldSkipInsert", () => {
   });
 });
 
-import { qualifyWinners } from "./qualifier.js";
-import type { Creative, Product } from "../types.js";
-import type { QualifyDeps } from "./types.js";
-
 function mkCreative(id: string, variantGroupId = "g1", variantLabel: Creative["copy"]["variantLabel"] = "emotional"): Creative {
   return {
     id, productId: "p1", variantGroupId,
@@ -188,12 +187,13 @@ describe("qualifyWinners", () => {
   it("inserts threshold-passing variants into store with both embeddings", async () => {
     const reports = [
       mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04 }),
-      mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "numerical", impressions: 1000, clicks: 5, inlineLinkClickCtr: 0.005 }),
+      mkReport({ variantGroupId: "g2", campaignId: "c2", variantLabel: "numerical", impressions: 1000, clicks: 5, inlineLinkClickCtr: 0.005 }),
     ];
     const inserted: WinnerCreative[] = [];
     const deps: QualifyDeps = {
-      loadCreative: async (id) => {
-        if (id === "c1::emotional" || id === "c1::numerical") return mkCreative(id, "g1", id.endsWith("emotional") ? "emotional" : "numerical");
+      findCreativeByVariant: async (gid, label) => {
+        if (gid === "g1" && label === "emotional") return mkCreative("cr-g1-emo", "g1", "emotional");
+        if (gid === "g2" && label === "numerical") return mkCreative("cr-g2-num", "g2", "numerical");
         return null;
       },
       loadProduct: async () => mkProd(),
@@ -205,7 +205,7 @@ describe("qualifyWinners", () => {
       },
     };
 
-    const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
+    const res = await qualifyWinners(reports, deps);
     expect(res.inserted).toBe(1);
     expect(res.skipped).toBe(1);
     expect(inserted[0].variantLabel).toBe("emotional");
@@ -219,7 +219,7 @@ describe("qualifyWinners", () => {
     ];
     const inserted: WinnerCreative[] = [];
     const deps: QualifyDeps = {
-      loadCreative: async () => mkCreative("c1::emotional"),
+      findCreativeByVariant: async () => mkCreative("cr-g1-emo", "g1", "emotional"),
       loadProduct: async () => mkProd(),
       embed: async (texts) => texts.map(() => Array.from({ length: 512 }, () => 0.5)),
       store: {
@@ -228,7 +228,7 @@ describe("qualifyWinners", () => {
         insert: (w) => inserted.push(w),
       },
     };
-    const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
+    const res = await qualifyWinners(reports, deps);
     expect(res.skipped).toBe(1);
     expect(inserted).toHaveLength(0);
   });
@@ -245,7 +245,7 @@ describe("qualifyWinners", () => {
       mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04 }),
     ];
     const deps: QualifyDeps = {
-      loadCreative: async () => mkCreative("c1::emotional"),
+      findCreativeByVariant: async () => mkCreative("cr-g1-emo", "g1", "emotional"),
       loadProduct: async () => mkProd(),
       embed: async (texts) => texts.map(() => Array.from({ length: 512 }, () => 1.0001)),
       store: {
@@ -254,18 +254,18 @@ describe("qualifyWinners", () => {
         insert: () => { throw new Error("should not be called"); },
       },
     };
-    const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
+    const res = await qualifyWinners(reports, deps);
     expect(res.skipped).toBe(1);
     expect(res.inserted).toBe(0);
   });
 
-  it("skips variants when loadCreative returns null", async () => {
+  it("skips variants when findCreativeByVariant returns null", async () => {
     const reports = [
       mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04 }),
     ];
     const inserted: WinnerCreative[] = [];
     const deps: QualifyDeps = {
-      loadCreative: async () => null,
+      findCreativeByVariant: async () => null,
       loadProduct: async () => mkProd(),
       embed: async (texts) => texts.map(() => Array.from({ length: 512 }, () => 0.5)),
       store: {
@@ -274,15 +274,55 @@ describe("qualifyWinners", () => {
         insert: (w) => inserted.push(w),
       },
     };
-    const res = await qualifyWinners(reports, deps, { creativeIdResolver: (agg) => `${agg.campaignId}::${agg.variantLabel}` });
+    const res = await qualifyWinners(reports, deps);
     expect(res.skipped).toBe(1);
     expect(res.inserted).toBe(0);
     expect(inserted).toHaveLength(0);
   });
-});
 
-import { pickBestPerVariantGroup } from "./qualifier.js";
-import type { VariantAggregate } from "./types.js";
+  it("Q1: filters below-threshold aggs before grouping", async () => {
+    const reports = [
+      mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 300, clicks: 14, inlineLinkClickCtr: 0.048 }),
+      mkReport({ variantGroupId: "g1", campaignId: "c2", variantLabel: "numerical", impressions: 800, clicks: 34, inlineLinkClickCtr: 0.043 }),
+      mkReport({ variantGroupId: "g1", campaignId: "c3", variantLabel: "urgency", impressions: 900, clicks: 36, inlineLinkClickCtr: 0.04 }),
+    ];
+    const inserted: WinnerCreative[] = [];
+    const deps: QualifyDeps = {
+      findCreativeByVariant: async (_gid, label) => mkCreative(`cr-${label}`, "g1", label as Creative["copy"]["variantLabel"]),
+      loadProduct: async () => mkProd(),
+      embed: async (texts) => texts.map((_, i) => Array.from({ length: 512 }, () => (i + 1) * 0.01)),
+      store: {
+        hasCreative: () => false,
+        loadAll: () => [],
+        insert: (w) => inserted.push(w),
+      },
+    };
+    const res = await qualifyWinners(reports, deps);
+    expect(res.inserted).toBe(1);
+    expect(inserted[0].variantLabel).toBe("numerical");
+  });
+
+  it("Q2: sibling chosen when best CTR variant fails threshold", async () => {
+    const reports = [
+      mkReport({ variantGroupId: "g1", campaignId: "c1", variantLabel: "emotional", impressions: 300, clicks: 15, inlineLinkClickCtr: 0.05 }),
+      mkReport({ variantGroupId: "g1", campaignId: "c2", variantLabel: "numerical", impressions: 800, clicks: 24, inlineLinkClickCtr: 0.03 }),
+    ];
+    const inserted: WinnerCreative[] = [];
+    const deps: QualifyDeps = {
+      findCreativeByVariant: async (_gid, label) => mkCreative(`cr-${label}`, "g1", label as Creative["copy"]["variantLabel"]),
+      loadProduct: async () => mkProd(),
+      embed: async (texts) => texts.map((_, i) => Array.from({ length: 512 }, () => (i + 1) * 0.01)),
+      store: {
+        hasCreative: () => false,
+        loadAll: () => [],
+        insert: (w) => inserted.push(w),
+      },
+    };
+    const res = await qualifyWinners(reports, deps);
+    expect(res.inserted).toBe(1);
+    expect(inserted[0].variantLabel).toBe("numerical");
+  });
+});
 
 function mkAgg(overrides: Partial<VariantAggregate>): VariantAggregate {
   return {
