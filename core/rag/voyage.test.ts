@@ -10,6 +10,7 @@ describe("createVoyageClient", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    delete process.env.VOYAGE_API_KEY;
   });
 
   it("POSTs to voyage embeddings endpoint with api key header", async () => {
@@ -62,5 +63,15 @@ describe("createVoyageClient", () => {
     const client = createVoyageClient();
     const result = await client.embed(["a", "b"]);
     expect(result).toEqual([[1], [2]]);
+  });
+
+  it("throws when response length does not match input length", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ embedding: [1, 2], index: 0 }] }),
+    }) as unknown as typeof fetch;
+
+    const client = createVoyageClient();
+    await expect(client.embed(["a", "b", "c"])).rejects.toThrow(/1.*3/);
   });
 });

@@ -26,6 +26,11 @@ export function createVoyageClient(): VoyageClient {
       }
       const data = (await res.json()) as VoyageResponse;
       const sorted = [...data.data].sort((a, b) => a.index - b.index);
+      if (sorted.length !== texts.length) {
+        throw new Error(
+          `Voyage API returned ${sorted.length} embeddings for ${texts.length} inputs`,
+        );
+      }
       return sorted.map((d) => d.embedding);
     },
   };
