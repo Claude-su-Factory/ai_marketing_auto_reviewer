@@ -73,3 +73,35 @@ describe("runScheduledImprovementCycle", () => {
     expect(analysisArg).toBe(JSON.stringify(analysisObj));
   });
 });
+
+describe("runScheduledImprovementCycle — 3-stage separation", () => {
+  it("runs all three stages when no stage throws", async () => {
+    const { runScheduledImprovementCycle } = await import("./improvementCycle.js");
+    const aggregate = vi.fn().mockResolvedValue({ variantReports: [], weeklyAnalysis: null });
+    const qualify = vi.fn().mockResolvedValue({ inserted: 0, skipped: 0 });
+    const runCycle = vi.fn().mockResolvedValue(undefined);
+    await runScheduledImprovementCycle({ aggregate, qualify, runCycle });
+    expect(aggregate).toHaveBeenCalledOnce();
+    expect(qualify).toHaveBeenCalledOnce();
+    expect(runCycle).toHaveBeenCalledOnce();
+  });
+
+  it("skips remaining stages when aggregate throws, logs error", async () => {
+    const { runScheduledImprovementCycle } = await import("./improvementCycle.js");
+    const aggregate = vi.fn().mockRejectedValue(new Error("read fail"));
+    const qualify = vi.fn();
+    const runCycle = vi.fn();
+    await runScheduledImprovementCycle({ aggregate, qualify, runCycle });
+    expect(qualify).not.toHaveBeenCalled();
+    expect(runCycle).not.toHaveBeenCalled();
+  });
+
+  it("still runs runCycle when qualify throws", async () => {
+    const { runScheduledImprovementCycle } = await import("./improvementCycle.js");
+    const aggregate = vi.fn().mockResolvedValue({ variantReports: [], weeklyAnalysis: { x: 1 } });
+    const qualify = vi.fn().mockRejectedValue(new Error("voyage fail"));
+    const runCycle = vi.fn().mockResolvedValue(undefined);
+    await runScheduledImprovementCycle({ aggregate, qualify, runCycle });
+    expect(runCycle).toHaveBeenCalledOnce();
+  });
+});
