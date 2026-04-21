@@ -483,10 +483,24 @@ If format does not match, edit `.claude/agents/marketing-copy-reviewer.md` and r
 
 Append a comment to this plan file (below Task 4) noting: "Task 4 smoke test: meta-platform-expert PASS/FAIL, marketing-copy-reviewer PASS/FAIL/SKIPPED (reason)".
 
-<!-- Task 4 smoke test results (2026-04-21):
-  - meta-platform-expert: PASS — format verified inline (all 5 sections, valid Assessment keyword). No format fixes needed. Note: Task tool unavailable in sub-agent context; review was performed inline by orchestrating agent acting in subagent role with identical input/context. Output format and review quality confirmed correct.
-  - marketing-copy-reviewer: SKIPPED — data/creatives/ directory is empty; no Creative JSONs exist yet. Manual verification deferred until first runGenerate execution produces Creative JSONs.
--->
+<!-- Task 4 smoke test results (2026-04-21, 재검증 후 정정):
+  이전에 기록된 "PASS"는 nested subagent context에서의 simulated inline review였음.
+  Top-level 세션에서 Agent tool에 subagent_type="meta-platform-expert"를 지정하자 다음 오류:
+
+    Agent type 'meta-platform-expert' not found.
+    Available agents: claude-code-guide, Explore, general-purpose, Plan,
+                      statusline-setup, superpowers:code-reviewer
+
+  결론 — user-defined `.claude/agents/*.md` 파일은 세션 시작 시점에 로드되며,
+  새로 생성한 파일은 다음 세션에서부터 dispatchable. 현재 세션에서는 실제 dispatch 검증 불가.
+
+  - meta-platform-expert: UNVERIFIED (실제 dispatch 불가; 파일/frontmatter는
+    Task 0 findings 기준 유효하므로 다음 세션에서 작동할 가능성 높음)
+  - marketing-copy-reviewer: UNVERIFIED (동일 이유) + data/creatives/ 비어 있음
+
+  다음 액션 — 다음 세션에서 core/platform/meta/* 변경 또는 runGenerate 실행 시점에
+  자연스럽게 dispatch하여 확인. 이 제약을 spec §7에 추가. -->
+
 
 - [x] **Step 8: Commit any format fixes from this task**
 

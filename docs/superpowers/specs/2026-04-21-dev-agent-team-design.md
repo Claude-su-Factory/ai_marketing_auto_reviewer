@@ -238,6 +238,7 @@ prompt: |
 - **호출이 강제되지 않음**: `CLAUDE.md`에 명시해도 세션에서 누락 가능. 현재는 자동 강제 메커니즘(hook 등) 없이 문서 규칙으로만 관리. 실제로 누락이 반복되면 hook 기반 강제로 업그레이드 검토.
 - **Subagent의 도메인 지식 한계**: subagent도 Claude가 base이므로 Meta API 스펙을 완벽히 알진 못함. `description`과 본문에서 "공식 문서 확인 필요 시 `WebFetch` 사용" 지시를 포함해 환각 방지.
 - **Phase 1b/1c 확장 기준 모호**: "실제 pain point 발생 시"라는 느슨한 기준. 구체 기준이 필요해지면 별도 스펙으로 정의.
+- **세션 시작 시점 로딩 제약**: user-defined `.claude/agents/*.md`는 Claude Code 세션 시작 시점에 available-agents 목록으로 로드된다. 현재 세션에서 새로 생성한 subagent 파일은 같은 세션 내에서 Agent/Task tool로 dispatch 불가 (2026-04-21 구현 시점에 확인). 다음 세션부터 정상 동작. 이 때문에 생성 직후 동일 세션에서 smoke-test dispatch는 검증 불가하며, 실제 사용은 새 세션에서 시작한다.
 
 ## 8. 구현 범위
 
