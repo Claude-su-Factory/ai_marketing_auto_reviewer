@@ -26,6 +26,8 @@ export function createQualifyJob(overrides: QualifyJobOverrides = {}): QualifyJo
   const productsDir = overrides.productsDir ?? "data/products";
 
   return async function qualify(reports: VariantReport[]) {
+    // Rebuilt per tick so newly generated creative.json files (added between ticks
+    // by runPipeline) become qualify-visible without worker restart. See spec §2.4.
     const creativeIndex = await buildCreativeIndex(creativesDir);
 
     const db = createCreativesDb(dbPath);
@@ -74,8 +76,8 @@ async function buildCreativeIndex(dir: string): Promise<Map<string, Creative>> {
       const creative = JSON.parse(content) as Creative;
       const key = `${creative.variantGroupId}::${creative.copy.variantLabel}`;
       index.set(key, creative);
-    } catch {
-      // Skip malformed entries silently.
+    } catch (e) {
+      console.warn("[qualifyJob] skipping malformed creative:", f, e);
     }
   }
   return index;

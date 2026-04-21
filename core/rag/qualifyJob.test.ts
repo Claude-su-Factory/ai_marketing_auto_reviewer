@@ -68,6 +68,8 @@ function mkReport(overrides: Partial<VariantReport>): VariantReport {
   };
 }
 
+// Deterministic across calls — same input position always yields the same 1-hot
+// vector. J3 relies on this to trigger cross-invocation dedup via shouldSkipInsert.
 const fakeVoyage: VoyageClient = {
   async embed(texts) {
     return texts.map((_, i) => {
