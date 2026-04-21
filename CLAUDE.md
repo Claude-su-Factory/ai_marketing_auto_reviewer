@@ -61,6 +61,24 @@ server/db.ts              — DB 스키마 및 마이그레이션 정의
 - `subagent-driven-development` 등 스킬이 "master 사용 시 사용자 동의 필요"를 요구하더라도 이 규칙이 사전 동의 역할을 한다.
 
 
+## Subagent 호출 규칙 (MANDATORY)
+
+다음 작업은 커밋 전 해당 subagent로 검토한다.
+
+| 작업 유형 | Subagent | 정의 위치 |
+|---------|----------|---------|
+| `core/platform/meta/*` 수정 | `meta-platform-expert` | `.claude/agents/meta-platform-expert.md` |
+| Copy 생성 로직/결과 변경 (`core/creative/prompt.ts` 수정, `runGenerate`/`runImprove` 산출물) | `marketing-copy-reviewer` | `.claude/agents/marketing-copy-reviewer.md` |
+| 모든 구현 Task 완료 후 | `superpowers:code-reviewer` | (기존 subagent-driven-development 규칙) |
+
+규칙:
+
+- Critical / Important 이슈는 반드시 수정 후 재검토
+- Minor는 `docs/STATUS.md`의 "알려진 결함"에 기록
+- Subagent 호출은 caller가 필요 컨텍스트(diff 전체, 대상 파일 경로, 관련 JSON 원문)를 프롬프트에 포함해 전달해야 한다. Subagent가 전체 프로젝트를 자유롭게 탐색하지 않도록 한다.
+- 호출 템플릿과 예시는 `docs/superpowers/specs/2026-04-21-dev-agent-team-design.md` §5.1 참조
+
+
 ## 하네스 엔지니어링 규칙 (MANDATORY)
 
 작업 중 발견한 **규칙·판단 기준·프로젝트 결정**은 반드시 프로젝트 문서에 기록한다. 세션이 완전히 새로 시작되어도 이 문서들이 자동 로드되어 프로젝트 이해도를 유지하기 위함이다. 메모리나 대화 맥락에만 남기는 것은 허용되지 않는다.

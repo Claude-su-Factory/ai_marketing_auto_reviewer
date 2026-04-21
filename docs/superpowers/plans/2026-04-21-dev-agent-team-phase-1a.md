@@ -326,7 +326,7 @@ git commit -m "feat: add marketing-copy-reviewer subagent definition"
 **Files:**
 - Modify: `/Users/yuhojin/Desktop/ad_ai/CLAUDE.md` — insert new section between "브랜치 전략" and "하네스 엔지니어링 규칙"
 
-- [ ] **Step 1: Read the current CLAUDE.md to find the exact anchor**
+- [x] **Step 1: Read the current CLAUDE.md to find the exact anchor**
 
 Read `/Users/yuhojin/Desktop/ad_ai/CLAUDE.md` and confirm these two adjacent section headers exist:
 - `## 브랜치 전략`
@@ -334,7 +334,9 @@ Read `/Users/yuhojin/Desktop/ad_ai/CLAUDE.md` and confirm these two adjacent sec
 
 The new section goes between them.
 
-- [ ] **Step 2: Insert the new section**
+<!-- Verification: Both section headers found at lines 57 and 64, respectively. Ready to insert new section. -->
+
+- [x] **Step 2: Insert the new section**
 
 Use the Edit tool to insert. The `old_string` is the last line of the 브랜치 전략 section and its trailing blank line plus the `## 하네스 엔지니어링 규칙` heading:
 
@@ -372,7 +374,7 @@ Use the Edit tool to insert. The `old_string` is the last line of the 브랜치 
 ## 하네스 엔지니어링 규칙 (MANDATORY)
 ```
 
-- [ ] **Step 3: Verify insertion**
+- [x] **Step 3: Verify insertion**
 
 Run:
 ```bash
@@ -381,10 +383,12 @@ grep -n "Subagent 호출 규칙" /Users/yuhojin/Desktop/ad_ai/CLAUDE.md
 
 Expected: one match, line number between the 브랜치 전략 end and 하네스 엔지니어링 규칙 start.
 
-- [ ] **Step 4: Commit**
+<!-- Verification result: One match at line 64. Confirmed section inserted between 브랜치 전략 (line 57) and 하네스 엔지니어링 규칙 (line 85 after insertion). -->
+
+- [x] **Step 4: Commit**
 
 ```bash
-git add CLAUDE.md
+git add CLAUDE.md docs/superpowers/plans/2026-04-21-dev-agent-team-phase-1a.md
 git commit -m "docs: add Subagent 호출 규칙 section to CLAUDE.md"
 ```
 
