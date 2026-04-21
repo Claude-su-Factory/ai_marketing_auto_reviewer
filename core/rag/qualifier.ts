@@ -1,5 +1,6 @@
+import { randomUUID } from "crypto";
 import type { VariantReport } from "../platform/types.js";
-import type { VariantAggregate, WinnerCreative } from "./types.js";
+import type { VariantAggregate, WinnerCreative, QualifyDeps } from "./types.js";
 import { cosineSimilarity, DEDUP_COSINE } from "./retriever.js";
 
 export function aggregateVariantReports(reports: VariantReport[]): VariantAggregate[] {
@@ -63,4 +64,59 @@ export function shouldSkipInsert(
   return existingWinners.some(
     (w) => cosineSimilarity(candidateEmbed, w.embeddingProduct) > DEDUP_COSINE,
   );
+}
+
+export interface QualifyOptions {
+  creativeIdResolver: (agg: VariantAggregate) => string;
+}
+
+export async function qualifyWinners(
+  reports: VariantReport[],
+  deps: QualifyDeps,
+  opts: QualifyOptions,
+): Promise<{ inserted: number; skipped: number }> {
+  const medianCtr = getMedianCtr(reports);
+  const aggregates = aggregateVariantReports(reports);
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const agg of aggregates) {
+    if (!passesThreshold(agg, medianCtr)) { skipped++; continue; }
+
+    const creativeId = opts.creativeIdResolver(agg);
+    if (deps.store.hasCreative(creativeId)) { skipped++; continue; }
+
+    const creative = await deps.loadCreative(creativeId);
+    const product = await deps.loadProduct(agg.productId);
+    if (!creative || !product) { skipped++; continue; }
+
+    const [embedProduct, embedCopy] = await deps.embed([
+      product.description,
+      `${creative.copy.headline} ${creative.copy.body}`,
+    ]);
+
+    const existing = deps.store.loadAll();
+    if (shouldSkipInsert(embedProduct, existing)) { skipped++; continue; }
+
+    const winner: WinnerCreative = {
+      id: randomUUID(),
+      creativeId,
+      productCategory: product.category ?? null,
+      productTags: product.tags,
+      productDescription: product.description,
+      headline: creative.copy.headline,
+      body: creative.copy.body,
+      cta: creative.copy.cta,
+      variantLabel: creative.copy.variantLabel,
+      embeddingProduct: embedProduct,
+      embeddingCopy: embedCopy,
+      qualifiedAt: new Date().toISOString(),
+      impressions: agg.impressions,
+      inlineLinkClickCtr: agg.inlineLinkClickCtr,
+    };
+    deps.store.insert(winner);
+    inserted++;
+  }
+
+  return { inserted, skipped };
 }
