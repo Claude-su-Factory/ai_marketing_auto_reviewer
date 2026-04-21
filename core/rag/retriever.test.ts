@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { cosineSimilarity, dedupByCosine, filterByCategory, retrieveTopK, lexicalFallback } from "./retriever.js";
+import { cosineSimilarity, dedupByCosine, filterByCategory, retrieveTopK, lexicalFallback, selectFewShotWinners } from "./retriever.js";
 import type { WinnerCreative } from "./types.js";
+import type { Product } from "../types.js";
 
 describe("cosineSimilarity", () => {
   it("returns 1 for identical vectors", () => {
@@ -142,5 +143,78 @@ describe("lexicalFallback", () => {
   it("returns [] when no tags overlap", () => {
     const corpus = [{ ...mkWinner("a", [0, 0, 0]), productTags: ["unrelated"] }];
     expect(lexicalFallback(["react"], corpus, 3)).toEqual([]);
+  });
+});
+
+function mkProduct(overrides: Partial<Product>): Product {
+  return {
+    id: "p1",
+    name: "Test",
+    description: "desc",
+    currency: "KRW",
+    targetUrl: "https://example.com",
+    tags: [],
+    inputMethod: "manual",
+    createdAt: "2026-04-20T00:00:00Z",
+    ...overrides,
+  };
+}
+
+describe("selectFewShotWinners", () => {
+  const queryEmbed = [1, 0, 0];
+
+  it("returns category-matched top-3 when enough available", () => {
+    // Vectors chosen so all have cosine > 0.6 to query, and cosine < 0.95 to each other
+    const allWinners = [
+      { ...mkWinner("a", [1, 0, 0]), productCategory: "course" },
+      { ...mkWinner("b", [0.8, 0.6, 0]), productCategory: "course" },
+      { ...mkWinner("c", [0.7, 0, 0.71]), productCategory: "course" },
+      { ...mkWinner("d", [0.95, 0.05, 0]), productCategory: "ecommerce" },
+    ];
+    const product = mkProduct({ category: "course", tags: [] });
+    const result = selectFewShotWinners(queryEmbed, allWinners, product);
+    expect(result.map((w) => w.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("fills from global pool when category yields fewer than 3", () => {
+    // Only "a" matches category; b and c come from global fill (all have cosine > 0.6)
+    const allWinners = [
+      { ...mkWinner("a", [1, 0, 0]), productCategory: "course" },
+      { ...mkWinner("b", [0.8, 0.6, 0]), productCategory: "ecommerce" },
+      { ...mkWinner("c", [0.7, 0, 0.71]), productCategory: "service" },
+    ];
+    const product = mkProduct({ category: "course", tags: [] });
+    const result = selectFewShotWinners(queryEmbed, allWinners, product);
+    expect(result.map((w) => w.id).sort()).toEqual(["a", "b", "c"]);
+  });
+
+  it("falls back to lexical when cosine results still < 3", () => {
+    const allWinners = [
+      { ...mkWinner("a", [0.9, 0.1, 0]), productCategory: "course", productTags: ["react"] },
+      { ...mkWinner("b", [0, 1, 0]), productCategory: "course", productTags: ["react", "hooks"] }, // cosine below 0.6
+      { ...mkWinner("c", [0, 0, 1]), productCategory: "course", productTags: ["react"] }, // cosine below 0.6
+    ];
+    const product = mkProduct({ category: "course", tags: ["react", "hooks"] });
+    const result = selectFewShotWinners(queryEmbed, allWinners, product);
+    expect(result.map((w) => w.id)).toContain("a");
+    expect(result.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("dedupes near-duplicates by embeddingProduct cosine > 0.95", () => {
+    // a has highest cosine to query; b is a near-duplicate of a (cosine > 0.95) → b is dropped
+    const allWinners = [
+      { ...mkWinner("a", [1, 0, 0]), productCategory: "course" },
+      { ...mkWinner("b", [0.98, 0.1, 0]), productCategory: "course" }, // near-duplicate of a
+      { ...mkWinner("c", [0.7, 0, 0.71]), productCategory: "course" },
+    ];
+    const product = mkProduct({ category: "course", tags: [] });
+    const result = selectFewShotWinners(queryEmbed, allWinners, product);
+    const ids = result.map((w) => w.id);
+    expect(ids).not.toContain("b");
+  });
+
+  it("returns [] when Winner DB is empty", () => {
+    const product = mkProduct({ category: "course", tags: [] });
+    expect(selectFewShotWinners(queryEmbed, [], product)).toEqual([]);
   });
 });

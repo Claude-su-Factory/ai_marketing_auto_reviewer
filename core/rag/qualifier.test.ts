@@ -3,8 +3,10 @@ import {
   aggregateVariantReports,
   getMedianCtr,
   passesThreshold,
+  shouldSkipInsert,
 } from "./qualifier.js";
 import type { VariantReport } from "../platform/types.js";
+import type { WinnerCreative } from "./types.js";
 
 function mkReport(overrides: Partial<VariantReport>): VariantReport {
   return {
@@ -126,5 +128,33 @@ describe("passesThreshold", () => {
       adQualityRanking: "AVERAGE", adEngagementRanking: "AVERAGE", adConversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(true);
+  });
+});
+
+function mkWinnerQ(id: string, embedding: number[]): WinnerCreative {
+  return {
+    id, creativeId: `c-${id}`, productCategory: "course", productTags: [],
+    productDescription: "d", headline: "h", body: "b", cta: "c",
+    variantLabel: "emotional",
+    embeddingProduct: embedding, embeddingCopy: embedding,
+    qualifiedAt: "2026-04-20T00:00:00Z", impressions: 1000, inlineLinkClickCtr: 0.03,
+  };
+}
+
+describe("shouldSkipInsert", () => {
+  it("returns true when similar winner exists (cosine > 0.95)", () => {
+    const existing = [mkWinnerQ("a", [1, 0, 0])];
+    const candidate = [0.99, 0.01, 0];
+    expect(shouldSkipInsert(candidate, existing)).toBe(true);
+  });
+
+  it("returns false when all existing winners are dissimilar", () => {
+    const existing = [mkWinnerQ("a", [0, 1, 0]), mkWinnerQ("b", [0, 0, 1])];
+    const candidate = [1, 0, 0];
+    expect(shouldSkipInsert(candidate, existing)).toBe(false);
+  });
+
+  it("returns false for empty existing list", () => {
+    expect(shouldSkipInsert([1, 0, 0], [])).toBe(false);
   });
 });

@@ -75,3 +75,32 @@ export function lexicalFallback(
     .slice(0, k);
   return scored.map((s) => s.w);
 }
+
+const MIN_COSINE = 0.6;
+const DEDUP_COSINE = 0.95;
+const TOP_K = 3;
+
+export function selectFewShotWinners(
+  queryEmbed: number[],
+  allWinners: WinnerCreative[],
+  product: Product,
+): WinnerCreative[] {
+  if (allWinners.length === 0) return [];
+
+  const categoryMatched = filterByCategory(allWinners, product.category ?? null);
+  let ranked = retrieveTopK(queryEmbed, categoryMatched, TOP_K, MIN_COSINE);
+
+  if (ranked.length < TOP_K) {
+    const remaining = allWinners.filter((w) => !ranked.includes(w));
+    const global = retrieveTopK(queryEmbed, remaining, TOP_K - ranked.length, MIN_COSINE);
+    ranked = [...ranked, ...global];
+  }
+
+  if (ranked.length < TOP_K) {
+    const remaining = allWinners.filter((w) => !ranked.includes(w));
+    const lex = lexicalFallback(product.tags, remaining, TOP_K - ranked.length);
+    ranked = [...ranked, ...lex];
+  }
+
+  return dedupByCosine(ranked, DEDUP_COSINE, "embeddingProduct");
+}
