@@ -105,7 +105,7 @@ If no findings needed (Step 5 "no change"), skip this commit and mention in Task
 **Files:**
 - Create: `.claude/agents/meta-platform-expert.md`
 
-- [ ] **Step 1: Verify the target directory exists**
+- [x] **Step 1: Verify the target directory exists**
 
 Run:
 ```bash
@@ -114,14 +114,14 @@ ls /Users/yuhojin/Desktop/ad_ai/.claude/
 
 Expected output contains `settings.local.json`. `agents/` directory does not exist yet and must be created in Step 2.
 
-- [ ] **Step 2: Create the agents directory**
+- [x] **Step 2: Create the agents directory**
 
 Run:
 ```bash
 mkdir -p /Users/yuhojin/Desktop/ad_ai/.claude/agents
 ```
 
-- [ ] **Step 3: Write the subagent file**
+- [x] **Step 3: Write the subagent file**
 
 Create `/Users/yuhojin/Desktop/ad_ai/.claude/agents/meta-platform-expert.md` with exactly this content:
 
@@ -195,7 +195,7 @@ Assessment: READY_TO_MERGE | NEEDS_FIXES | BLOCKED
 If any category is empty, write `- (none)` under it. Do not omit categories.
 ```
 
-- [ ] **Step 4: Verify the file was written correctly**
+- [x] **Step 4: Verify the file was written correctly**
 
 Run:
 ```bash
@@ -205,7 +205,7 @@ wc -l /Users/yuhojin/Desktop/ad_ai/.claude/agents/meta-platform-expert.md
 
 Expected: first 3 lines show `---`, `name: meta-platform-expert`, `description: ...`. Line count roughly 45-55.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .claude/agents/meta-platform-expert.md
