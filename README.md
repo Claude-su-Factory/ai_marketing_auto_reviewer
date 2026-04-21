@@ -11,19 +11,26 @@ Meta(Instagram/Facebook) 광고 자동화 CLI 파이프라인.
 ```bash
 npm install
 npx playwright install chromium
-cp .env.example .env
 ```
 
-`.env` 파일을 열고 API 키를 입력한다.
+환경 변수 템플릿은 용도별로 두 개가 있다. 사용하려는 경로에 맞춰 하나를 복사해 `.env`로 사용한다.
 
-### 필요한 API 키
+| 템플릿 | 언제 쓰나 |
+|--------|----------|
+| `.env.owner.example` | 로컬에서 직접 광고 파이프라인/worker 를 돌릴 때 (Anthropic + Google + Voyage + Meta 키 전부 필요) |
+| `.env.service.example` | Usage API Server 를 호스팅해 라이선스를 판매할 때 (AI 키 + Stripe 필수, Meta 는 운영자 자체 광고 계정이 있을 때만) |
 
-| 키 | 용도 | 필수 |
-|----|------|------|
-| `ANTHROPIC_API_KEY` | 카피 생성, 성과 분석 | Scrape/Generate/Monitor 사용 시 |
-| `GOOGLE_AI_API_KEY` | HTML 파싱, 이미지/영상 생성 | Scrape/Generate 사용 시 |
-| `META_ACCESS_TOKEN` 외 5개 | 광고 게재 및 성과 수집 | Launch/Monitor 사용 시 |
-| `AD_PLATFORMS` | 활성 광고 플랫폼 (기본값 `meta`) | Launch/Monitor 사용 시 |
+예시:
+
+```bash
+# Owner (로컬에서 본인 광고 돌릴 때)
+cp .env.owner.example .env
+
+# Service (서버 호스팅할 때)
+cp .env.service.example .env
+```
+
+각 템플릿 상단 주석에 어느 프로세스가 어느 키를 언제 요구하는지 정리되어 있다.
 
 Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_KEY`만 있으면 된다. Meta 관련 키 없이도 소재 생성까지는 동작한다.
 
