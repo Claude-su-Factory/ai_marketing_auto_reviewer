@@ -77,13 +77,15 @@ describe("runScheduledImprovementCycle", () => {
 describe("runScheduledImprovementCycle — 3-stage separation", () => {
   it("runs all three stages when no stage throws", async () => {
     const { runScheduledImprovementCycle } = await import("./improvementCycle.js");
-    const aggregate = vi.fn().mockResolvedValue({ variantReports: [], weeklyAnalysis: null });
+    const reports = [{ id: "r1" } as any];
+    const analysis = { summary: "w" };
+    const aggregate = vi.fn().mockResolvedValue({ variantReports: reports, weeklyAnalysis: analysis });
     const qualify = vi.fn().mockResolvedValue({ inserted: 0, skipped: 0 });
     const runCycle = vi.fn().mockResolvedValue(undefined);
     await runScheduledImprovementCycle({ aggregate, qualify, runCycle });
     expect(aggregate).toHaveBeenCalledOnce();
-    expect(qualify).toHaveBeenCalledOnce();
-    expect(runCycle).toHaveBeenCalledOnce();
+    expect(qualify).toHaveBeenCalledWith(reports);
+    expect(runCycle).toHaveBeenCalledWith(analysis, reports);
   });
 
   it("skips remaining stages when aggregate throws, logs error", async () => {
@@ -102,6 +104,17 @@ describe("runScheduledImprovementCycle — 3-stage separation", () => {
     const qualify = vi.fn().mockRejectedValue(new Error("voyage fail"));
     const runCycle = vi.fn().mockResolvedValue(undefined);
     await runScheduledImprovementCycle({ aggregate, qualify, runCycle });
+    expect(runCycle).toHaveBeenCalledOnce();
+  });
+
+  it("resolves even when runCycle throws", async () => {
+    const { runScheduledImprovementCycle } = await import("./improvementCycle.js");
+    const aggregate = vi.fn().mockResolvedValue({ variantReports: [], weeklyAnalysis: null });
+    const qualify = vi.fn().mockResolvedValue({ inserted: 0, skipped: 0 });
+    const runCycle = vi.fn().mockRejectedValue(new Error("run fail"));
+    await expect(
+      runScheduledImprovementCycle({ aggregate, qualify, runCycle })
+    ).resolves.toBeUndefined();
     expect(runCycle).toHaveBeenCalledOnce();
   });
 });
