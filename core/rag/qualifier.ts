@@ -120,3 +120,24 @@ export async function qualifyWinners(
 
   return { inserted, skipped };
 }
+
+export function pickBestPerVariantGroup(aggs: VariantAggregate[]): VariantAggregate[] {
+  const byGroup = new Map<string, VariantAggregate[]>();
+  for (const a of aggs) {
+    const cur = byGroup.get(a.variantGroupId);
+    if (cur) cur.push(a);
+    else byGroup.set(a.variantGroupId, [a]);
+  }
+  const picked: VariantAggregate[] = [];
+  for (const group of byGroup.values()) {
+    const sorted = [...group].sort((a, b) => {
+      if (b.inlineLinkClickCtr !== a.inlineLinkClickCtr) {
+        return b.inlineLinkClickCtr - a.inlineLinkClickCtr;
+      }
+      if (b.impressions !== a.impressions) return b.impressions - a.impressions;
+      return a.variantLabel.localeCompare(b.variantLabel);
+    });
+    picked.push(sorted[0]);
+  }
+  return picked;
+}

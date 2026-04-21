@@ -280,3 +280,62 @@ describe("qualifyWinners", () => {
     expect(inserted).toHaveLength(0);
   });
 });
+
+import { pickBestPerVariantGroup } from "./qualifier.js";
+import type { VariantAggregate } from "./types.js";
+
+function mkAgg(overrides: Partial<VariantAggregate>): VariantAggregate {
+  return {
+    campaignId: "c1",
+    variantLabel: "emotional",
+    variantGroupId: "g1",
+    productId: "p1",
+    impressions: 1000,
+    clicks: 50,
+    inlineLinkClickCtr: 0.05,
+    adQualityRanking: "AVERAGE",
+    adEngagementRanking: "AVERAGE",
+    adConversionRanking: "AVERAGE",
+    ...overrides,
+  };
+}
+
+describe("pickBestPerVariantGroup", () => {
+  it("P1: returns [] for empty input", () => {
+    expect(pickBestPerVariantGroup([])).toEqual([]);
+  });
+
+  it("P2: picks best CTR per variantGroupId", () => {
+    const aggs = [
+      mkAgg({ variantGroupId: "g1", variantLabel: "emotional", inlineLinkClickCtr: 0.03 }),
+      mkAgg({ variantGroupId: "g1", variantLabel: "numerical", inlineLinkClickCtr: 0.05 }),
+      mkAgg({ variantGroupId: "g2", variantLabel: "urgency", inlineLinkClickCtr: 0.04 }),
+    ];
+    const result = pickBestPerVariantGroup(aggs);
+    expect(result).toHaveLength(2);
+    const g1 = result.find((a) => a.variantGroupId === "g1")!;
+    const g2 = result.find((a) => a.variantGroupId === "g2")!;
+    expect(g1.variantLabel).toBe("numerical");
+    expect(g2.variantLabel).toBe("urgency");
+  });
+
+  it("P3: tie-break — ctr tie resolved by impressions desc", () => {
+    const aggs = [
+      mkAgg({ variantGroupId: "g1", variantLabel: "emotional", inlineLinkClickCtr: 0.05, impressions: 100 }),
+      mkAgg({ variantGroupId: "g1", variantLabel: "numerical", inlineLinkClickCtr: 0.05, impressions: 200 }),
+    ];
+    const result = pickBestPerVariantGroup(aggs);
+    expect(result).toHaveLength(1);
+    expect(result[0].variantLabel).toBe("numerical");
+  });
+
+  it("P4: tie-break — ctr and impressions tie resolved by variantLabel lex asc", () => {
+    const aggs = [
+      mkAgg({ variantGroupId: "g1", variantLabel: "numerical", inlineLinkClickCtr: 0.05, impressions: 100 }),
+      mkAgg({ variantGroupId: "g1", variantLabel: "emotional", inlineLinkClickCtr: 0.05, impressions: 100 }),
+    ];
+    const result = pickBestPerVariantGroup(aggs);
+    expect(result).toHaveLength(1);
+    expect(result[0].variantLabel).toBe("emotional");
+  });
+});
