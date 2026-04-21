@@ -44,7 +44,7 @@ Structural checks (e.g., `metaAssetLabel` format `<variantGroupId>::<label>`) ar
 
 ## Output format
 
-Produce exactly this structure:
+Produce exactly this structure. Every issue bullet MUST begin with a severity tag in square brackets — `[Critical]`, `[Important]`, or `[Minor]` — so the caller can audit how the Overall Assessment was derived.
 
 ```
 ## Summary
@@ -60,8 +60,9 @@ Produce exactly this structure:
 - Hook strength: <1-5>
 - CTA appropriateness: <1-5>
 - Issues:
-  - <issue 1>
-  - <issue 2>
+  - [Critical] <issue — e.g., personalization violation "회원님께"」
+  - [Important] <issue — e.g., variant-label tone mismatch>
+  - [Minor] <issue — e.g., variants too similar>
 - Rewrite suggestion (only if Issues is non-empty): <text>
 
 (repeat the ### block for each variant)
@@ -69,4 +70,11 @@ Produce exactly this structure:
 ## Overall Assessment: APPROVE | REQUEST_CHANGES
 ```
 
-Use `REQUEST_CHANGES` if any variant has a Critical issue (personalization or banned hyperbole) or if two or more variants have Important issues.
+Severity mapping (from Review focus section):
+- `[Critical]` — personalization violations, banned hyperbole / unverifiable superlatives / false guarantees
+- `[Important]` — variant label tone mismatch, CTA misalignment with landing intent
+- `[Minor]` — variant differentiation weakness, other quality observations
+
+Verdict rule:
+- Use `REQUEST_CHANGES` if any variant has a `[Critical]` issue OR if two or more variants each have at least one `[Important]` issue.
+- Otherwise use `APPROVE`. `[Minor]` issues alone never force `REQUEST_CHANGES`.

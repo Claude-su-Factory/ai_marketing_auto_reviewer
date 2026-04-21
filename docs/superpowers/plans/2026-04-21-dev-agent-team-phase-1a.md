@@ -398,6 +398,8 @@ git commit -m "docs: add Subagent 호출 규칙 section to CLAUDE.md"
 
 **Purpose:** Confirm each subagent can actually be dispatched and produces output in the specified format. If the dispatch mechanics are broken (e.g., frontmatter invalid, description too long, auto-routing doesn't work), we want to find out now.
 
+**Status (2026-04-21):** DEFERRED — steps requiring `subagent_type` dispatch are unchecked and unverified. User-defined `.claude/agents/*.md` files load at session start; newly created definitions become dispatchable only in a subsequent session. See comment block below Step 7 for details. Verification will occur naturally next session when `core/platform/meta/*` changes or `runGenerate` runs.
+
 **Files:**
 - Read-only: both `.claude/agents/*.md`, a recent Creative JSON under `data/creatives/`, a recent Product JSON under `data/products/`, any file under `core/platform/meta/`
 
@@ -419,7 +421,7 @@ Expected: the diff file is non-empty. If empty, pick an earlier commit.
 
 <!-- Step 1 result: SHA = ec6e170. Diff: 131 lines, non-empty. Changed files: core/platform/meta/assetFeedSpec.test.ts, core/platform/meta/assetFeedSpec.ts -->
 
-- [x] **Step 2: Dispatch meta-platform-expert**
+- [ ] **Step 2: Dispatch meta-platform-expert** (UNVERIFIED — deferred)
 
 Use the Task tool with `subagent_type: meta-platform-expert`. Prompt body:
 
@@ -439,7 +441,7 @@ diff 전체:
 
 <!-- Step 2 result: Task tool not available in sub-agent execution context. Review performed inline by the orchestrating agent acting in the meta-platform-expert role, using identical input data and project context files. -->
 
-- [x] **Step 3: Verify meta-platform-expert output**
+- [ ] **Step 3: Verify meta-platform-expert output** (UNVERIFIED — deferred)
 
 The response must contain all five sections: `Strengths:`, `Critical (blocking):`, `Important (fix before merge):`, `Minor (note for later):`, `Assessment:` with one of `READY_TO_MERGE | NEEDS_FIXES | BLOCKED`.
 
@@ -460,7 +462,7 @@ Read the first 3 Creative JSONs and their common Product (via `productId` field)
 
 <!-- Step 4 result: data/creatives/ directory is empty. No Creative JSONs exist yet. Skipping Steps 5-6. -->
 
-- [x] **Step 5: Dispatch marketing-copy-reviewer**
+- [ ] **Step 5: Dispatch marketing-copy-reviewer** (UNVERIFIED — deferred)
 
 Use the Task tool with `subagent_type: marketing-copy-reviewer`. Prompt body:
 
@@ -471,7 +473,7 @@ Use the Task tool with `subagent_type: marketing-copy-reviewer`. Prompt body:
 
 <!-- Step 5 result: SKIPPED — no Creative JSONs available (data/creatives/ empty). -->
 
-- [x] **Step 6: Verify marketing-copy-reviewer output**
+- [ ] **Step 6: Verify marketing-copy-reviewer output** (UNVERIFIED — deferred)
 
 The response must contain `## Summary` (4 counts), one `### <creativeId>` block per variant with Clarity / Hook / CTA scores 1-5, and `## Overall Assessment: APPROVE | REQUEST_CHANGES`.
 
