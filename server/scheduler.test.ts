@@ -17,6 +17,7 @@ vi.mock("../core/improver/runner.js", () => ({
 
 describe("startScheduler", () => {
   it("SERVER_CADENCE 로 registerJobs 를 호출한다", async () => {
+    process.env.VOYAGE_API_KEY = "test-key";
     const { startScheduler } = await import("./scheduler.js");
     const { registerJobs } = await import("../core/scheduler/index.js");
     const { SERVER_CADENCE } = await import("../core/scheduler/cadence.js");
@@ -24,5 +25,13 @@ describe("startScheduler", () => {
     expect(registerJobs).toHaveBeenCalledTimes(1);
     const calledCadence = (registerJobs as any).mock.calls[0][2];
     expect(calledCadence).toEqual(SERVER_CADENCE);
+  });
+
+  it("VOYAGE_API_KEY 부재 시 throws", async () => {
+    const prev = process.env.VOYAGE_API_KEY;
+    delete process.env.VOYAGE_API_KEY;
+    const { startScheduler } = await import("./scheduler.js");
+    await expect(startScheduler()).rejects.toThrow("VOYAGE_API_KEY not configured");
+    if (prev !== undefined) process.env.VOYAGE_API_KEY = prev;
   });
 });

@@ -14,7 +14,7 @@ import {
 import { runScheduledImprovementCycle } from "../../core/scheduler/improvementCycle.js";
 import { createQualifyJob } from "../../core/rag/qualifyJob.js";
 
-const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY"];
+const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY", "VOYAGE_API_KEY"];
 for (const key of required) {
   const v = process.env[key];
   if (!v || v === "__INJECT__") {

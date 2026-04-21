@@ -14,6 +14,11 @@ import { runScheduledImprovementCycle } from "../core/scheduler/improvementCycle
 import { createQualifyJob } from "../core/rag/qualifyJob.js";
 
 export async function startScheduler(): Promise<void> {
+  const voyageKey = process.env.VOYAGE_API_KEY;
+  if (!voyageKey || voyageKey === "__INJECT__") {
+    console.error("[scheduler] VOYAGE_API_KEY is missing or placeholder. Refusing to start scheduler (qualify stage would silently fail).");
+    throw new Error("VOYAGE_API_KEY not configured");
+  }
   const mutex = createMutex();
   const qualifyJob = createQualifyJob();
   const deps = {
