@@ -38,7 +38,6 @@ export interface MenuItem {
   description: string;
   needsInput: boolean;
   inputPrompt?: string;
-  ownerOnly?: boolean;
 }
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -48,6 +47,6 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: "review",   label: "Review",   description: "검토·승인",            needsInput: false },
   { key: "launch",   label: "Launch",   description: "광고 게재",            needsInput: false },
   { key: "monitor",  label: "Monitor",  description: "성과 분석",            needsInput: true,  inputPrompt: "daily / weekly 선택 (d/w):" },
-  { key: "improve",  label: "Improve",  description: "자율 개선",            needsInput: false, ownerOnly: true },
+  { key: "improve",  label: "Improve",  description: "자율 개선",            needsInput: false },
   { key: "pipeline", label: "Pipeline", description: "전체 파이프라인 실행", needsInput: true,  inputPrompt: "URL 입력 (공백으로 구분, Enter 확정):" },
 ];

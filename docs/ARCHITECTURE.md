@@ -171,6 +171,13 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `core/reviewe
 
 **Trade-off:** 현재는 어댑터 1개라 과도한 추상화처럼 보이지만, Plan B의 multi-variant 런칭과 Plan C의 Winner DB에서 플랫폼 중립 흐름을 요구하므로 지금 도입하는 것이 합리적.
 
+### 2026-04-22 — CLI는 owner-only, server/는 미래 웹 UI 대기 인프라
+
+- CLI (`cli/tui/`) 는 repo clone 한 owner/기여자만 사용. `AD_AI_MODE=customer` 분기 삭제
+- `server/` (billing, license, AI proxy) 는 코드로만 유지되고 현재 실행되지 않는다 (non-active)
+- 재활성화 시점: 웹 UI 재개 작업 (ROADMAP Tier 2)
+- Why: 외부 서비스 제공 모델 대신, repo 클론 후 자기 API 키 사용하는 owner-only 모델로 단순화
+
 ---
 
 ## 데이터 저장소

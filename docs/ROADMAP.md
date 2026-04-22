@@ -25,6 +25,9 @@
 - 고객 셀프서비스 페이지 (결제 URL 외에 사용량/잔액 확인 대시보드)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
+- **웹 UI + customer 모드 재도입**: `server/` billing/license/AI proxy 재활성화, CLI 외 웹 사용자 대상 서비스 제공. 트리거: owner 만의 CLI 운영 경험 충분히 축적된 후
+- **Meta API spend 수집 + Monitor spend/CPC 복원**: `fetchMetaVariantReports` 확장, `VariantReport` 에 `spend/cpc` 추가, Monitor 화면 재설계. 트리거: Plan C 안정화 완료
+- **Pipeline 4단계 확장**: Review/Launch 를 `runPipelineAction` 에 통합, 수동 승인 단계 자동 skip 옵션. 트리거: Review 자동 승인 규칙 확정 후
 
 ---
 
