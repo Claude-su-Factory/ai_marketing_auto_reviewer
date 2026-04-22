@@ -1,6 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import type { Creative, Product } from "../../../core/types.js";
+import { getAssetMeta, type AssetMeta } from "../review/assetMeta.js";
+import { Header } from "../components/Header.js";
+import { colors } from "../theme/tokens.js";
+import { useTodayStats } from "../hooks/useTodayStats.js";
+
+function StatusBadge({ status }: { status: "pending" | "approved" | "rejected" | "edited" }) {
+  const map = {
+    pending:  { bg: colors.warning, label: "pending" },
+    approved: { bg: colors.success, label: "approved" },
+    rejected: { bg: colors.danger,  label: "rejected" },
+    edited:   { bg: colors.review,  label: "edited" },
+  } as const;
+  const { bg, label } = map[status];
+  return <Text backgroundColor={bg} color={colors.bg}> {label} </Text>;
+}
 
 export interface ReviewGroup {
   variantGroupId: string;
@@ -25,9 +40,22 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
   const [variantIndex, setVariantIndex] = useState(0);
   const [mode, setMode] = useState<"browse" | "edit" | "reject">("browse");
   const [inputValue, setInputValue] = useState("");
+  const [meta, setMeta] = useState<{ image?: AssetMeta; video?: AssetMeta }>({});
+  const { bump } = useTodayStats();
 
   const currentGroup = groups[groupIndex];
   const currentVariant = currentGroup?.creatives[variantIndex];
+
+  useEffect(() => {
+    if (!currentVariant) return;
+    let cancelled = false;
+    void Promise.all([
+      getAssetMeta(currentVariant.imageLocalPath),
+      getAssetMeta(currentVariant.videoLocalPath),
+    ]).then(([image, video]) => { if (!cancelled) setMeta({ image, video }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentVariant?.imageLocalPath, currentVariant?.videoLocalPath]);
 
   useInput((input, key) => {
     if (mode === "browse") {
@@ -45,6 +73,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
       }
       if (input === "a" && currentGroup && currentVariant && currentVariant.status === "pending") {
         onApprove(currentGroup.variantGroupId, currentVariant.id);
+        bump();
       }
       if (input === "r" && currentGroup && currentVariant && currentVariant.status === "pending") {
         setMode("reject");
@@ -90,9 +119,6 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
     );
   }
 
-  const statusColor = (s: Creative["status"]) =>
-    s === "approved" || s === "edited" ? "green" : s === "rejected" ? "red" : "yellow";
-
   return (
     <Box borderStyle="round" padding={1} width={90}>
       <Box flexDirection="column" width={24} marginRight={2}>
@@ -112,7 +138,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
         {currentGroup.creatives.map((c, i) => (
           <Text key={c.id} color={i === variantIndex ? "cyan" : "white"}>
             {i === variantIndex ? "▶ " : "  "}[{i + 1}] {c.copy.variantLabel}{" "}
-            <Text color={statusColor(c.status)}>({c.status})</Text>
+            <StatusBadge status={c.status} />
           </Text>
         ))}
         <Box marginTop={1} flexDirection="column">
@@ -122,6 +148,15 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
           <Text>본문: {currentVariant.copy.body}</Text>
           <Text>CTA: {currentVariant.copy.cta}</Text>
           <Text>태그: {currentVariant.copy.hashtags.join(" ")}</Text>
+        </Box>
+        <Box marginTop={1} flexDirection="column">
+          <Text dimColor>── ASSETS ────</Text>
+          {meta.image && (
+            <Text>image: {meta.image.width}×{meta.image.height} {meta.image.format} {Math.round(meta.image.sizeBytes / 1000)}KB</Text>
+          )}
+          {meta.video && (
+            <Text>video: {meta.video.width}×{meta.video.height} {meta.video.format} {Math.round(meta.video.sizeBytes / 1000)}KB</Text>
+          )}
         </Box>
         {mode === "browse" && currentVariant.status === "pending" && (
           <Box marginTop={1}>
