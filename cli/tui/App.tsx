@@ -9,6 +9,7 @@ import { AddProductScreen } from "./screens/AddProductScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
 import { GenerateScreen } from "./screens/GenerateScreen.js";
+import { LaunchScreen } from "./screens/LaunchScreen.js";
 import { MonitorScreen } from "./screens/MonitorScreen.js";
 import { ReviewScreen, type ReviewGroup } from "./screens/ReviewScreen.js";
 import {
@@ -244,6 +245,9 @@ export function App() {
     }
     if (runProgress.generate) {
       return React.createElement(GenerateScreen, { progress: runProgress });
+    }
+    if (currentAction === "launch") {
+      return React.createElement(LaunchScreen, { progress: runProgress });
     }
     return React.createElement(PipelineProgress, {
       currentStep: "generate",
