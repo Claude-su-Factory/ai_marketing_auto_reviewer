@@ -556,7 +556,7 @@ import { describe, it, expect } from "vitest";
 import { colors, border, icons } from "./tokens.js";
 
 describe("theme tokens", () => {
-  it("exposes 7 Tokyo Night color keys", () => {
+  it("exposes 9 Tokyo Night color keys", () => {
     expect(Object.keys(colors).sort()).toEqual(
       ["accent", "analytics", "bg", "danger", "dim", "fg", "review", "success", "warning"].sort()
     );
