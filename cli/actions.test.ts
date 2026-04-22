@@ -82,3 +82,38 @@ describe("runGenerate parallelism", () => {
     expect(withGen[0].generate.tracks.video).toBeDefined();
   });
 });
+
+describe("runLaunch emits launchLogs to progress callback", () => {
+  it("relays platform log entries through RunProgress.launchLogs", async () => {
+    const events: any[] = [];
+    vi.doMock("../core/platform/registry.js", () => ({
+      activePlatforms: async () => [{
+        name: "meta",
+        launch: async (_g: any, onLog?: (l: any) => void) => {
+          onLog?.({ ts: "14:32:04", method: "POST", path: "/act/campaigns", status: 200, refId: "c1" });
+          return { campaignId: "c1", platform: "meta", externalIds: { campaign: "ext", adSet: "a", ad: "d" } };
+        },
+      }],
+    }));
+    vi.doMock("../core/launch/groupApproval.js", () => ({
+      groupCreativesByVariantGroup: (cs: any[]) => new Map([["g1", cs]]),
+      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "p1", imageLocalPath: "i", videoLocalPath: "v" }] }),
+    }));
+    vi.doMock("../core/storage.js", () => ({
+      listJson: async () => ["data/creatives/c.json"],
+      readJson: async (p: string) => p.endsWith("c.json")
+        ? { id: "c", productId: "p1", status: "approved", imageLocalPath: "i", videoLocalPath: "v" }
+        : { id: "p1", name: "X", description: "", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" },
+      writeJson: async () => {},
+    }));
+    vi.resetModules();
+    const { runLaunch } = await import("./actions.js");
+    await runLaunch((p: any) => events.push({ ...p }));
+    const withLogs = events.filter((e) => Array.isArray(e.launchLogs) && e.launchLogs.length > 0);
+    expect(withLogs.length).toBeGreaterThan(0);
+    expect(withLogs.at(-1)!.launchLogs.at(-1).status).toBe(200);
+    vi.doUnmock("../core/platform/registry.js");
+    vi.doUnmock("../core/launch/groupApproval.js");
+    vi.doUnmock("../core/storage.js");
+  });
+});

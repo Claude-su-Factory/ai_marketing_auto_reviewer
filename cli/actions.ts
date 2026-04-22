@@ -2,7 +2,7 @@ import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { activePlatforms } from "../core/platform/registry.js";
-import type { VariantGroup, VariantReport } from "../core/platform/types.js";
+import type { VariantGroup, VariantReport, LaunchLog } from "../core/platform/types.js";
 import {
   groupCreativesByVariantGroup,
   groupApprovalCheck,
@@ -157,6 +157,7 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
     }
     const groups = groupCreativesByVariantGroup(allCreatives);
     const logs: string[] = [];
+    const launchLogs: LaunchLog[] = [];
     for (const [groupId, members] of groups.entries()) {
       const { launch, approved } = groupApprovalCheck(members);
       if (!launch) {
@@ -169,9 +170,12 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
         continue;
       }
       const group: VariantGroup = { variantGroupId: groupId, product, creatives: approved, assets: { image: approved[0].imageLocalPath, video: approved[0].videoLocalPath } };
-      onProgress({ message: `게재 중: ${product.name} (${approved.length} variants)` });
+      onProgress({ message: `게재 중: ${product.name} (${approved.length} variants)`, launchLogs: [...launchLogs] });
       for (const platform of platforms) {
-        const result = await platform.launch(group);
+        const result = await platform.launch(group, (log) => {
+          launchLogs.push(log);
+          onProgress({ message: `${log.method} ${log.path} → ${log.status}`, launchLogs: [...launchLogs] });
+        });
         logs.push(`${product.name} → ${result.externalIds.campaign} (${platform.name}, ${approved.length} variants)`);
       }
     }
