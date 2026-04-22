@@ -5,6 +5,7 @@ import { MENU_ITEMS } from "./AppTypes.js";
 import { MenuScreen } from "./screens/MenuScreen.js";
 import { DoneScreen } from "./screens/DoneScreen.js";
 import { ScrapeScreen } from "./screens/ScrapeScreen.js";
+import { AddProductScreen } from "./screens/AddProductScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
 import { GenerateScreen } from "./screens/GenerateScreen.js";
@@ -198,6 +199,16 @@ export function App() {
   });
 
   const currentMenuItem = visibleMenuItems[selectedIndex];
+
+  if (appState === "input" && currentAction === "add-product") {
+    return React.createElement(AddProductScreen, {
+      currentStep: formStep,
+      formData,
+      inputValue,
+      onSubmit: () => {},
+      onCancel: () => {},
+    });
+  }
 
   if (appState === "input" && currentAction === "scrape") {
     return React.createElement(ScrapeScreen, {
