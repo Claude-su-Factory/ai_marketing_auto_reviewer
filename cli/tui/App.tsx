@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useInput } from "ink";
 import type { AppState, ActionKey, RunProgress, DoneResult } from "./AppTypes.js";
 import { MENU_ITEMS } from "./AppTypes.js";
-import { MenuScreen } from "./MenuScreen.js";
+import { MenuScreen } from "./screens/MenuScreen.js";
 import { DoneScreen } from "./DoneScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
