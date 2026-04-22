@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { buildOverallProgress, validateMonitorMode, runScrape, runGenerate, runLaunch, runMonitor, runImprove, runPipelineAction } from "./actions.js";
 import type { TaskProgress } from "./tui/AppTypes.js";
 
@@ -52,5 +52,32 @@ describe("actions no longer require AiProxy", () => {
   });
   it("runPipelineAction accepts (urls, onProgress) without proxy", () => {
     expect(runPipelineAction.length).toBe(2);
+  });
+});
+
+describe("runGenerate parallelism", () => {
+  it("emits progress.generate with 3 tracks", async () => {
+    // NOTE: 실제 SDK 호출은 mock. core/creative/* 모듈을 vi.mock 으로 stub
+    // generateImage/generateVideo/generateCopy 를 instant resolve 로 대체
+    // 아래 mock 은 beforeEach 에서 vi.resetModules 후 재주입
+    const events: any[] = [];
+    vi.doMock("../core/creative/image.js", () => ({ generateImage: async () => "img.jpg" }));
+    vi.doMock("../core/creative/video.js", () => ({ generateVideo: async () => "vid.mp4" }));
+    vi.doMock("../core/creative/copy.js", () => ({
+      generateCopy: async () => ({ headline: "h", body: "b", cta: "c", hashtags: [] }),
+      createAnthropicClient: () => ({}),
+    }));
+    vi.doMock("../core/storage.js", () => ({
+      listJson: async () => ["data/products/p1.json"],
+      readJson: async () => ({ id: "p1", name: "AI 부트캠프", description: "d", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" }),
+      writeJson: async () => {},
+    }));
+    const { runGenerate: fresh } = await import("./actions.js?parallel-test");
+    await fresh((p: any) => events.push(p));
+    const withGen = events.filter((e) => e.generate);
+    expect(withGen.length).toBeGreaterThan(0);
+    expect(withGen[0].generate.tracks.copy).toBeDefined();
+    expect(withGen[0].generate.tracks.image).toBeDefined();
+    expect(withGen[0].generate.tracks.video).toBeDefined();
   });
 });

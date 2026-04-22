@@ -64,33 +64,72 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
     }
     const anthropic = createAnthropicClient();
     const logs: string[] = [];
+    const startedAt = Date.now();
+
     for (let i = 0; i < productPaths.length; i++) {
       const product = await readJson<Product>(productPaths[i]);
       if (!product) continue;
-      const taskProgress: TaskProgress = { copy: 0, image: 0, video: 0 };
-      onProgress({ message: "이미지 생성 중...", currentCourse: product.name, courseIndex: i + 1, totalCourses: productPaths.length, taskProgress: { ...taskProgress } });
-      const imageLocalPath = await generateImage(product);
-      taskProgress.image = 100;
-      onProgress({ message: "영상 생성 중...", currentCourse: product.name, courseIndex: i + 1, totalCourses: productPaths.length, taskProgress: { ...taskProgress } });
-      const videoLocalPath = await generateVideo(product, (msg) => {
-        const match = msg.match(/\((\d+)\/(\d+)\)/);
-        if (match) taskProgress.video = Math.round((Number(match[1]) / Number(match[2])) * 90);
-        onProgress({ message: msg, currentCourse: product.name, courseIndex: i + 1, totalCourses: productPaths.length, taskProgress: { ...taskProgress } });
-      });
-      taskProgress.video = 100;
+      const queue: ("done" | "running" | "pending")[] =
+        productPaths.map((_, idx) => idx < i ? "done" : idx === i ? "running" : "pending");
       const variantGroupId = randomUUID();
-      for (let v = 0; v < VARIANT_LABELS.length; v++) {
-        const label = VARIANT_LABELS[v];
-        onProgress({ message: `카피 ${v + 1}/3 생성 중 (${label})...`, currentCourse: product.name, courseIndex: i + 1, totalCourses: productPaths.length, taskProgress: { copy: Math.round(((v + 1) / 3) * 100), image: 100, video: 100 } });
-        const copy = await generateCopy(anthropic, product, [], label);
+
+      const tracks = {
+        copy:  { status: "running" as const, pct: 0, label: "대기" },
+        image: { status: "running" as const, pct: 0, label: "시작" },
+        video: { status: "running" as const, pct: 0, label: "시작" },
+      };
+      const emit = (msg: string) => onProgress({
+        message: msg,
+        generate: {
+          queue,
+          currentProduct: { id: product.id, name: product.name },
+          tracks: { ...tracks },
+          elapsedMs: Date.now() - startedAt,
+        },
+      });
+      emit(`${product.name} 생성 중...`);
+
+      const imageTask = (async () => {
+        const p = await generateImage(product);
+        tracks.image = { status: "done", pct: 100, label: "done" };
+        emit(`${product.name} 이미지 완료`);
+        return p;
+      })();
+
+      const videoTask = (async () => {
+        const p = await generateVideo(product, (msg) => {
+          const match = msg.match(/\((\d+)\/(\d+)\)/);
+          if (match) tracks.video = { status: "running", pct: Math.round((Number(match[1]) / Number(match[2])) * 95), label: msg };
+          emit(msg);
+        });
+        tracks.video = { status: "done", pct: 100, label: "done" };
+        emit(`${product.name} 영상 완료`);
+        return p;
+      })();
+
+      const copiesTask = (async () => {
+        const copies: { label: typeof VARIANT_LABELS[number]; data: Awaited<ReturnType<typeof generateCopy>> }[] = [];
+        for (let v = 0; v < VARIANT_LABELS.length; v++) {
+          const label = VARIANT_LABELS[v];
+          tracks.copy = { status: "running", pct: Math.round((v / VARIANT_LABELS.length) * 100), label: `variant ${v + 1}/3` };
+          emit(`카피 ${v + 1}/3 (${label})`);
+          const c = await generateCopy(anthropic, product, [], label);
+          copies.push({ label, data: c });
+        }
+        tracks.copy = { status: "done", pct: 100, label: "3 variants" };
+        emit(`${product.name} 카피 완료`);
+        return copies;
+      })();
+
+      const [imageLocalPath, videoLocalPath, copies] = await Promise.all([imageTask, videoTask, copiesTask]);
+
+      for (const { label, data } of copies) {
         const creative: Creative = {
           id: randomUUID(),
           productId: product.id,
           variantGroupId,
-          copy: { ...copy, variantLabel: label, metaAssetLabel: `${variantGroupId}::${label}` },
-          imageLocalPath,
-          videoLocalPath,
-          status: "pending",
+          copy: { ...data, variantLabel: label, metaAssetLabel: `${variantGroupId}::${label}` },
+          imageLocalPath, videoLocalPath, status: "pending",
           createdAt: new Date().toISOString(),
         };
         await writeJson(`data/creatives/${creative.id}.json`, creative);
