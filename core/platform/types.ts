@@ -39,9 +39,17 @@ export interface VariantReport {
   adConversionRanking: string | null;
 }
 
+export interface LaunchLog {
+  ts: string;
+  method: string;
+  path: string;
+  status: number;
+  refId?: string;
+}
+
 export interface AdPlatform {
   name: string;
-  launch(group: VariantGroup): Promise<LaunchResult>;
+  launch(group: VariantGroup, onLog?: (log: LaunchLog) => void): Promise<LaunchResult>;
   fetchReports(campaignId: string, date: string): Promise<VariantReport[]>;
   cleanup(campaignId: string): Promise<CleanupResult>;
 }

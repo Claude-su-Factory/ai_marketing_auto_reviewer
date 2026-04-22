@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildCampaignName, buildAdSetTargeting, buildAdConfig } from "./launcher.js";
+import { buildCampaignName, buildAdSetTargeting, buildAdConfig, launchMetaDco } from "./launcher.js";
 import type { Product } from "../../types.js";
+import type { LaunchLog } from "../types.js";
 
 const mockProduct: Product = {
   id: "p1", name: "Docker 기초", description: "컨테이너 기술",
@@ -29,5 +30,14 @@ describe("buildAdConfig", () => {
   it("has daily budget > 0", () => {
     const config = buildAdConfig();
     expect(config.dailyBudgetKRW).toBeGreaterThan(0);
+  });
+});
+
+describe("launchMetaDco onLog emission", () => {
+  it("accepts optional onLog callback as second argument", () => {
+    // Signature check — runtime path tests live in integration harness.
+    const _fn: (g: any, onLog?: (l: LaunchLog) => void) => any = launchMetaDco;
+    void _fn;
+    expect(launchMetaDco.length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,3 +1,6 @@
+import type { LaunchLog } from "../../core/platform/types.js";
+export type { LaunchLog };
+
 export type AppState = "menu" | "input" | "running" | "done" | "review" | "monitor";
 
 export interface TaskProgress {
@@ -64,10 +67,4 @@ export interface GenerateProgress {
   elapsedMs: number;
 }
 
-export interface LaunchLog {
-  ts: string;
-  method: string;
-  path: string;
-  status: number;
-  refId?: string;
-}
+

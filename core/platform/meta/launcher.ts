@@ -2,7 +2,7 @@ import bizSdk from "facebook-nodejs-business-sdk";
 import { readFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import type { Product } from "../../types.js";
-import type { VariantGroup, LaunchResult } from "../types.js";
+import type { VariantGroup, LaunchResult, LaunchLog } from "../types.js";
 import { assembleAssetFeedSpec } from "./assetFeedSpec.js";
 import { executeRollback, appendOrphansToDisk, type CreatedResource } from "./rollback.js";
 import { readJson, writeJson } from "../../storage.js";
@@ -64,7 +64,7 @@ async function deleteMetaResource(
   await api.call("DELETE", [id]);
 }
 
-export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> {
+export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog) => void): Promise<LaunchResult> {
   const config = buildAdConfig();
   const account = initMeta();
   const created: CreatedResource[] = [];
@@ -78,6 +78,7 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       special_ad_categories: [],
     });
     created.push({ type: "campaign", id: campaign.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/campaigns", status: 201, refId: campaign.id });
 
     // 2. AdSet
     const startTime = new Date().toISOString();
@@ -94,6 +95,7 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       status: "PAUSED",
     });
     created.push({ type: "adset", id: adSet.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adsets", status: 201, refId: adSet.id });
 
     // 3. Upload assets (image + video)
     const imageHash = await uploadImage(account, group.assets.image);
@@ -117,6 +119,7 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       asset_feed_spec: assetFeedSpec,
     });
     created.push({ type: "creative", id: adCreative.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adcreatives", status: 201, refId: adCreative.id });
 
     // 6. Create DCO ad (1 ad per group)
     const ad = await account.createAd([], {
@@ -126,6 +129,7 @@ export async function launchMetaDco(group: VariantGroup): Promise<LaunchResult> 
       status: "PAUSED",
     });
     created.push({ type: "ad", id: ad.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/ads", status: 201, refId: ad.id });
 
     // 7. Persist Campaign record
     const campaignRecord = {

@@ -1,4 +1,4 @@
-import type { AdPlatform, VariantGroup, LaunchResult, VariantReport, CleanupResult } from "../types.js";
+import type { AdPlatform, VariantGroup, LaunchResult, VariantReport, CleanupResult, LaunchLog } from "../types.js";
 import { launchMetaDco } from "./launcher.js";
 import { fetchMetaVariantReports } from "./monitor.js";
 import { executeRollback, appendOrphansToDisk } from "./rollback.js";
@@ -13,8 +13,8 @@ async function deleteMetaResource(type: "campaign" | "adset" | "ad" | "creative"
 export function createMetaAdapter(): AdPlatform {
   return {
     name: "meta",
-    async launch(group: VariantGroup): Promise<LaunchResult> {
-      return launchMetaDco(group);
+    async launch(group: VariantGroup, onLog?: (l: LaunchLog) => void): Promise<LaunchResult> {
+      return launchMetaDco(group, onLog);
     },
     async fetchReports(campaignId: string, date: string): Promise<VariantReport[]> {
       return fetchMetaVariantReports(campaignId, date);
