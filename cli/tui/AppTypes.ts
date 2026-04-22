@@ -12,6 +12,8 @@ export interface RunProgress {
   courseIndex?: number;
   totalCourses?: number;
   taskProgress?: TaskProgress;
+  generate?: GenerateProgress;
+  launchLogs?: LaunchLog[];
 }
 
 export type ProgressCallback = (p: RunProgress) => void;
@@ -50,3 +52,22 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: "improve",  label: "Improve",  description: "자율 개선",            needsInput: false },
   { key: "pipeline", label: "Pipeline", description: "전체 파이프라인 실행", needsInput: true,  inputPrompt: "URL 입력 (공백으로 구분, Enter 확정):" },
 ];
+
+export interface GenerateProgress {
+  queue: ("done" | "running" | "pending")[];
+  currentProduct: { id: string; name: string };
+  tracks: {
+    copy:  { status: "pending" | "running" | "done"; pct: number; label: string };
+    image: { status: "pending" | "running" | "done"; pct: number; label: string };
+    video: { status: "pending" | "running" | "done"; pct: number; label: string };
+  };
+  elapsedMs: number;
+}
+
+export interface LaunchLog {
+  ts: string;
+  method: string;
+  path: string;
+  status: number;
+  refId?: string;
+}
