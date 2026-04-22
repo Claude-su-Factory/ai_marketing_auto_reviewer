@@ -4,6 +4,7 @@ import type { AppState, ActionKey, RunProgress, DoneResult } from "./AppTypes.js
 import { MENU_ITEMS } from "./AppTypes.js";
 import { MenuScreen } from "./screens/MenuScreen.js";
 import { DoneScreen } from "./screens/DoneScreen.js";
+import { ScrapeScreen } from "./screens/ScrapeScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
 import { GenerateScreen } from "./screens/GenerateScreen.js";
@@ -55,6 +56,7 @@ export function App() {
   const [reviewGroups, setReviewGroups] = useState<ReviewGroup[]>([]);
   const [formStep, setFormStep] = useState<FormStep>("name");
   const [formData, setFormData] = useState<Partial<Product>>({});
+  const [scrapeUrl, setScrapeUrl] = useState("");
 
   const visibleMenuItems = MENU_ITEMS;
 
@@ -180,6 +182,7 @@ export function App() {
       if (key.return) {
         const action = currentAction!;
         const val = inputValue;
+        if (action === "scrape") setScrapeUrl(val);
         setInputValue("");
         executeAction(action, val);
         return;
@@ -196,6 +199,15 @@ export function App() {
 
   const currentMenuItem = visibleMenuItems[selectedIndex];
 
+  if (appState === "input" && currentAction === "scrape") {
+    return React.createElement(ScrapeScreen, {
+      stage: "input",
+      inputValue,
+      onSubmit: () => {},
+      onCancel: () => {},
+    });
+  }
+
   if (appState === "menu" || appState === "input") {
     return React.createElement(MenuScreen, {
       onSelect: executeAction,
@@ -210,6 +222,15 @@ export function App() {
   }
 
   if (appState === "running") {
+    if (currentAction === "scrape") {
+      return React.createElement(ScrapeScreen, {
+        stage: "running",
+        inputValue: scrapeUrl,
+        progress: runProgress,
+        onSubmit: () => {},
+        onCancel: () => {},
+      });
+    }
     if (runProgress.generate) {
       return React.createElement(GenerateScreen, { progress: runProgress });
     }
