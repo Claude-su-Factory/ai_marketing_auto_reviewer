@@ -48,7 +48,7 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용한다. 
 | `core/reviewer/` | 검토 결정 적용 함수 (승인/거절/수정) |
 | `core/improver/` | 성과 분석 + 개선 프롬프트 구성 순수 함수 |
 | `cli/entries/` | CLI 진입점 (app/scrape/generate/review/launch/monitor/improve/pipeline) |
-| `cli/tui/` | Ink 기반 TUI 화면 (메뉴, 리뷰, 진행 바) |
+| `cli/tui/` | Ink 기반 TUI. `theme/tokens.ts`(Tokyo Night 팔레트+아이콘), `components/`(Header/StatusBar/ProgressTrack), `screens/`(10개 화면), `hooks/`(useElapsed/useReports/useTodayStats/useWorkerStatus), `monitor/metrics.ts`, `review/assetMeta.ts`, `format.ts`, `AppTypes.ts`, `App.tsx`(라우팅) |
 | `cli/scraper.ts` | Playwright 런타임 + `core/product` 조합 |
 | `cli/reviewer/session.ts` | 실제 리뷰 세션 실행 (Ink 상호작용) |
 | `core/improver/runner.ts` | 자율 개선 사이클 실행 (파일 I/O + 코드 패치) — §8 예외 |
