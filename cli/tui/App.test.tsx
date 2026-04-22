@@ -12,8 +12,11 @@ describe("getNextStateForAction", () => {
 
   it("actions needing input go to input state", () => {
     expect(getNextStateForAction("scrape")).toBe("input");
-    expect(getNextStateForAction("monitor")).toBe("input");
     expect(getNextStateForAction("pipeline")).toBe("input");
+  });
+
+  it("monitor goes directly to monitor state", () => {
+    expect(getNextStateForAction("monitor")).toBe("monitor");
   });
 
   it("actions not needing input go directly to running", () => {

@@ -7,10 +7,11 @@ import { DoneScreen } from "./screens/DoneScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
 import { GenerateScreen } from "./screens/GenerateScreen.js";
+import { MonitorScreen } from "./screens/MonitorScreen.js";
 import { ReviewScreen, type ReviewGroup } from "./screens/ReviewScreen.js";
 import {
-  runScrape, runGenerate, runLaunch, runMonitor,
-  runImprove, runPipelineAction, validateMonitorMode,
+  runScrape, runGenerate, runLaunch,
+  runImprove, runPipelineAction,
 } from "../actions.js";
 import { readJson, writeJson, listJson } from "../../core/storage.js";
 import { applyReviewDecision } from "../../core/reviewer/decisions.js";
@@ -31,6 +32,7 @@ const FORM_PROMPTS: Record<FormStep, string> = {
 
 export function getNextStateForAction(key: ActionKey): AppState {
   if (key === "review") return "review";
+  if (key === "monitor") return "monitor";
   if (key === "add-product") return "input";
   const item = MENU_ITEMS.find((m) => m.key === key);
   return item?.needsInput ? "input" : "running";
@@ -68,13 +70,6 @@ export function App() {
       case "scrape":      result = await runScrape(inputVal ?? "", handleProgressUpdate); break;
       case "generate":    result = await runGenerate(handleProgressUpdate); break;
       case "launch":      result = await runLaunch(handleProgressUpdate); break;
-      case "monitor": {
-        const mode = validateMonitorMode(inputVal ?? "");
-        result = mode
-          ? await runMonitor(mode, handleProgressUpdate)
-          : { success: false, message: "Monitor 실패", logs: ["d 또는 w를 입력하세요"] };
-        break;
-      }
       case "improve":     result = await runImprove(handleProgressUpdate); break;
       case "pipeline":    result = await runPipelineAction((inputVal ?? "").split(/\s+/).filter(Boolean), handleProgressUpdate); break;
       default:            result = { success: false, message: "알 수 없는 액션", logs: [] };
@@ -108,8 +103,8 @@ export function App() {
   }, [appState, loadReviewGroups]);
 
   useInput((input, key) => {
-    // running/review 상태에서는 해당 컴포넌트가 직접 입력을 처리
-    if (appState === "running" || appState === "review") return;
+    // running/review/monitor 상태에서는 해당 컴포넌트가 직접 입력을 처리
+    if (appState === "running" || appState === "review" || appState === "monitor") return;
 
     if (appState === "menu") {
       if (key.upArrow) setSelectedIndex((i) => Math.max(0, i - 1));
@@ -238,6 +233,10 @@ export function App() {
         setRunProgress({ message: "" });
       },
     });
+  }
+
+  if (appState === "monitor") {
+    return React.createElement(MonitorScreen, { onBack: () => setAppState("menu") });
   }
 
   if (appState === "review") {

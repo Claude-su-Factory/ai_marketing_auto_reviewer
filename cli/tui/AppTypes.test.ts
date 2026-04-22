@@ -12,7 +12,7 @@ import { MENU_ITEMS } from "./AppTypes.js";
 describe("AppTypes", () => {
   it("AppState covers all states", () => {
     expectTypeOf<AppState>().toEqualTypeOf<
-      "menu" | "input" | "running" | "done" | "review"
+      "menu" | "input" | "running" | "done" | "review" | "monitor"
     >();
   });
 
