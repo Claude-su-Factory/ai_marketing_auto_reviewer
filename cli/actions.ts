@@ -16,7 +16,7 @@ import {
 import { runImprovementCycle } from "../core/improver/runner.js";
 import { shouldTriggerImprovement } from "../core/improver/index.js";
 import { readJson, writeJson, listJson } from "../core/storage.js";
-import type { Product, Creative, Report } from "../core/types.js";
+import type { Product, Creative } from "../core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./tui/AppTypes.js";
 import { randomUUID } from "crypto";
 import { VARIANT_LABELS } from "../core/creative/prompt.js";
@@ -208,5 +208,11 @@ export async function runPipelineAction(urls: string[], onProgress: ProgressCall
   }
   const generateResult = await runGenerate(onProgress);
   logs.push(...generateResult.logs);
-  return { success: generateResult.success, message: `Pipeline 완료`, logs };
+  return {
+    success: generateResult.success,
+    message: generateResult.success
+      ? `Pipeline 완료 — ${urls.length}개 URL 처리`
+      : "Pipeline 실패",
+    logs,
+  };
 }
