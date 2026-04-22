@@ -33,9 +33,14 @@ export function useReports(windowDays: 7 | 14 | 30): UseReportsResult {
 
   useEffect(() => {
     void load();
-    const w1 = fs.watch("data/reports", { persistent: false }, () => { void load(); });
+    let w1: ReturnType<typeof fs.watch> | undefined;
+    try {
+      w1 = fs.watch("data/reports", { persistent: false }, () => { void load(); });
+    } catch {
+      // directory may not exist yet on fresh checkout; interval fallback will catch it
+    }
     const fallback = setInterval(() => { void load(); }, 60_000);
-    return () => { w1.close(); clearInterval(fallback); };
+    return () => { w1?.close(); clearInterval(fallback); };
   }, [windowDays]);
 
   return { reports, loading, lastRefreshAt };
