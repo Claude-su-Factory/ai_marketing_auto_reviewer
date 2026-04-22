@@ -78,7 +78,8 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
       special_ad_categories: [],
     });
     created.push({ type: "campaign", id: campaign.id });
-    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/campaigns", status: 201, refId: campaign.id });
+    // onLog paths are symbolic (no account_id substitution) — used only for TUI display and the 4-step regex match in LaunchScreen.
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/campaigns", status: 200, refId: campaign.id });
 
     // 2. AdSet
     const startTime = new Date().toISOString();
@@ -95,11 +96,13 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
       status: "PAUSED",
     });
     created.push({ type: "adset", id: adSet.id });
-    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adsets", status: 201, refId: adSet.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adsets", status: 200, refId: adSet.id });
 
     // 3. Upload assets (image + video)
     const imageHash = await uploadImage(account, group.assets.image);
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adimages", status: 200, refId: imageHash });
     const videoId = await uploadVideo(account, group.assets.video);
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/advideos", status: 200, refId: videoId });
 
     // 4. Assemble asset_feed_spec
     const assetFeedSpec = assembleAssetFeedSpec({
@@ -119,7 +122,7 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
       asset_feed_spec: assetFeedSpec,
     });
     created.push({ type: "creative", id: adCreative.id });
-    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adcreatives", status: 201, refId: adCreative.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adcreatives", status: 200, refId: adCreative.id });
 
     // 6. Create DCO ad (1 ad per group)
     const ad = await account.createAd([], {
@@ -129,7 +132,7 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
       status: "PAUSED",
     });
     created.push({ type: "ad", id: ad.id });
-    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/ads", status: 201, refId: ad.id });
+    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/ads", status: 200, refId: ad.id });
 
     // 7. Persist Campaign record
     const campaignRecord = {
