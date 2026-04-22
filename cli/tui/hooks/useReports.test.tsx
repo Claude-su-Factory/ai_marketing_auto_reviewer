@@ -33,8 +33,8 @@ function Harness({ window }: { window: 7 | 14 | 30 }) {
 }
 
 describe("useReports", () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
   it("loads reports on mount and counts them", async () => {
     const { lastFrame } = render(React.createElement(Harness, { window: 7 }));
     await vi.waitFor(() => expect(lastFrame()).toContain("reports:1"));

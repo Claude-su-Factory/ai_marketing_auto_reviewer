@@ -874,8 +874,8 @@ function Harness({ window }: { window: 7 | 14 | 30 }) {
 }
 
 describe("useReports", () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
   it("loads reports on mount and counts them", async () => {
     const { lastFrame } = render(React.createElement(Harness, { window: 7 }));
     await vi.waitFor(() => expect(lastFrame()).toContain("reports:1"));
@@ -978,8 +978,8 @@ function Harness() {
   return React.createElement(Text, null, active ? "active" : "inactive");
 }
 
-beforeEach(() => vi.useFakeTimers());
-afterEach(() => vi.useRealTimers());
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(() => { vi.useRealTimers(); });
 
 describe("useWorkerStatus", () => {
   it("reports active when launchctl output contains pid > 0", async () => {
@@ -1751,7 +1751,8 @@ describe("runGenerate parallelism", () => {
       readJson: async () => ({ id: "p1", name: "AI 부트캠프", description: "d", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" }),
       writeJson: async () => {},
     }));
-    const { runGenerate: fresh } = await import("./actions.js?parallel-test");
+    vi.resetModules();
+    const { runGenerate: fresh } = await import("./actions.js");
     await fresh((p: any) => events.push(p));
     const withGen = events.filter((e) => e.generate);
     expect(withGen.length).toBeGreaterThan(0);
@@ -1790,10 +1791,11 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         productPaths.map((_, idx) => idx < i ? "done" : idx === i ? "running" : "pending");
       const variantGroupId = randomUUID();
 
-      const tracks = {
-        copy:  { status: "running" as const, pct: 0, label: "대기" },
-        image: { status: "running" as const, pct: 0, label: "시작" },
-        video: { status: "running" as const, pct: 0, label: "시작" },
+      type Track = { status: "pending" | "running" | "done"; pct: number; label: string };
+      const tracks: { copy: Track; image: Track; video: Track } = {
+        copy:  { status: "running", pct: 0, label: "대기" },
+        image: { status: "running", pct: 0, label: "시작" },
+        video: { status: "running", pct: 0, label: "시작" },
       };
       const emit = (msg: string) => onProgress({
         message: msg,

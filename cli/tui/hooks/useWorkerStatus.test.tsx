@@ -15,8 +15,8 @@ function Harness() {
   return React.createElement(Text, null, active ? "active" : "inactive");
 }
 
-beforeEach(() => vi.useFakeTimers());
-afterEach(() => vi.useRealTimers());
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(() => { vi.useRealTimers(); });
 
 describe("useWorkerStatus", () => {
   it("reports active when launchctl output contains pid > 0", async () => {

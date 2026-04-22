@@ -73,10 +73,11 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         productPaths.map((_, idx) => idx < i ? "done" : idx === i ? "running" : "pending");
       const variantGroupId = randomUUID();
 
-      const tracks = {
-        copy:  { status: "running" as const, pct: 0, label: "대기" },
-        image: { status: "running" as const, pct: 0, label: "시작" },
-        video: { status: "running" as const, pct: 0, label: "시작" },
+      type Track = { status: "pending" | "running" | "done"; pct: number; label: string };
+      const tracks: { copy: Track; image: Track; video: Track } = {
+        copy:  { status: "running", pct: 0, label: "대기" },
+        image: { status: "running", pct: 0, label: "시작" },
+        video: { status: "running", pct: 0, label: "시작" },
       };
       const emit = (msg: string) => onProgress({
         message: msg,

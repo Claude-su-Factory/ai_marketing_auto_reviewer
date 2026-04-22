@@ -72,7 +72,8 @@ describe("runGenerate parallelism", () => {
       readJson: async () => ({ id: "p1", name: "AI 부트캠프", description: "d", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" }),
       writeJson: async () => {},
     }));
-    const { runGenerate: fresh } = await import("./actions.js?parallel-test");
+    vi.resetModules();
+    const { runGenerate: fresh } = await import("./actions.js");
     await fresh((p: any) => events.push(p));
     const withGen = events.filter((e) => e.generate);
     expect(withGen.length).toBeGreaterThan(0);
