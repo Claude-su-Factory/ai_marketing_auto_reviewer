@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildOverallProgress, validateMonitorMode } from "./actions.js";
+import { buildOverallProgress, validateMonitorMode, runScrape, runGenerate, runLaunch, runMonitor, runImprove, runPipelineAction } from "./actions.js";
 import type { TaskProgress } from "./tui/AppTypes.js";
 
 describe("buildOverallProgress", () => {
@@ -31,5 +31,26 @@ describe("validateMonitorMode", () => {
   it("returns null for invalid input", () => {
     expect(validateMonitorMode("x")).toBeNull();
     expect(validateMonitorMode("")).toBeNull();
+  });
+});
+
+describe("actions no longer require AiProxy", () => {
+  it("runScrape accepts (url, onProgress) without proxy", () => {
+    expect(runScrape.length).toBe(2);
+  });
+  it("runGenerate accepts (onProgress) without proxy", () => {
+    expect(runGenerate.length).toBe(1);
+  });
+  it("runLaunch accepts (onProgress) without proxy", () => {
+    expect(runLaunch.length).toBe(1);
+  });
+  it("runMonitor accepts (mode, onProgress) without proxy", () => {
+    expect(runMonitor.length).toBe(2);
+  });
+  it("runImprove accepts (onProgress) without proxy", () => {
+    expect(runImprove.length).toBe(1);
+  });
+  it("runPipelineAction accepts (urls, onProgress) without proxy", () => {
+    expect(runPipelineAction.length).toBe(2);
   });
 });
