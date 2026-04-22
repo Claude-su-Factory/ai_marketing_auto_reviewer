@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Text, useInput } from "ink";
+import { useInput } from "ink";
 import type { AppState, ActionKey, RunProgress, DoneResult } from "./AppTypes.js";
 import { MENU_ITEMS } from "./AppTypes.js";
 import { MenuScreen } from "./MenuScreen.js";
@@ -16,9 +16,6 @@ import { applyReviewDecision } from "../../core/reviewer/decisions.js";
 import type { Creative, Product } from "../../core/types.js";
 import { groupCreativesByVariantGroup } from "../../core/launch/groupApproval.js";
 import { randomUUID } from "crypto";
-import { detectMode, type ModeConfig } from "../mode.js";
-import { createAiProxy, type AiProxy } from "../client/aiProxy.js";
-import { validateLicense } from "../client/usageServer.js";
 
 type FormStep = "name" | "description" | "targetUrl" | "price";
 
@@ -46,9 +43,6 @@ const DEFAULT_STEP_STATUSES: Record<PipelineStep, StepStatus> = {
 };
 
 export function App() {
-  const [modeConfig] = useState<ModeConfig>(() => detectMode());
-  const [proxy] = useState<AiProxy>(() => createAiProxy(modeConfig));
-  const [initialized, setInitialized] = useState(modeConfig.mode === "owner");
   const [appState, setAppState] = useState<AppState>("menu");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
@@ -59,21 +53,7 @@ export function App() {
   const [formStep, setFormStep] = useState<FormStep>("name");
   const [formData, setFormData] = useState<Partial<Product>>({});
 
-  const visibleMenuItems = modeConfig.mode === "customer"
-    ? MENU_ITEMS.filter(item => !item.ownerOnly)
-    : MENU_ITEMS;
-
-  useEffect(() => {
-    if (modeConfig.mode === "customer" && !initialized) {
-      validateLicense(modeConfig).then((valid) => {
-        if (!valid) {
-          setDoneResult({ success: false, message: "라이선스 검증 실패", logs: ["유효하지 않은 라이선스 키입니다."] });
-          setAppState("done");
-        }
-        setInitialized(true);
-      });
-    }
-  }, []);
+  const visibleMenuItems = MENU_ITEMS;
 
   const handleProgressUpdate = useCallback((p: RunProgress) => {
     setRunProgress(p);
@@ -82,42 +62,22 @@ export function App() {
   const executeAction = useCallback(async (key: ActionKey, inputVal?: string) => {
     setAppState("running");
     setRunProgress({ message: "시작 중..." });
-
     let result: DoneResult;
-
     switch (key) {
-      case "scrape":
-        result = await runScrape(proxy, inputVal ?? "", handleProgressUpdate);
-        break;
-      case "generate":
-        result = await runGenerate(proxy, handleProgressUpdate);
-        break;
-      case "launch":
-        result = await runLaunch(proxy, handleProgressUpdate);
-        break;
+      case "scrape":      result = await runScrape(inputVal ?? "", handleProgressUpdate); break;
+      case "generate":    result = await runGenerate(handleProgressUpdate); break;
+      case "launch":      result = await runLaunch(handleProgressUpdate); break;
       case "monitor": {
         const mode = validateMonitorMode(inputVal ?? "");
-        if (!mode) {
-          result = { success: false, message: "Monitor 실패", logs: ["d 또는 w를 입력하세요"] };
-        } else {
-          result = await runMonitor(proxy, mode, handleProgressUpdate);
-        }
+        result = mode
+          ? await runMonitor(mode, handleProgressUpdate)
+          : { success: false, message: "Monitor 실패", logs: ["d 또는 w를 입력하세요"] };
         break;
       }
-      case "improve":
-        result = await runImprove(proxy, handleProgressUpdate);
-        break;
-      case "pipeline":
-        result = await runPipelineAction(
-          proxy,
-          (inputVal ?? "").split(/\s+/).filter(Boolean),
-          handleProgressUpdate
-        );
-        break;
-      default:
-        result = { success: false, message: "알 수 없는 액션", logs: [] };
+      case "improve":     result = await runImprove(handleProgressUpdate); break;
+      case "pipeline":    result = await runPipelineAction((inputVal ?? "").split(/\s+/).filter(Boolean), handleProgressUpdate); break;
+      default:            result = { success: false, message: "알 수 없는 액션", logs: [] };
     }
-
     setDoneResult(result);
     setAppState("done");
   }, [handleProgressUpdate]);
@@ -239,12 +199,6 @@ export function App() {
   });
 
   const currentMenuItem = visibleMenuItems[selectedIndex];
-
-  if (!initialized) {
-    return React.createElement(Box, null,
-      React.createElement(Text, { color: "yellow" }, "라이선스 검증 중...")
-    );
-  }
 
   if (appState === "menu" || appState === "input") {
     return React.createElement(MenuScreen, {
