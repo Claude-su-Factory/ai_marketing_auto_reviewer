@@ -1,6 +1,6 @@
 # 프로젝트 상태
 
-마지막 업데이트: 2026-04-21
+마지막 업데이트: 2026-04-22
 
 ---
 
@@ -9,7 +9,7 @@
 - [x] SP0 — 제품 일반화 (Course → Product로 범용화)
 - [x] SP1 — 기본 파이프라인 (Scrape → Generate → Review → Launch → Monitor → Improve)
 - [x] SP1.5 — 통합 TUI 앱 (Ink 기반 메뉴/입력/진행 화면)
-- [x] SP2 — CLI 모드 분리 (Owner/Customer) + Usage API Server (Express + SQLite)
+- [x] SP2 — CLI 모드 분리 (Owner/Customer) + Usage API Server (Express + SQLite)  ← CLI 모드 2026-04-22 제거, server 는 비활성 유지
 - [x] SP3 — Stripe 빌링 (deduct-first 패턴 + 자동 충전 + Webhook dedup)
 - [x] SP4 — 레이어드 아키텍처 리팩터 (`core/` + `cli/` + `server/` 분리 완료)
 - ✅ Platform Adapter 추상화 (`core/platform/`, `AdPlatform` interface)
@@ -23,15 +23,17 @@
 
 ## 서비스 컴포넌트 상태
 
+> 범례: ✅ 운영 = 실행 중 / ✅ 구현 완료 = 코드 존재 / 🟡 비활성 = 코드 존재하나 미실행 (server/ 미실행, 웹 UI 재개 시 재활성화)
+
 | 컴포넌트 | 상태 | 위치 |
 |---------|------|------|
-| CLI 앱 (Owner/Customer 모드) | ✅ 운영 | `cli/entries/`, `cli/tui/` |
-| Usage API Server (Express + SQLite) | ✅ 구현 완료 | `server/index.ts` |
-| AI 프록시 라우트 (copy/image/video/parse/analyze) | ✅ 구현 완료 | `server/routes/` |
-| Stripe Webhook + 자동 충전 | ✅ 구현 완료 (dedup 포함) | `server/routes/stripeWebhook.ts` |
-| Admin CLI (라이선스 관리) | ✅ 구현 완료 | `server/admin.ts` |
-| 비동기 Veo 영상 작업 관리자 | ✅ 구현 완료 | `server/jobs/videoJob.ts` |
-| 세션 인증 + 레이트 리밋 (10 req/min) | ✅ 구현 완료 | `server/auth.ts`, `server/rateLimit.ts` |
+| CLI 앱 (Owner-only) | ✅ 운영 | `cli/entries/`, `cli/tui/` |
+| Usage API Server (Express + SQLite) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/index.ts` |
+| AI 프록시 라우트 (copy/image/video/parse/analyze) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/routes/` |
+| Stripe Webhook + 자동 충전 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/routes/stripeWebhook.ts` |
+| Admin CLI (라이선스 관리) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/admin.ts` |
+| 비동기 Veo 영상 작업 관리자 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/jobs/videoJob.ts` |
+| 세션 인증 + 레이트 리밋 (10 req/min) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/auth.ts`, `server/rateLimit.ts` |
 | 자기학습 워커 (launchd daemon) | ✅ 구현 완료 | `cli/entries/worker.ts`, `scripts/com.adai.worker.plist` |
 | 스케줄러 (공유 모듈) | ✅ 구현 완료 | `core/scheduler/` |
 | 테스트 (vitest) | ✅ 대부분 모듈에 `.test.ts` 존재 | 프로젝트 전반 |
