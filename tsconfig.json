@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "outDir": "dist"
   },
-  "include": ["core/**/*", "cli/**/*", "server/**/*", "types/**/*"],
+  "include": ["core/**/*", "cli/**/*", "server/**/*"],
   "exclude": ["node_modules", "dist"]
 }
