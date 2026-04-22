@@ -46,6 +46,24 @@ describe("DoneScreen", () => {
         onBack: vi.fn(),
       })
     );
-    expect(lastFrame()).toContain("메뉴로 복귀");
+    expect(lastFrame()).toContain("메뉴로");
+  });
+});
+
+describe("DoneScreen summary card", () => {
+  it("shows dim-limited last 3 logs by default", () => {
+    const { lastFrame } = render(React.createElement(DoneScreen, {
+      result: {
+        success: true,
+        message: "Generate 완료 — 3개 제품",
+        logs: ["log1","log2","log3","log4","log5"],
+      },
+      onBack: () => {},
+    }));
+    const f = lastFrame() ?? "";
+    expect(f).toContain("log3");
+    expect(f).toContain("log4");
+    expect(f).toContain("log5");
+    expect(f).not.toContain("log1");
   });
 });

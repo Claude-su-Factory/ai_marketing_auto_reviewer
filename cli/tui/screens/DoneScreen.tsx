@@ -1,42 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { colors, icons } from "../theme/tokens.js";
+import { Header } from "../components/Header.js";
+import { StatusBar } from "../components/StatusBar.js";
 import type { DoneResult } from "../AppTypes.js";
 
-interface Props {
-  result: DoneResult;
-  onBack: () => void;
-}
+interface Props { result: DoneResult; onBack: () => void; }
 
 export function DoneScreen({ result, onBack }: Props) {
-  useInput(() => {
-    onBack();
+  const [expanded, setExpanded] = useState(false);
+  useInput((input, key) => {
+    if (key.return || key.escape) onBack();
+    if (input === "v" || input === "V") setExpanded((x) => !x);
   });
-
-  return (
-    <Box flexDirection="column" borderStyle="round" padding={1} width={50}>
-      <Text bold>AD-AI</Text>
-      <Text dimColor>{"─".repeat(46)}</Text>
-
-      <Box marginTop={1}>
-        {result.success ? (
-          <Text color="green">✓ {result.message}</Text>
-        ) : (
-          <Text color="red">✗ {result.message}</Text>
-        )}
-      </Box>
-
-      {result.logs.length > 0 && (
-        <Box marginTop={1} flexDirection="column">
-          {result.logs.map((log, i) => (
-            <Text key={i} dimColor>· {log}</Text>
-          ))}
-        </Box>
-      )}
-
-      <Box marginTop={1} flexDirection="column">
-        <Text dimColor>{"─".repeat(46)}</Text>
-        <Text dimColor>아무 키나 누르면 메뉴로 복귀</Text>
-      </Box>
-    </Box>
+  const shown = expanded ? result.logs : result.logs.slice(-3);
+  const headerIcon = result.success ? icons.success : icons.failure;
+  const headerCol = result.success ? colors.success : colors.danger;
+  return React.createElement(Box, { flexDirection: "column" },
+    React.createElement(Header, { rightSlot: "Done" }),
+    React.createElement(Box, { paddingX: 2, paddingY: 1, flexDirection: "column", borderStyle: "round", borderColor: headerCol },
+      React.createElement(Text, { color: headerCol, bold: true }, `${headerIcon}  ${result.message}`),
+      React.createElement(Text, null, " "),
+      ...shown.map((l, i) => React.createElement(Text, { key: i, color: colors.dim }, l)),
+      !expanded && result.logs.length > 3
+        ? React.createElement(Text, { color: colors.dim }, `... (V 키로 전체 ${result.logs.length}줄 보기)`)
+        : null,
+    ),
+    React.createElement(StatusBar, { winners: null }),
+    React.createElement(Box, { paddingX: 2 },
+      React.createElement(Text, { color: colors.dim }, "Enter/Esc 메뉴로   V 전체 로그 토글")),
   );
 }
