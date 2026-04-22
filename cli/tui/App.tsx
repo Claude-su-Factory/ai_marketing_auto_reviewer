@@ -3,10 +3,10 @@ import { useInput } from "ink";
 import type { AppState, ActionKey, RunProgress, DoneResult } from "./AppTypes.js";
 import { MENU_ITEMS } from "./AppTypes.js";
 import { MenuScreen } from "./screens/MenuScreen.js";
-import { DoneScreen } from "./DoneScreen.js";
+import { DoneScreen } from "./screens/DoneScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
-import { ReviewScreen, type ReviewGroup } from "./ReviewScreen.js";
+import { ReviewScreen, type ReviewGroup } from "./screens/ReviewScreen.js";
 import {
   runScrape, runGenerate, runLaunch, runMonitor,
   runImprove, runPipelineAction, validateMonitorMode,

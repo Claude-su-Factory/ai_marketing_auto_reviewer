@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { render } from "ink-testing-library";
 import { DoneScreen } from "./DoneScreen.js";
-import type { DoneResult } from "./AppTypes.js";
+import type { DoneResult } from "../AppTypes.js";
 
 const successResult: DoneResult = {
   success: true,

@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
-import type { DoneResult } from "./AppTypes.js";
+import type { DoneResult } from "../AppTypes.js";
 
 interface Props {
   result: DoneResult;

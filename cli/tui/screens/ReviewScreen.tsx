@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
-import type { Creative, Product } from "../../core/types.js";
+import type { Creative, Product } from "../../../core/types.js";
 
 export interface ReviewGroup {
   variantGroupId: string;
