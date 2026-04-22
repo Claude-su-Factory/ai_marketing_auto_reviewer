@@ -7,7 +7,7 @@ export function formatPct(ratio: number): string {
 }
 
 export function formatAgo(date: Date): string {
-  const diffMs = Date.now() - date.getTime();
+  const diffMs = Math.max(0, Date.now() - date.getTime());
   if (diffMs < 60_000) return "just now";
   if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)}m ago`;
   if (diffMs < 86_400_000) return `${Math.floor(diffMs / 3_600_000)}h ago`;
@@ -15,6 +15,7 @@ export function formatAgo(date: Date): string {
 }
 
 export function truncate(s: string, max: number): string {
+  if (max <= 0) return "";
   if ([...s].length <= max) return s;
   return `${[...s].slice(0, max).join("").trimEnd()}…`;
 }

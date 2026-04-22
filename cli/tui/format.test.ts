@@ -32,6 +32,9 @@ describe("format.formatAgo", () => {
   it("handles just now (<60s)", () => {
     expect(formatAgo(new Date(Date.now() - 5_000))).toBe("just now");
   });
+  it("clamps future dates to just now", () => {
+    expect(formatAgo(new Date(Date.now() + 5_000))).toBe("just now");
+  });
 });
 
 describe("format.truncate", () => {
@@ -42,5 +45,12 @@ describe("format.truncate", () => {
   });
   it("returns original when short", () => {
     expect(truncate("짧음", 10)).toBe("짧음");
+  });
+  it("returns empty string when max is 0 or negative", () => {
+    expect(truncate("hello", 0)).toBe("");
+    expect(truncate("hello", -1)).toBe("");
+  });
+  it("returns original when length equals max", () => {
+    expect(truncate("abc", 3)).toBe("abc");
   });
 });
