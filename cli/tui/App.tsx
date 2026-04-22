@@ -228,8 +228,8 @@ export function App() {
   }
 
   if (appState === "running") {
-    if (runProgress.generate) return React.createElement(GenerateScreen, { progress: runProgress });
-    if (runProgress.launchLogs !== undefined) return React.createElement(LaunchScreen, { progress: runProgress });
+    if (currentAction === "generate") return React.createElement(GenerateScreen, { progress: runProgress });
+    if (currentAction === "launch") return React.createElement(LaunchScreen, { progress: runProgress });
     if (currentAction === "scrape") {
       return React.createElement(ScrapeScreen, { stage: "running", inputValue: scrapeUrl, progress: runProgress, onSubmit: () => {}, onCancel: () => {} });
     }

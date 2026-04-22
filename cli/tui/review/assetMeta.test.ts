@@ -15,8 +15,8 @@ describe("getAssetMeta", () => {
     const m = await getAssetMeta("x.jpg");
     expect(m).toEqual({ kind: "image", width: 1080, height: 1080, format: "jpeg", sizeBytes: 342000 });
   });
-  it("returns 1080x1920 hardcoded for video", async () => {
+  it("omits dimensions for video (no ffprobe available)", async () => {
     const m = await getAssetMeta("x.mp4");
-    expect(m).toEqual({ kind: "video", width: 1080, height: 1920, format: "mp4", sizeBytes: 342000 });
+    expect(m).toEqual({ kind: "video", format: "mp4", sizeBytes: 342000 });
   });
 });

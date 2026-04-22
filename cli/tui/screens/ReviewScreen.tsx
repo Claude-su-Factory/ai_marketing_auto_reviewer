@@ -155,7 +155,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
             <Text>image: {meta.image.width}×{meta.image.height} {meta.image.format} {Math.round(meta.image.sizeBytes / 1000)}KB</Text>
           )}
           {meta.video && (
-            <Text>video: {meta.video.width}×{meta.video.height} {meta.video.format} {Math.round(meta.video.sizeBytes / 1000)}KB</Text>
+            <Text>video: {meta.video.format} {Math.round(meta.video.sizeBytes / 1000)}KB</Text>
           )}
         </Box>
         {mode === "browse" && currentVariant.status === "pending" && (

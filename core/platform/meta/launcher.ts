@@ -57,9 +57,11 @@ async function uploadVideo(account: any, videoPath: string): Promise<string> {
 }
 
 async function deleteMetaResource(
-  type: "campaign" | "adset" | "ad" | "creative",
+  _type: "campaign" | "adset" | "ad" | "creative",
   id: string,
 ): Promise<void> {
+  // Meta SDK uses uniform DELETE-by-ID syntax; type is kept for caller-side documentation only.
+  // Semantics differ: campaign/adset/ad transition to DELETED status; creative is hard-deleted.
   const api = (bizSdk as any).FacebookAdsApi.getDefaultApi();
   await api.call("DELETE", [id]);
 }

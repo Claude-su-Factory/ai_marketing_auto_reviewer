@@ -3,8 +3,8 @@ import sharp from "sharp";
 
 export interface AssetMeta {
   kind: "image" | "video";
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   format: string;
   sizeBytes: number;
 }
@@ -17,7 +17,7 @@ export async function getAssetMeta(path: string): Promise<AssetMeta> {
   const s = await stat(path);
   let meta: AssetMeta;
   if (path.endsWith(".mp4")) {
-    meta = { kind: "video", width: 1080, height: 1920, format: "mp4", sizeBytes: s.size };
+    meta = { kind: "video", format: "mp4", sizeBytes: s.size };
   } else {
     const m = await sharp(path).metadata();
     meta = {
