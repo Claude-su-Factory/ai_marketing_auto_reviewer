@@ -6,6 +6,7 @@ import { MenuScreen } from "./screens/MenuScreen.js";
 import { DoneScreen } from "./screens/DoneScreen.js";
 import { PipelineProgress } from "./PipelineProgress.js";
 import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
+import { GenerateScreen } from "./screens/GenerateScreen.js";
 import { ReviewScreen, type ReviewGroup } from "./screens/ReviewScreen.js";
 import {
   runScrape, runGenerate, runLaunch, runMonitor,
@@ -214,6 +215,9 @@ export function App() {
   }
 
   if (appState === "running") {
+    if (runProgress.generate) {
+      return React.createElement(GenerateScreen, { progress: runProgress });
+    }
     return React.createElement(PipelineProgress, {
       currentStep: "generate",
       stepStatuses: DEFAULT_STEP_STATUSES,
