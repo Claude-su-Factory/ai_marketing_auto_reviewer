@@ -6,8 +6,7 @@ import { MenuScreen } from "./screens/MenuScreen.js";
 import { DoneScreen } from "./screens/DoneScreen.js";
 import { ScrapeScreen } from "./screens/ScrapeScreen.js";
 import { AddProductScreen } from "./screens/AddProductScreen.js";
-import { PipelineProgress } from "./PipelineProgress.js";
-import type { PipelineStep, StepStatus } from "./PipelineProgress.js";
+import { PipelineScreen } from "./screens/PipelineScreen.js";
 import { GenerateScreen } from "./screens/GenerateScreen.js";
 import { LaunchScreen } from "./screens/LaunchScreen.js";
 import { ImproveScreen } from "./screens/ImproveScreen.js";
@@ -42,12 +41,6 @@ export function getNextStateForAction(key: ActionKey): AppState {
   return item?.needsInput ? "input" : "running";
 }
 
-const DEFAULT_STEP_STATUSES: Record<PipelineStep, StepStatus> = {
-  scrape: "pending",
-  generate: "pending",
-  review: "pending",
-  launch: "pending",
-};
 
 export function App() {
   const [appState, setAppState] = useState<AppState>("menu");
@@ -235,33 +228,17 @@ export function App() {
   }
 
   if (appState === "running") {
+    if (runProgress.generate) return React.createElement(GenerateScreen, { progress: runProgress });
+    if (runProgress.launchLogs !== undefined) return React.createElement(LaunchScreen, { progress: runProgress });
     if (currentAction === "scrape") {
-      return React.createElement(ScrapeScreen, {
-        stage: "running",
-        inputValue: scrapeUrl,
-        progress: runProgress,
-        onSubmit: () => {},
-        onCancel: () => {},
-      });
+      return React.createElement(ScrapeScreen, { stage: "running", inputValue: scrapeUrl, progress: runProgress, onSubmit: () => {}, onCancel: () => {} });
     }
-    if (runProgress.generate) {
-      return React.createElement(GenerateScreen, { progress: runProgress });
+    if (currentAction === "improve") return React.createElement(ImproveScreen, { progress: runProgress });
+    if (currentAction === "pipeline") {
+      const stage = runProgress.generate ? ("generate" as const) : ("scrape" as const);
+      return React.createElement(PipelineScreen, { progress: runProgress, currentStage: stage });
     }
-    if (currentAction === "launch") {
-      return React.createElement(LaunchScreen, { progress: runProgress });
-    }
-    if (currentAction === "improve") {
-      return React.createElement(ImproveScreen, { progress: runProgress });
-    }
-    return React.createElement(PipelineProgress, {
-      currentStep: "generate",
-      stepStatuses: DEFAULT_STEP_STATUSES,
-      currentCourse: runProgress.currentCourse ?? "",
-      courseIndex: runProgress.courseIndex ?? 0,
-      totalCourses: runProgress.totalCourses ?? 0,
-      progressMessage: runProgress.message,
-      taskProgress: runProgress.taskProgress,
-    });
+    return React.createElement(PipelineScreen, { progress: runProgress, currentStage: "scrape" });
   }
 
   if (appState === "done" && doneResult) {

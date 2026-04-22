@@ -1,8 +1,7 @@
 import "dotenv/config";
 import React from "react";
 import { render } from "ink";
-import type { PipelineStep, StepStatus } from "./tui/PipelineProgress.js";
-import { PipelineProgress } from "./tui/PipelineProgress.js";
+import { PipelineScreen } from "./tui/screens/PipelineScreen.js";
 import { scrapeProduct } from "./scraper.js";
 import { generateCopy, createAnthropicClient } from "../core/creative/copy.js";
 import { generateImage } from "../core/creative/image.js";
@@ -17,41 +16,23 @@ import { createCreativesDb } from "../core/rag/db.js";
 import { WinnerStore } from "../core/rag/store.js";
 
 export async function runPipeline(urls: string[]): Promise<void> {
-  const stepStatuses: Record<PipelineStep, StepStatus> = {
-    scrape: "pending",
-    generate: "pending",
-    review: "pending",
-    launch: "pending",
-  };
-
+  let currentStage: "scrape" | "generate" = "scrape";
   let progressMessage = "";
-  let currentCourse = "";
-  let courseIndex = 0;
 
   const { rerender, unmount } = render(
-    React.createElement(PipelineProgress, {
-      currentStep: "scrape",
-      stepStatuses,
-      currentCourse,
-      courseIndex,
-      totalCourses: urls.length,
-      progressMessage,
+    React.createElement(PipelineScreen, {
+      currentStage,
+      progress: { message: progressMessage },
     })
   );
 
-  const update = (step: PipelineStep, status: StepStatus, msg: string, course = currentCourse, idx = courseIndex) => {
-    stepStatuses[step] = status;
+  const update = (stage: "scrape" | "generate", msg: string) => {
+    currentStage = stage;
     progressMessage = msg;
-    currentCourse = course;
-    courseIndex = idx;
     rerender(
-      React.createElement(PipelineProgress, {
-        currentStep: step,
-        stepStatuses: { ...stepStatuses },
-        currentCourse,
-        courseIndex,
-        totalCourses: urls.length,
-        progressMessage,
+      React.createElement(PipelineScreen, {
+        currentStage,
+        progress: { message: progressMessage },
       })
     );
   };
@@ -59,17 +40,17 @@ export async function runPipeline(urls: string[]): Promise<void> {
   const client = createAnthropicClient();
 
   // Step 1: Scrape
-  update("scrape", "running", "스크래핑 시작...");
+  update("scrape", "스크래핑 시작...");
   const products: Product[] = [];
   for (let i = 0; i < urls.length; i++) {
-    update("scrape", "running", `스크래핑 중... ${urls[i].slice(0, 40)}`, urls[i].split("/").pop() ?? "", i + 1);
+    update("scrape", `스크래핑 중... ${urls[i].slice(0, 40)}`);
     const product = await scrapeProduct(urls[i]);
     products.push(product);
   }
-  update("scrape", "done", `${products.length}개 제품 스크래핑 완료`);
+  update("scrape", `${products.length}개 제품 스크래핑 완료`);
 
   // Step 2: Generate
-  update("generate", "running", "소재 생성 시작...");
+  update("generate", "소재 생성 시작...");
 
   const voyage = createVoyageClient();
   const creativesDb = createCreativesDb();
@@ -78,12 +59,12 @@ export async function runPipeline(urls: string[]): Promise<void> {
 
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
-      update("generate", "running", `이미지 생성 중...`, product.name, i + 1);
+      update("generate", `이미지 생성 중... ${product.name}`);
       const imageLocalPath = await generateImage(product);
 
-      update("generate", "running", `영상 생성 중... (최대 10분 소요)`, product.name, i + 1);
+      update("generate", `영상 생성 중... (최대 10분 소요) ${product.name}`);
       const videoLocalPath = await generateVideo(product, (msg) =>
-        update("generate", "running", msg, product.name, i + 1)
+        update("generate", msg)
       );
 
       const variantGroupId = randomUUID();
@@ -94,7 +75,7 @@ export async function runPipeline(urls: string[]): Promise<void> {
       });
 
       for (const label of VARIANT_LABELS) {
-        update("generate", "running", `카피 생성 중 (${label})...`, product.name, i + 1);
+        update("generate", `카피 생성 중 (${label})... ${product.name}`);
         const copy = await generateCopy(client, product, fewShot, label);
 
         const creative: Creative = {
@@ -117,7 +98,7 @@ export async function runPipeline(urls: string[]): Promise<void> {
   } finally {
     creativesDb.close();
   }
-  update("generate", "done", "소재 생성 완료 — 검토 대기 중");
+  update("generate", "소재 생성 완료 — 검토 대기 중");
 
   unmount();
   console.log("\n소재 생성 완료. 검토를 시작하려면 npm run review 를 실행하세요.");
