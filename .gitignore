@@ -28,10 +28,10 @@ logs/
 *.db-journal
 *.sqlite
 *.sqlite3
-server/data.db
-server/test.db
-server/test-billing.db
-server/tmp/
+data/licenses.db
+packages/server/src/test.db
+packages/server/src/test-billing.db
+packages/server/tmp/
 
 # launchd / local worker (installed plist lives at ~/Library/LaunchAgents/, never in repo)
 # The template scripts/com.adai.worker.plist uses __INJECT__ placeholders and is safe to commit.
