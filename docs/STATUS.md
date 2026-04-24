@@ -28,15 +28,15 @@
 
 | 컴포넌트 | 상태 | 위치 |
 |---------|------|------|
-| CLI 앱 (Owner-only) | ✅ 운영 | `cli/entries/`, `cli/tui/` |
-| Usage API Server (Express + SQLite) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/index.ts` |
-| AI 프록시 라우트 (copy/image/video/parse/analyze) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/routes/` |
-| Stripe Webhook + 자동 충전 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/routes/stripeWebhook.ts` |
-| Admin CLI (라이선스 관리) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/admin.ts` |
-| 비동기 Veo 영상 작업 관리자 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/jobs/videoJob.ts` |
-| 세션 인증 + 레이트 리밋 (10 req/min) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `server/auth.ts`, `server/rateLimit.ts` |
-| 자기학습 워커 (launchd daemon) | ✅ 구현 완료 | `cli/entries/worker.ts`, `scripts/com.adai.worker.plist` |
-| 스케줄러 (공유 모듈) | ✅ 구현 완료 | `core/scheduler/` |
+| CLI 앱 (Owner-only) | ✅ 운영 | `packages/cli/src/entries/`, `packages/cli/src/tui/` |
+| Usage API Server (Express + SQLite) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/index.ts` |
+| AI 프록시 라우트 (copy/image/video/parse/analyze) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/routes/` |
+| Stripe Webhook + 자동 충전 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/routes/stripeWebhook.ts` |
+| Admin CLI (라이선스 관리) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/admin.ts` |
+| 비동기 Veo 영상 작업 관리자 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/jobs/videoJob.ts` |
+| 세션 인증 + 레이트 리밋 (10 req/min) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/auth.ts`, `packages/server/src/rateLimit.ts` |
+| 자기학습 워커 (launchd daemon) | ✅ 구현 완료 | `packages/cli/src/entries/worker.ts`, `scripts/com.adai.worker.plist` |
+| 스케줄러 (공유 모듈) | ✅ 구현 완료 | `packages/core/src/scheduler/` |
 | 테스트 (vitest) | ✅ 대부분 모듈에 `.test.ts` 존재 | 프로젝트 전반 |
 | Winner DB (Voyage RAG) | ✅ 운영 | `core/rag/`, `data/creatives.db` |
 | Dev-time Subagent 팀 (meta-platform-expert, marketing-copy-reviewer) | ✅ 구현 완료 — 2026-04-22 TUI upgrade Task 31 에서 meta-platform-expert dispatch 성공 (launcher onLog 검증 + deleteMetaResource 시맨틱 검증) | `.claude/agents/` |
@@ -47,13 +47,13 @@
 
 Plan A 리뷰에서 식별된 Minor 항목 중 이번 수정 플랜 범위 밖으로 미룬 것. Plan B 이후 cleanup 경로를 실제로 호출하게 되는 시점에 재검토.
 
-- **deleteMetaResource 중복** — `core/platform/meta/launcher.ts:59-65`와 `core/platform/meta/adapter.ts:8-11`에 동일 함수. 나중에 공유 모듈로 추출.
+- **deleteMetaResource 중복** — `packages/core/src/platform/meta/launcher.ts:59-65`와 `packages/core/src/platform/meta/adapter.ts:8-11`에 동일 함수. 나중에 공유 모듈로 추출.
 - **failedRecord의 이미 삭제된 ID** — `launch_failed` Campaign 레코드는 rollback이 성공시킨 ID까지 그대로 담는다. 현재 cleanup()은 launch_failed에 호출되지 않으므로 문제 없지만, cleanup 경로 활성화 시점에 `cleanupResult.orphans`만 보존하도록 변경 필요.
 - **ad_formats 명시, README 경고 문구, `assembleAssetFeedSpec` 에러 메시지 regex 강화** — 1차 리뷰에서 Minor로 분류된 나머지 항목.
-- **Plan C final review Minor** — (1) `core/rag/qualifier.test.ts`에 `loadProduct === null` 전용 테스트 없음, (2) `core/rag/qualifyJob.ts:buildCreativeIndex`가 ENOENT 외 readdir 에러(EACCES/EMFILE)도 무음 스킵, (3) `winners.creative_id`는 UNIQUE 제약 없음 — 동시 tick 시 동일 Creative 중복 기록 가능 (설계 의도), (4) `buildCreativeIndex` 매 tick 전체 스캔 — 수천 creatives 단계에서는 캐시 전략 필요. 모두 Minor, 운영상 지장 없음.
-- **useReports 동시 load 레이스** — `cli/tui/hooks/useReports.ts`에서 `fs.watch` 이벤트가 이전 `load()` 진행 중 발생하면 setState 호출이 out-of-order가 되거나 unmount 후 setState 경고가 날 수 있다. 현재는 변화 빈도가 낮아 영향 미미. Monitor 화면 실운영 관찰 후 필요 시 mountedRef/inflightRef 도입.
-- **runGenerate 오판 시 orphan promise** — `cli/actions.ts:runGenerate`는 image/video/copies 3-track을 `Promise.all`로 병렬 실행한다. 한 트랙이 실패하면 `Promise.all`이 즉시 reject되지만 나머지 트랙(특히 Veo polling)이 백그라운드에서 계속 진행돼 quota를 소모할 수 있다. 실운영 관찰 후 필요 시 AbortController 도입.
-- **TUI upgrade final review Minor** (Task 31 잔여, 2026-04-22): (1) `useWorkerStatus`가 `Number(pid) > 0` 검사로 "-" placeholder를 자연 차단하는데 명시 주석 없음, (2) `useElapsed` useEffect dep에 `startedAt` 미포함 — 호출자가 mid-lifetime에 바꾸면 stale closure, (3) `MonitorScreen`의 StatusBar `winners: null` 하드코딩(미연결), (4) MonitorScreen 입력 힌트 "R 새로고침" 이 있지만 핸들러 미구현(dead affordance), (5) `aggregateVariantReports`의 `avgCtr`는 `totalClicks/totalImpressions`와 동치인 redundant 가중 계산, (6) MonitorScreen/LaunchScreen 테스트가 render-check 위주(정렬·하이라이트 behavioral assertion 부재). 모두 v1 기능엔 영향 없음 — 실운영 관찰 후 batched cleanup.
+- **Plan C final review Minor** — (1) `packages/core/src/rag/qualifier.test.ts`에 `loadProduct === null` 전용 테스트 없음, (2) `packages/core/src/rag/qualifyJob.ts:buildCreativeIndex`가 ENOENT 외 readdir 에러(EACCES/EMFILE)도 무음 스킵, (3) `winners.creative_id`는 UNIQUE 제약 없음 — 동시 tick 시 동일 Creative 중복 기록 가능 (설계 의도), (4) `buildCreativeIndex` 매 tick 전체 스캔 — 수천 creatives 단계에서는 캐시 전략 필요. 모두 Minor, 운영상 지장 없음.
+- **useReports 동시 load 레이스** — `packages/cli/src/tui/hooks/useReports.ts`에서 `fs.watch` 이벤트가 이전 `load()` 진행 중 발생하면 setState 호출이 out-of-order가 되거나 unmount 후 setState 경고가 날 수 있다. 현재는 변화 빈도가 낮아 영향 미미. Monitor 화면 실운영 관찰 후 필요 시 mountedRef/inflightRef 도입.
+- **runGenerate 오판 시 orphan promise** — `packages/cli/src/actions.ts:runGenerate`는 image/video/copies 3-track을 `Promise.all`로 병렬 실행한다. 한 트랙이 실패하면 `Promise.all`이 즉시 reject되지만 나머지 트랙(특히 Veo polling)이 백그라운드에서 계속 진행돼 quota를 소모할 수 있다. 실운영 관찰 후 필요 시 AbortController 도입.
+- **TUI upgrade final review Minor** (Task 31 잔여, 2026-04-22): (1) `useWorkerStatus`가 `Number(pid) > 0` 검사로 "-" placeholder를 자연 차단하는데 명시 주석 없음, (2) `useElapsed` useEffect dep에 `startedAt` 미포함 — 호출자가 mid-lifetime에 바꾸면 stale closure, (3) `MonitorScreen`의 StatusBar `winners: null` 하드코딩(미연결), (4) MonitorScreen 입력 힌트 "R 새로고침" 이 있지만 핸들러 미구현(dead affordance), (5) `packages/core/src/campaign/`의 `aggregateVariantReports`의 `avgCtr`는 `totalClicks/totalImpressions`와 동치인 redundant 가중 계산, (6) MonitorScreen/LaunchScreen 테스트가 render-check 위주(정렬·하이라이트 behavioral assertion 부재). 모두 v1 기능엔 영향 없음 — 실운영 관찰 후 batched cleanup.
 
 ---
 

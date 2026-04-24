@@ -57,10 +57,10 @@
 ## 스펙 & 계획 위치
 
 ```
-docs/superpowers/specs/   — 설계 문서 (기능별)
-docs/superpowers/plans/   — 구현 계획 (기능별)
-server/data.db            — 런타임 SQLite DB (licenses/usage/billing, git 제외)
-server/db.ts              — DB 스키마 및 마이그레이션 정의
+docs/superpowers/specs/      — 설계 문서 (기능별)
+docs/superpowers/plans/      — 구현 계획 (기능별)
+data/licenses.db             — 런타임 SQLite DB (licenses/usage/billing, git 제외)
+packages/server/src/db.ts    — DB 스키마 및 마이그레이션 정의
 ```
 
 
