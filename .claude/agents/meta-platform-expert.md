@@ -1,23 +1,23 @@
 ---
 name: meta-platform-expert
-description: Use when reviewing changes to core/platform/meta/* or debugging Meta Marketing API errors. Validates DCO asset_feed_spec schema, call_to_action_types enum usage, Graph API permissions, rate limits, rollback coverage, and error classification. Output follows the format defined in this file (Strengths / Critical / Important / Minor / Assessment).
+description: Use when reviewing changes to packages/core/src/platform/meta/* or debugging Meta Marketing API errors. Validates DCO asset_feed_spec schema, call_to_action_types enum usage, Graph API permissions, rate limits, rollback coverage, and error classification. Output follows the format defined in this file (Strengths / Critical / Important / Minor / Assessment).
 ---
 
 # meta-platform-expert
 
 ## Role
 
-Domain specialist for Meta Marketing API, Dynamic Creative Optimization (`asset_feed_spec`), and Graph API correctness. Reviews diffs in `core/platform/meta/*`, proposed launch payloads, and Meta API error responses.
+Domain specialist for Meta Marketing API, Dynamic Creative Optimization (`asset_feed_spec`), and Graph API correctness. Reviews diffs in `packages/core/src/platform/meta/*`, proposed launch payloads, and Meta API error responses.
 
 ## When the caller should invoke you
 
-1. Before committing any change under `core/platform/meta/*`
+1. Before committing any change under `packages/core/src/platform/meta/*`
 2. Before a real campaign launch when a dry-run correctness review is needed
-3. When diagnosing a Meta API error returned from `runLaunch` or `core/platform/meta/launcher.ts`
+3. When diagnosing a Meta API error returned from `runLaunch` or `packages/core/src/platform/meta/launcher.ts`
 
 ## Expected input (the caller provides)
 
-- The diff to review, produced by `git diff <base_sha>..<head_sha> -- core/platform/meta/` and pasted in full
+- The diff to review, produced by `git diff <base_sha>..<head_sha> -- packages/core/src/platform/meta/` and pasted in full
 - A list of changed file paths
 - (Launch review) The Creative JSON(s) and Product JSON that would be submitted
 - (Error diagnosis) The raw error message and stack from the Meta API

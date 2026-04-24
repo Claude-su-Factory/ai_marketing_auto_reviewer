@@ -77,9 +77,9 @@ server/db.ts              — DB 스키마 및 마이그레이션 정의
 
 | 작업 유형 | Subagent | 정의 위치 |
 |---------|----------|---------|
-| `core/platform/meta/*` 수정 | `meta-platform-expert` | `.claude/agents/meta-platform-expert.md` |
-| Meta Marketing API 오류 진단 (`runLaunch`/`core/platform/meta/launcher.ts`에서 발생한 에러 원인 파악) | `meta-platform-expert` | `.claude/agents/meta-platform-expert.md` |
-| Copy 생성 로직/결과 변경 (`core/creative/prompt.ts` 수정, `runGenerate`/`runImprove` 산출물) | `marketing-copy-reviewer` | `.claude/agents/marketing-copy-reviewer.md` |
+| `packages/core/src/platform/meta/*` 수정 | `meta-platform-expert` | `.claude/agents/meta-platform-expert.md` |
+| Meta Marketing API 오류 진단 (`runLaunch`/`packages/core/src/platform/meta/launcher.ts`에서 발생한 에러 원인 파악) | `meta-platform-expert` | `.claude/agents/meta-platform-expert.md` |
+| Copy 생성 로직/결과 변경 (`packages/core/src/creative/prompt.ts` 수정, `runGenerate`/`runImprove` 산출물) | `marketing-copy-reviewer` | `.claude/agents/marketing-copy-reviewer.md` |
 | 모든 구현 Task 완료 후 | `superpowers:code-reviewer` | (기존 subagent-driven-development 규칙) |
 
 규칙:
