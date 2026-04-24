@@ -45,7 +45,7 @@ Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_K
 3. **자기학습 워커 등록** — 아래 "자기학습 워커 설치" 에 따라 launchd 데몬 기동. 이후 6시간마다 성과 수집, 2일마다 주간 분석 + 자기학습 사이클이 자동 실행된다.
 4. **운영 중** — 새 제품은 TUI로 등록·Generate·Review·Launch만 수동으로 하면 된다. 성과 수집 → Winner DB 적재 → 약한 variant 개선 루프는 워커가 알아서 돌린다.
 
-Service 모드(API 서버)는 `server/scheduler.ts` 가 Express 프로세스 안에서 node-cron으로 자동 실행되므로 별도 워커 설치가 필요 없다.
+Service 모드(API 서버)는 `packages/server/src/scheduler.ts` 가 Express 프로세스 안에서 node-cron으로 자동 실행되므로 별도 워커 설치가 필요 없다.
 
 ---
 
