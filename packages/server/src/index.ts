@@ -92,7 +92,7 @@ cleanupOldFiles();
 
 app.listen(PORT, () => {
   console.log(`[Usage Server] Running on ${SERVER_URL}`);
-  console.log(`[Usage Server] DB: server/data.db`);
+  console.log(`[Usage Server] DB: data/licenses.db`);
 });
 
 // Scheduler runs opportunistically; server availability must not depend on it.

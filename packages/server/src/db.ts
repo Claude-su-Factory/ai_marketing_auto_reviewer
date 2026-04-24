@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 
 export type AppDb = Database.Database;
 
-export function createDb(path = "server/data.db"): AppDb {
+export function createDb(path = "data/licenses.db"): AppDb {
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
