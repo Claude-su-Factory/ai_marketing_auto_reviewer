@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createDb, type AppDb } from "./db.js";
 import { unlinkSync, existsSync } from "fs";
 
-const TEST_DB = "server/test.db";
+const TEST_DB = "packages/server/src/test.db";
 let db: AppDb;
 beforeEach(() => { db = createDb(TEST_DB); });
 afterEach(() => { db.close(); if (existsSync(TEST_DB)) unlinkSync(TEST_DB); });

@@ -4,7 +4,7 @@ import { createBillingService } from "./billing.js";
 import { randomUUID } from "crypto";
 import { unlinkSync, existsSync } from "fs";
 
-const TEST_DB = "server/test-billing.db";
+const TEST_DB = "packages/server/src/test-billing.db";
 let db: AppDb;
 let billing: ReturnType<typeof createBillingService>;
 let licenseId: string;
