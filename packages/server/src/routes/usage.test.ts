@@ -4,7 +4,7 @@ import { PRICING } from "@ad-ai/core/billing/pricing.js";
 import { randomUUID } from "crypto";
 import { unlinkSync, existsSync } from "fs";
 
-const TEST_DB = "server/test-usage.db";
+const TEST_DB = "packages/server/src/test-usage.db";
 let db: AppDb;
 let licenseId: string;
 

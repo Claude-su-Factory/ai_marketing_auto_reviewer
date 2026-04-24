@@ -16,7 +16,7 @@ let stripe: Stripe;
 let testDbPath: string;
 
 beforeEach(() => {
-  testDbPath = `server/test-webhook-${randomUUID()}.db`;
+  testDbPath = `packages/server/src/test-webhook-${randomUUID()}.db`;
   db = createDb(testDbPath);
   const billing = createBillingService(db);
   licenseId = randomUUID();

@@ -4,7 +4,7 @@ import { createSessionStore, type SessionStore } from "../auth.js";
 import { randomUUID } from "crypto";
 import { unlinkSync, existsSync } from "fs";
 
-const TEST_DB = "server/test-license.db";
+const TEST_DB = "packages/server/src/test-license.db";
 let db: AppDb;
 let sessions: SessionStore;
 

@@ -3,7 +3,7 @@ import { createDb, type AppDb } from "./db.js";
 import { markEventProcessed } from "./webhookDedup.js";
 import { unlinkSync, existsSync } from "fs";
 
-const TEST_DB = "server/test-dedup.db";
+const TEST_DB = "packages/server/src/test-dedup.db";
 let db: AppDb;
 
 beforeEach(() => { db = createDb(TEST_DB); });
