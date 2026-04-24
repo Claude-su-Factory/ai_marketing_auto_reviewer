@@ -28,9 +28,6 @@ logs/
 *.db-journal
 *.sqlite
 *.sqlite3
-data/licenses.db
-packages/server/src/test.db
-packages/server/src/test-billing.db
 packages/server/tmp/
 
 # launchd / local worker (installed plist lives at ~/Library/LaunchAgents/, never in repo)
