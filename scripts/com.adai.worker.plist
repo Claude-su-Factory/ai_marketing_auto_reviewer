@@ -6,7 +6,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>__TSX_PATH__</string>
-    <string>cli/entries/worker.ts</string>
+    <string>packages/cli/src/entries/worker.ts</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
