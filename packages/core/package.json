@@ -1,0 +1,19 @@
+{
+  "name": "@ad-ai/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*.js": "./src/*.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/genai": "^0.7.0",
+    "better-sqlite3": "^12.9.0",
+    "facebook-nodejs-business-sdk": "^20.0.2",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8"
+  }
+}

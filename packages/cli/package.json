@@ -1,0 +1,36 @@
+{
+  "name": "@ad-ai/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*.js": "./src/*.ts"
+  },
+  "scripts": {
+    "app": "tsx src/entries/app.ts",
+    "scrape": "tsx src/entries/scrape.ts",
+    "generate": "tsx src/entries/generate.ts",
+    "review": "tsx src/entries/review.ts",
+    "launch": "tsx src/entries/launch.ts",
+    "monitor": "tsx src/entries/monitor.ts",
+    "pipeline": "tsx src/entries/pipeline.ts",
+    "improve": "tsx src/entries/improve.ts",
+    "worker": "tsx src/entries/worker.ts"
+  },
+  "dependencies": {
+    "@ad-ai/core": "*",
+    "chalk": "^5.3.0",
+    "dotenv": "^16.4.5",
+    "ink": "^5.0.1",
+    "ink-big-text": "^2.0.0",
+    "ink-gradient": "^3.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "playwright": "^1.43.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "ink-testing-library": "^4.0.0"
+  }
+}

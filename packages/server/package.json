@@ -1,0 +1,26 @@
+{
+  "name": "@ad-ai/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*.js": "./src/*.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "admin": "tsx src/admin.ts"
+  },
+  "dependencies": {
+    "@ad-ai/core": "*",
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "node-cron": "^3.0.3",
+    "stripe": "^22.0.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/express": "^4.17.21",
+    "@types/node-cron": "^3.0.11"
+  }
+}
