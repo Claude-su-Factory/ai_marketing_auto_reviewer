@@ -1,6 +1,6 @@
 # 로드맵
 
-마지막 업데이트: 2026-04-22
+마지막 업데이트: 2026-04-24
 
 ---
 
@@ -21,6 +21,7 @@
 아래 항목들은 제안된 후보이며, 우선순위는 사용자와 상의 후 확정한다.
 
 - 프로덕션 배포 파이프라인 구축 (서버 호스팅, 도메인 연결, TLS 설정)
+- **멀티모듈 Phase B — 개별 repo 분리**: `packages/core,cli,server/` 를 독립 git repo 로 분리. 트리거: Phase A 가 충분히 실운영 검증된 후 (여러 주간 안정 운영). 작업: 각 repo 의 remote push, `"*"` → `"^1.0.0"` 버전 전환, CI/CD 분리.
 - Dev-time Agent Team Phase 1b — Performance Analyst subagent (Winner DB 구축 완료 — 바로 도입 가능)
 - 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
