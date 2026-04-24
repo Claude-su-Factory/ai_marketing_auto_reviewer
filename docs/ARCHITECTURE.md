@@ -26,8 +26,8 @@ AD-AI는 두 개의 독립적인 구성 요소로 이루어진다.
 └──────────────────────────────────────┘
 
 packages/core/src/는 프레임워크 무관(pure) 도메인 로직, packages/cli/src/는 presentation·infra(Ink/Playwright/cron),
-packages/server/src/는 Express/Stripe/SQLite presentation layer. server/는 core/를 import하고, cli/는 core/를 import한다.
-core/는 외부(어떤 presentation layer에도) 의존하지 않는다.
+packages/server/src/는 Express/Stripe/SQLite presentation layer. packages/server/src/는 packages/core/src/를 import하고, packages/cli/src/는 packages/core/src/를 import한다.
+packages/core/src/는 외부(어떤 presentation layer에도) 의존하지 않는다.
 ```
 
 Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용한다. Customer 모드는 2026-04-22 제거되어 비활성 상태이다 (ROADMAP Tier 2 "웹 UI + customer 모드 재도입" 참조).
@@ -134,10 +134,10 @@ Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용한다. 
 **Why:** 초기의 `src/` + `server/` 구조에서는 TUI·Playwright·cron 같은 presentation/infra 코드와 pure 도메인 로직이 같은 디렉토리에 뒤섞여 있어, 서버에서 재사용하려 해도 무거운 의존성이 딸려 들어오는 문제가 있었다. `core/`로 순수 로직을 분리하면 server/와 cli/가 같은 도메인 규칙을 공유하면서도 각자의 런타임 의존성만 가져가게 된다.
 
 **How:** 의존성 방향은 **단방향**이다.
-- `core/` → (외부 없음) : 프레임워크·I/O·프로세스 의존 금지
-- `cli/` → `core/` : Ink/Playwright/node-cron/파일 I/O 포함
-- `server/` → `core/` : Express/Stripe/better-sqlite3 포함
-- `cli/` ↔ `server/` 상호 import 금지 (HTTP 경계로만 통신)
+- `packages/core/src/` → (외부 없음) : 프레임워크·I/O·프로세스 의존 금지
+- `packages/cli/src/` → `packages/core/src/` : Ink/Playwright/node-cron/파일 I/O 포함
+- `packages/server/src/` → `packages/core/src/` : Express/Stripe/better-sqlite3 포함
+- `packages/cli/src/` ↔ `packages/server/src/` 상호 import 금지 (HTTP 경계로만 통신)
 
 Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/core/src/reviewer/decisions.ts`의 `applyReviewDecision()`은 pure, `packages/cli/src/reviewer/session.ts`의 `runReviewSession()`은 Ink 의존.
 

@@ -13,7 +13,7 @@
 - [x] SP3 — Stripe 빌링 (deduct-first 패턴 + 자동 충전 + Webhook dedup)
 - [x] SP4 — 레이어드 아키텍처 리팩터 (`core/` + `cli/` + `server/` 분리 완료)
 - [x] SP5 — TUI 업그레이드 (Tokyo Night 팔레트, Generate 3-track 병렬, Monitor 신규 화면, owner-only CLI 전환, 10개 화면 톤 통일)
-- ✅ Platform Adapter 추상화 (`core/platform/`, `AdPlatform` interface)
+- ✅ Platform Adapter 추상화 (`packages/core/src/platform/`, `AdPlatform` interface)
 - ✅ Meta Advantage+ Creative (DCO) 런칭 경로
 - ✅ Rollback + orphans 기록 (`data/orphans.json`)
 - ✅ 외부 수정 자동 감지 (`externally_modified` 상태)
@@ -38,7 +38,7 @@
 | 자기학습 워커 (launchd daemon) | ✅ 구현 완료 | `packages/cli/src/entries/worker.ts`, `scripts/com.adai.worker.plist` |
 | 스케줄러 (공유 모듈) | ✅ 구현 완료 | `packages/core/src/scheduler/` |
 | 테스트 (vitest) | ✅ 대부분 모듈에 `.test.ts` 존재 | 프로젝트 전반 |
-| Winner DB (Voyage RAG) | ✅ 운영 | `core/rag/`, `data/creatives.db` |
+| Winner DB (Voyage RAG) | ✅ 운영 | `packages/core/src/rag/`, `data/creatives.db` |
 | Dev-time Subagent 팀 (meta-platform-expert, marketing-copy-reviewer) | ✅ 구현 완료 — 2026-04-22 TUI upgrade Task 31 에서 meta-platform-expert dispatch 성공 (launcher onLog 검증 + deleteMetaResource 시맨틱 검증) | `.claude/agents/` |
 
 ---
