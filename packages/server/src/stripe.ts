@@ -1,7 +1,14 @@
 import Stripe from "stripe";
+import { requireStripeConfig } from "@ad-ai/core/config/helpers.js";
 
+/**
+ * Throws if [billing.stripe] is not configured. Callers that don't gate on
+ * `getConfig().billing?.stripe` rely on the invariant that licenses with
+ * stripe_customer_id only exist when billing config is present (enforced by
+ * admin.ts create-license).
+ */
 export function createStripeClient(): Stripe {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!);
+  return new Stripe(requireStripeConfig().secret_key);
 }
 
 export async function createStripeCustomer(stripe: Stripe, email: string, licenseKey: string): Promise<string> {

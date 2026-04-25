@@ -16,6 +16,7 @@ import { createUsageRouter } from "./routes/usage.js";
 import { createStripeWebhookRouter } from "./routes/stripeWebhook.js";
 import { cleanupOldFiles } from "./jobs/videoJob.js";
 import { startScheduler } from "./scheduler.js";
+import { getConfig } from "@ad-ai/core/config/index.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 3000);
 const SERVER_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`;
@@ -32,9 +33,10 @@ if (orphaned > 0) console.log(`[Billing] Cleaned up ${orphaned} orphaned pending
 const app = express();
 
 // Stripe webhook must be registered BEFORE express.json() — needs raw body
-if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) {
+const stripeCfg = getConfig().billing?.stripe;
+if (stripeCfg) {
   const stripe = createStripeClient();
-  app.use(createStripeWebhookRouter(stripe, process.env.STRIPE_WEBHOOK_SECRET, billing, db));
+  app.use(createStripeWebhookRouter(stripe, stripeCfg.webhook_secret, billing, db));
 }
 
 app.use(express.json({ limit: "10mb" }));

@@ -3,6 +3,7 @@ import { createDb } from "./db.js";
 import { createBillingService } from "./billing.js";
 import { createStripeClient, createStripeCustomer, createCheckoutSession } from "./stripe.js";
 import { getTierAmount } from "@ad-ai/core/billing/tiers.js";
+import { getConfig } from "@ad-ai/core/config/index.js";
 import { randomUUID } from "crypto";
 import { generateKey, getFlag as getFlagUtil } from "./adminUtils.js";
 
@@ -24,7 +25,7 @@ switch (command) {
     const id = randomUUID();
     const key = generateKey();
 
-    if (process.env.STRIPE_SECRET_KEY) {
+    if (getConfig().billing?.stripe) {
       const stripe = createStripeClient();
       (async () => {
         const customerId = await createStripeCustomer(stripe, email, key);
@@ -64,7 +65,7 @@ switch (command) {
       console.log(`License created: ${key}`);
       console.log(`Email: ${email}`);
       console.log(`Tier: ${tier} ($${rechargeAmount})`);
-      console.log(`Status: active (no Stripe — STRIPE_SECRET_KEY not set)`);
+      console.log(`Status: active (no Stripe — [billing.stripe] not configured)`);
     }
     break;
   }
