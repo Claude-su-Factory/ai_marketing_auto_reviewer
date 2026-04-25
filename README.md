@@ -13,26 +13,35 @@ npm install
 npx playwright install chromium
 ```
 
-환경 변수 템플릿은 용도별로 두 개가 있다. 사용하려는 경로에 맞춰 하나를 복사해 `.env`로 사용한다.
-
-| 템플릿 | 언제 쓰나 |
-|--------|----------|
-| `.env.owner.example` | 로컬에서 직접 광고 파이프라인/worker 를 돌릴 때 (Anthropic + Google + Voyage + Meta 키 전부 필요) |
-| `.env.service.example` | Usage API Server 를 호스팅해 라이선스를 판매할 때 (AI 키 + Stripe 필수, Meta 는 운영자 자체 광고 계정이 있을 때만) |
-
-예시:
+설정 파일 템플릿을 복사해서 실제 키를 채운다.
 
 ```bash
-# Owner (로컬에서 본인 광고 돌릴 때)
-cp .env.owner.example .env
-
-# Service (서버 호스팅할 때)
-cp .env.service.example .env
+cp config.example.toml config.toml
+# config.toml 편집
 ```
 
-각 템플릿 상단 주석에 어느 프로세스가 어느 키를 언제 요구하는지 정리되어 있다.
+`config.toml`은 도메인별 섹션으로 구성된다.
 
-Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_KEY`만 있으면 된다. Meta 관련 키 없이도 소재 생성까지는 동작한다.
+| 섹션 | 언제 필요한가 |
+|------|--------------|
+| `[platforms.meta]` | Meta(Instagram/Facebook) 광고 게재·성과 수집 |
+| `[ai.anthropic]` 또는 `[ai.google]` | LLM 호출(카피 생성, 주간 분석, improver) — 최소 1개 필수 |
+| `[ai.voyage]` | Winner DB / qualify 파이프라인 (워커 사용 시 필수) |
+| `[billing.stripe]` | Service 모드(웹 UI + 결제) — 현재는 비활성 |
+| `[server]` | Service 모드 포트/URL — 현재는 비활성 |
+| `[defaults]` | 캠페인 기본값(예산/기간/연령/CTR 임계) |
+
+`config.toml` 상단 주석에 각 섹션이 어느 흐름에서 쓰이는지 정리되어 있다.
+
+Scrape과 Generate만 테스트하려면 `[ai.anthropic]`과 `[ai.google]` 둘 다 있으면 된다. Meta 키 없이도 소재 생성까지는 동작한다.
+
+### 사용자 지정 설정 경로
+
+기본은 프로젝트 루트의 `./config.toml`이다. 다른 경로를 쓰려면 `CONFIG_PATH` 환경변수를 사용한다.
+
+```bash
+CONFIG_PATH=/etc/ad-ai/prod.toml npm run server
+```
 
 ---
 
@@ -40,7 +49,7 @@ Scrape과 Generate만 테스트하려면 `ANTHROPIC_API_KEY`와 `GOOGLE_AI_API_K
 
 로컬에서 직접 광고를 돌리는 경우 아래 순서로 진행한다.
 
-1. **의존성 + 환경변수** — 위 "시작하기"에서 `.env.owner.example` → `.env` 복사 후 키 주입
+1. **의존성 + 설정** — 위 "시작하기"에서 `config.example.toml` → `config.toml` 복사 후 키 주입
 2. **수동 bootstrap (최초 1회)** — 아래 "빠른 테스트 가이드" 순서로 Scrape → Generate → Review → Launch 까지 1사이클 실행해 첫 캠페인을 Meta에 띄운다. 이 단계에서 `data/products/`, `data/creatives/`, `data/campaigns/` 가 시드된다.
 3. **자기학습 워커 등록** — 아래 "자기학습 워커 설치" 에 따라 launchd 데몬 기동. 이후 6시간마다 성과 수집, 2일마다 주간 분석 + 자기학습 사이클이 자동 실행된다.
 4. **운영 중** — 새 제품은 TUI로 등록·Generate·Review·Launch만 수동으로 하면 된다. 성과 수집 → Winner DB 적재 → 약한 variant 개선 루프는 워커가 알아서 돌린다.
@@ -147,7 +156,7 @@ npm run app
 # → Launch 선택
 ```
 
-승인된 소재를 Meta Marketing API로 게재한다. `.env`에 Meta 키가 설정되어 있어야 한다.
+승인된 소재를 Meta Marketing API로 게재한다. `config.toml`의 `[platforms.meta]` 섹션이 채워져 있어야 한다.
 
 ---
 
@@ -175,21 +184,11 @@ npm run pipeline <URL1> [URL2] ...     # 스크래핑 + 소재 생성 일괄 실
 
 ```bash
 npm install                           # tsx 등 의존성 설치 확인
-bash scripts/install-worker.sh        # plist 생성 (토큰은 __INJECT__ 자리표시자 상태)
+cp config.example.toml config.toml    # 미설정 상태라면 먼저 채움
+bash scripts/install-worker.sh        # plist 생성 + launchctl load
 ```
 
-`~/Library/LaunchAgents/com.adai.worker.plist` 를 편집해서 4개 `__INJECT__` 자리를 실제 토큰 값으로 교체:
-
-- `META_ACCESS_TOKEN`
-- `META_AD_ACCOUNT_ID`
-- `ANTHROPIC_API_KEY`
-- `VOYAGE_API_KEY`  ← Winner DB embedding 용 (없으면 worker가 부팅 거부)
-
-그런 다음 다시 실행해서 로드:
-
-```bash
-bash scripts/install-worker.sh        # 이번엔 __INJECT__가 없으므로 launchctl load 까지 실행됨
-```
+워커는 프로젝트 루트의 `config.toml`을 cwd 기준으로 읽으므로 별도 환경변수 주입이 필요 없습니다. `[platforms.meta]`, `[ai.anthropic]`, `[ai.voyage]`가 모두 채워져 있어야 boot됩니다.
 
 로그 확인:
 

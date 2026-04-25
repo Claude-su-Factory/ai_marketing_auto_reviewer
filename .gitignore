@@ -35,7 +35,7 @@ logs/
 packages/server/tmp/
 
 # launchd / local worker (installed plist lives at ~/Library/LaunchAgents/, never in repo)
-# The template scripts/com.adai.worker.plist uses __INJECT__ placeholders and is safe to commit.
+# The template scripts/com.adai.worker.plist no longer carries secret placeholders (worker reads config.toml from cwd) — safe to commit.
 
 # Personal helper scripts (contain secrets or machine-specific paths)
 scripts/*.local.sh

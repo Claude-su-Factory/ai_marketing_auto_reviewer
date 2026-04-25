@@ -71,6 +71,13 @@ packages/server/src/db.ts    — DB 스키마 및 마이그레이션 정의
 - `subagent-driven-development` 등 스킬이 "master 사용 시 사용자 동의 필요"를 요구하더라도 이 규칙이 사전 동의 역할을 한다.
 
 
+## 환경변수 정책 (MANDATORY)
+
+`process.env.X` 직접 참조 금지. 모든 설정은 `config.toml`에 두고 `getConfig()` 또는 도메인 helper(`@ad-ai/core/config/helpers.js`의 `requireMeta`/`requireAnthropicKey`/`requireGoogleAiKey`/`requireVoyageKey`/`requireStripeConfig`)를 사용한다. 예외: `CONFIG_PATH` 1건만 `loader.ts` 내부에서 사용 허용.
+
+테스트는 `setConfigForTesting(makeTestConfig({...}))` 패턴을 사용한다. `vi.stubEnv` 또는 `process.env` 직접 조작 금지. `vitest.setup.ts`가 매 테스트 자동으로 BASE_CONFIG를 주입하므로 별도 setup 없이도 테스트 가능.
+
+
 ## Subagent 호출 규칙 (MANDATORY)
 
 다음 작업은 커밋 전 해당 subagent로 검토한다.

@@ -1,6 +1,6 @@
 # 아키텍처
 
-마지막 업데이트: 2026-04-22
+마지막 업데이트: 2026-04-25
 
 ---
 
@@ -30,7 +30,7 @@ packages/server/src/는 Express/Stripe/SQLite presentation layer. packages/serve
 packages/core/src/는 외부(어떤 presentation layer에도) 의존하지 않는다.
 ```
 
-Owner 모드는 `.env`의 AI 키로 직접 호출하여 무제한 사용한다. Customer 모드는 2026-04-22 제거되어 비활성 상태이다 (ROADMAP Tier 2 "웹 UI + customer 모드 재도입" 참조).
+Owner 모드는 `config.toml`의 AI 키로 직접 호출하여 무제한 사용한다. Customer 모드는 2026-04-22 제거되어 비활성 상태이다 (ROADMAP Tier 2 "웹 UI + customer 모드 재도입" 참조).
 
 ---
 
@@ -170,7 +170,7 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 
 **Why:** Meta 외 플랫폼 (TikTok, Google Ads 등) 확장 가능성을 준비하되, 현재는 Meta만 구현. 플랫폼별 로직이 `cli/entries/launch.ts`나 `core/campaign/`에 섞여있으면 확장 시 코드 수정 범위가 커진다.
 
-**How:** `packages/core/src/platform/types.ts`의 `AdPlatform` interface (launch/fetchReports/cleanup). `packages/core/src/platform/registry.ts`가 `.env`의 `AD_PLATFORMS=meta,tiktok` csv를 파싱해 활성 어댑터 배열을 반환. 각 어댑터는 `packages/core/src/platform/<name>/` 하위에 자체 logic. 어댑터별 credential env prefix 강제 (`META_*`, 추후 `TIKTOK_*`).
+**How:** `packages/core/src/platform/types.ts`의 `AdPlatform` interface (launch/fetchReports/cleanup). `packages/core/src/platform/registry.ts`가 `config.toml`의 `[platforms] enabled = ["meta"]` 배열을 읽어 활성 어댑터 배열을 반환. 각 어댑터는 `packages/core/src/platform/<name>/` 하위에 자체 logic. 어댑터별 credential은 `[platforms.<name>]` 섹션에 분리 (`[platforms.meta]`, 추후 `[platforms.tiktok]`).
 
 **Trade-off:** 현재는 어댑터 1개라 과도한 추상화처럼 보이지만, Plan B의 multi-variant 런칭과 Plan C의 Winner DB에서 플랫폼 중립 흐름을 요구하므로 지금 도입하는 것이 합리적.
 
@@ -181,6 +181,19 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 **How:** `packages/cli/src/mode.ts`, `packages/cli/src/client/aiProxy.ts`, `packages/cli/src/client/usageServer.ts` 삭제. CLI 는 항상 owner 경로(`.env` AI 키 직접 호출)로만 동작. `packages/server/src/` 코드는 보존하되 실행하지 않는다 (non-active). 커밋: `d3d575e`, `0c626f2`.
 
 **Trade-off:** `server/` billing/license/AI proxy 코드가 사장(dead code)으로 남는다. 재활성화 시 코드 자체는 재사용 가능하나, 서버 인프라 설정·Stripe 재연결·테스트 보강이 필요하다. 트리거: ROADMAP Tier 2 "웹 UI + customer 모드 재도입".
+
+### 12. TOML 설정 + Zod 검증된 lazy singleton (2026-04-25)
+
+**Why:** `.env` 평면 구조는 17개 변수를 한 줄씩 늘어놓아 도메인 그룹핑이 불가능했고, 멀티플랫폼 어댑터 추가 시 `META_*`/`TIKTOK_*`/`GOOGLE_*` 접두사가 폭증한다. TOML의 `[platforms.meta]`/`[platforms.tiktok]` 섹션 구조는 자연스럽게 도메인을 표현하고, Zod schema가 cross-section 검증(예: `enabled=["meta"]`이면 `[platforms.meta]` 필수)을 수행한다.
+
+**How:** `packages/core/src/config/`에 모듈 분리.
+- `loader.ts`가 `smol-toml`로 파일 파싱 후 `schema.ts`의 Zod 스키마로 검증. 실패 시 path-specific 에러 메시지(예: `platforms.meta.ad_account_id: must be "act_" + digits`).
+- `index.ts`의 lazy singleton(`getConfig()`)이 첫 호출 시 캐시. 테스트는 `setConfigForTesting(makeTestConfig({...}))` 패턴으로 주입(vitest.setup.ts가 매 테스트 자동 reset).
+- 도메인별 require helper(`requireMeta`/`requireAnthropicKey`/`requireGoogleAiKey`/`requireVoyageKey`/`requireStripeConfig`)로 호출처 narrowing. 모두 `cfg: Config = getConfig()` 시그니처로 pure-function injection 가능.
+- `process.env`는 `CONFIG_PATH` 메타 설정 1건만 예외 허용. `dotenv` 의존성과 `.env.*.example` 파일은 완전 제거.
+- 모듈 로드 순서가 문제되는 경우(예: `improver/index.ts`의 CTR 임계)는 const 대신 getter 함수(`getCtrThreshold()`)로 lazy 평가.
+
+**Trade-off:** TOML 파일 누락 시 첫 `getConfig()` 호출이 throw하므로 fail-fast가 명시적. 단점: 호출이 여러 모듈에 흩어진 경우 어떤 키가 필요한지 schema와 helper.ts를 함께 봐야 한다.
 
 ---
 
