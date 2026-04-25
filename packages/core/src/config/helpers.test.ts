@@ -5,6 +5,8 @@ import {
   requireGoogleAiKey,
   requireVoyageKey,
   requireStripeConfig,
+  requireTiktok,
+  requireGoogle,
 } from "./helpers.js";
 import { makeTestConfig } from "./testing.js";
 
@@ -53,5 +55,37 @@ describe("config helpers", () => {
 
   it("requireStripeConfig throws when billing omitted", () => {
     expect(() => requireStripeConfig(makeTestConfig({}, ["billing"]))).toThrow(/billing\.stripe/);
+  });
+});
+
+describe("requireTiktok", () => {
+  it("returns tiktok config when present", () => {
+    const cfg = makeTestConfig({
+      platforms: {
+        enabled: ["meta", "tiktok"],
+        tiktok: { access_token: "t-tok", advertiser_id: "12345" },
+      },
+    });
+    expect(requireTiktok(cfg).access_token).toBe("t-tok");
+  });
+
+  it("throws when [platforms.tiktok] missing", () => {
+    expect(() => requireTiktok(makeTestConfig())).toThrow(/platforms\.tiktok/);
+  });
+});
+
+describe("requireGoogle", () => {
+  it("returns google config when present", () => {
+    const cfg = makeTestConfig({
+      platforms: {
+        enabled: ["meta", "google"],
+        google: { developer_token: "g-tok", customer_id: "123-456-7890" },
+      },
+    });
+    expect(requireGoogle(cfg).developer_token).toBe("g-tok");
+  });
+
+  it("throws when [platforms.google] missing", () => {
+    expect(() => requireGoogle(makeTestConfig())).toThrow(/platforms\.google/);
   });
 });

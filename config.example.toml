@@ -3,7 +3,10 @@
 # config.toml은 .gitignore에 있어 커밋되지 않음
 
 [platforms]
-# 활성화할 광고 플랫폼 목록. 멀티플랫폼 어댑터 도입 시 "tiktok", "google" 추가
+# 활성화할 광고 플랫폼 목록.
+# - "meta": 구현 완료, 즉시 사용 가능
+# - "tiktok", "google": scaffold만 존재 (NotImplemented). enabled에 추가해도 registry가 warning 후 skip.
+#   실 통합은 packages/core/src/platform/<name>/README.md 참조.
 enabled = ["meta"]
 
 [platforms.meta]
@@ -13,6 +16,19 @@ access_token = "EAA..."
 ad_account_id = "act_1234567890"  # "act_" 접두사 포함
 page_id = "1234567890"
 instagram_actor_id = "1234567890"
+
+# Scaffold-only — 실 통합 전까지 주석 유지. 활성화하려면:
+#   1. enabled 배열에 "tiktok" 추가
+#   2. 아래 섹션 주석 해제 후 실제 값 입력
+#   3. packages/core/src/platform/tiktok/README.md 참조
+# [platforms.tiktok]
+# access_token = "..."   # TikTok Marketing API access token
+# advertiser_id = "..."  # TikTok Ads Manager advertiser ID
+
+# Scaffold-only — 실 통합 전까지 주석 유지.
+# [platforms.google]
+# developer_token = "..."   # Google Ads developer token
+# customer_id = "..."       # Google Ads CID (123-456-7890 형식)
 
 [ai.anthropic]
 # Anthropic Claude — copy 생성, 주간 분석, improver

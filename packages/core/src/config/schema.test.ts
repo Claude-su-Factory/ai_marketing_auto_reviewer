@@ -61,4 +61,38 @@ describe("ConfigSchema", () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it("rejects when 'tiktok' enabled but [platforms.tiktok] missing", () => {
+    const r = ConfigSchema.safeParse({
+      platforms: { enabled: ["tiktok"], meta: validBase.platforms.meta },
+      ai: { anthropic: { api_key: "k" } },
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.join(".") === "platforms.tiktok")).toBe(true);
+    }
+  });
+
+  it("rejects when 'google' enabled but [platforms.google] missing", () => {
+    const r = ConfigSchema.safeParse({
+      platforms: { enabled: ["google"], meta: validBase.platforms.meta },
+      ai: { anthropic: { api_key: "k" } },
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.join(".") === "platforms.google")).toBe(true);
+    }
+  });
+
+  it("accepts tiktok + meta when both sections present", () => {
+    const r = ConfigSchema.safeParse({
+      ...validBase,
+      platforms: {
+        enabled: ["meta", "tiktok"],
+        meta: validBase.platforms.meta,
+        tiktok: { access_token: "t-tok", advertiser_id: "12345" },
+      },
+    });
+    expect(r.success).toBe(true);
+  });
 });

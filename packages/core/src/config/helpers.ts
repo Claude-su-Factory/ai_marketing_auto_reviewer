@@ -34,3 +34,21 @@ export function requireStripeConfig(
   if (!stripe) throw new Error("[billing.stripe] is required for this operation");
   return stripe;
 }
+
+export function requireTiktok(
+  cfg: Config = getConfig(),
+): NonNullable<Config["platforms"]["tiktok"]> {
+  if (!cfg.platforms.tiktok) {
+    throw new Error("[platforms.tiktok] is required for this operation");
+  }
+  return cfg.platforms.tiktok;
+}
+
+export function requireGoogle(
+  cfg: Config = getConfig(),
+): NonNullable<Config["platforms"]["google"]> {
+  if (!cfg.platforms.google) {
+    throw new Error("[platforms.google] is required for this operation");
+  }
+  return cfg.platforms.google;
+}

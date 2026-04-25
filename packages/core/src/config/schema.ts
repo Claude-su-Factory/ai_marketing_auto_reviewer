@@ -9,9 +9,22 @@ const MetaPlatform = z.object({
   instagram_actor_id: z.string().regex(/^\d+$/),
 });
 
+// Scaffold 전용 — 필드는 최소만. 실 통합 시 OAuth 등 추가 시 schema 확장.
+const TiktokPlatform = z.object({
+  access_token: z.string().min(1),
+  advertiser_id: z.string().min(1),  // numeric 검증은 실 통합 시 강화
+});
+
+const GooglePlatform = z.object({
+  developer_token: z.string().min(1),
+  customer_id: z.string().min(1),    // "123-456-7890" 검증은 실 통합 시 강화
+});
+
 const PlatformsSection = z.object({
   enabled: z.array(PlatformId).min(1, "at least one platform must be enabled"),
   meta: MetaPlatform.optional(),
+  tiktok: TiktokPlatform.optional(),
+  google: GooglePlatform.optional(),
 });
 
 const AiSection = z
@@ -78,6 +91,20 @@ export const ConfigSchema = z
           code: z.ZodIssueCode.custom,
           path: ["platforms", "meta"],
           message: '"meta"가 platforms.enabled에 있지만 [platforms.meta] 섹션이 없습니다',
+        });
+      }
+      if (id === "tiktok" && !cfg.platforms.tiktok) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["platforms", "tiktok"],
+          message: '"tiktok"가 platforms.enabled에 있지만 [platforms.tiktok] 섹션이 없습니다',
+        });
+      }
+      if (id === "google" && !cfg.platforms.google) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["platforms", "google"],
+          message: '"google"가 platforms.enabled에 있지만 [platforms.google] 섹션이 없습니다',
         });
       }
     }
