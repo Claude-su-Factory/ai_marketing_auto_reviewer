@@ -1,9 +1,12 @@
 import type { Report } from "../types.js";
+import { getConfig } from "@ad-ai/core/config/index.js";
 
-export const CTR_THRESHOLD = Number(process.env.CTR_IMPROVEMENT_THRESHOLD ?? 1.5);
+export function getCtrThreshold(): number {
+  return getConfig().defaults.ctr_improvement_threshold;
+}
 
 export function shouldTriggerImprovement(report: Report): boolean {
-  return report.ctr < CTR_THRESHOLD;
+  return report.ctr < getCtrThreshold();
 }
 
 export function buildImprovementPrompt(

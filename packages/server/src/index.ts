@@ -18,8 +18,8 @@ import { cleanupOldFiles } from "./jobs/videoJob.js";
 import { startScheduler } from "./scheduler.js";
 import { getConfig } from "@ad-ai/core/config/index.js";
 
-const PORT = Number(process.env.SERVER_PORT ?? 3000);
-const SERVER_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`;
+const PORT = getConfig().server.port;
+const SERVER_URL = getConfig().server.base_url;
 
 const db = createDb();
 const billing = createBillingService(db);

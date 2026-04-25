@@ -4,7 +4,7 @@ import { execFileSync } from "child_process";
 import type { Report, Improvement, ImprovementChange } from "../types.js";
 import { appendJson } from "../storage.js";
 import {
-  CTR_THRESHOLD,
+  getCtrThreshold,
   buildImprovementPrompt,
   parseImprovements,
 } from "./index.js";
@@ -53,7 +53,7 @@ export async function runImprovementCycle(
     const prompt = buildImprovementPrompt(
       item.targetFile,
       currentCode,
-      `CTR ${weakReports[0].ctr}% — 임계값 ${CTR_THRESHOLD}% 미달`,
+      `CTR ${weakReports[0].ctr}% — 임계값 ${getCtrThreshold()}% 미달`,
       item.issue
     );
 
