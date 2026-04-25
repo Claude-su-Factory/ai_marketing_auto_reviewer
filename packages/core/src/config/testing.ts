@@ -32,6 +32,8 @@ const BASE_CONFIG: Config = {
   },
 };
 
+// Note: undefined override values are skipped (cannot clear keys via undefined).
+// Use the `omit` parameter of makeTestConfig to remove optional sections.
 function deepMerge<T>(base: T, overrides: DeepPartial<T>): T {
   const out: any = Array.isArray(base) ? [...(base as any)] : { ...base };
   for (const key of Object.keys(overrides) as (keyof T)[]) {
@@ -52,6 +54,17 @@ function deepMerge<T>(base: T, overrides: DeepPartial<T>): T {
   return out;
 }
 
-export function makeTestConfig(overrides: DeepPartial<Config> = {}): Config {
-  return deepMerge(BASE_CONFIG, overrides);
+export function makeTestConfig(
+  overrides: DeepPartial<Config> = {},
+  omit: ReadonlyArray<"billing" | "platforms.meta" | "ai.anthropic" | "ai.google" | "ai.voyage"> = []
+): Config {
+  const merged = deepMerge(BASE_CONFIG, overrides);
+  for (const path of omit) {
+    if (path === "billing") delete (merged as any).billing;
+    else if (path === "platforms.meta") delete (merged as any).platforms.meta;
+    else if (path === "ai.anthropic") delete (merged as any).ai.anthropic;
+    else if (path === "ai.google") delete (merged as any).ai.google;
+    else if (path === "ai.voyage") delete (merged as any).ai.voyage;
+  }
+  return merged;
 }
