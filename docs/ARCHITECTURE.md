@@ -221,8 +221,6 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 | `data/campaigns/` | 게재된 Meta 캠페인 정보 |
 | `data/reports/` | 일간/주간 성과 데이터 |
 | `data/improvements/` | 자율 개선 이력 (before/after diff) |
-| `data/temp/` | ~~Customer 모드 임시 파일~~ (비활성 — 2026-04-22 Customer 모드 제거) |
-| `data/courses/` | SP0 이전 레거시. `npm run migrate`로 `products/`로 이관. 신규 코드는 사용 금지 |
 | `packages/server/src/tmp/` | Veo 영상 임시 저장 (24시간 후 삭제) |
 
 ---

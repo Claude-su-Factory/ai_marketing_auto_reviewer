@@ -208,16 +208,6 @@ rm ~/Library/LaunchAgents/com.adai.worker.plist
 
 ---
 
-## 기존 데이터 마이그레이션
-
-이전 버전(`data/courses/`)의 데이터가 있으면 `data/products/`로 변환한다.
-
-```bash
-npm run migrate
-```
-
----
-
 ## 데이터 구조
 
 ```

@@ -18,8 +18,6 @@
     "worker": "tsx packages/cli/src/entries/worker.ts",
     "server": "tsx packages/server/src/index.ts",
     "admin": "tsx packages/server/src/admin.ts",
-    "migrate": "tsx scripts/migrate.ts",
-    "migrate:creatives": "tsx scripts/migrate-creatives.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
