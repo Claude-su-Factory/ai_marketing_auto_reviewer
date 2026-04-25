@@ -191,7 +191,7 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 - `index.ts`의 lazy singleton(`getConfig()`)이 첫 호출 시 캐시. 테스트는 `setConfigForTesting(makeTestConfig({...}))` 패턴으로 주입(vitest.setup.ts가 매 테스트 자동 reset).
 - 도메인별 require helper(`requireMeta`/`requireAnthropicKey`/`requireGoogleAiKey`/`requireVoyageKey`/`requireStripeConfig`)로 호출처 narrowing. 모두 `cfg: Config = getConfig()` 시그니처로 pure-function injection 가능.
 - `process.env`는 `CONFIG_PATH` 메타 설정 1건만 예외 허용. `dotenv` 의존성과 `.env.*.example` 파일은 완전 제거.
-- 모듈 로드 순서가 문제되는 경우(예: `improver/index.ts`의 CTR 임계)는 const 대신 getter 함수(`getCtrThreshold()`)로 lazy 평가.
+- 모듈-스코프 상수에서 `getConfig()`를 호출하지 않는다. `export const X = getConfig().X` 형태는 import 시점에 평가되는데, vitest가 `setupFiles`의 `beforeEach`로 `setConfigForTesting`을 호출하기 전이므로 실 `config.toml`을 ENOENT로 찾으려다 테스트가 깨진다. 이런 값은 항상 getter 함수(`packages/core/src/improver/index.ts:getCtrThreshold` 참조)로 노출해 호출 시점에 lazy 평가한다.
 
 **Trade-off:** TOML 파일 누락 시 첫 `getConfig()` 호출이 throw하므로 fail-fast가 명시적. 단점: 호출이 여러 모듈에 흩어진 경우 어떤 키가 필요한지 schema와 helper.ts를 함께 봐야 한다.
 

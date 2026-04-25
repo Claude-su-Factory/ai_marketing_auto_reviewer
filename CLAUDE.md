@@ -77,6 +77,15 @@ packages/server/src/db.ts    — DB 스키마 및 마이그레이션 정의
 
 테스트는 `setConfigForTesting(makeTestConfig({...}))` 패턴을 사용한다. `vi.stubEnv` 또는 `process.env` 직접 조작 금지. `vitest.setup.ts`가 매 테스트 자동으로 BASE_CONFIG를 주입하므로 별도 setup 없이도 테스트 가능.
 
+### 모듈-스코프 상수에서 `getConfig()` 호출 금지
+
+`export const X = getConfig().X` 형태는 모듈 import 시점에 평가된다. 이 시점은 `vitest.setup.ts`의 `beforeEach`보다 빨라 `setConfigForTesting`이 아직 주입되지 않았으므로, 첫 import가 실 `config.toml`을 찾으려다 ENOENT로 실패해 테스트가 깨진다. config 값을 모듈 레벨에 노출하려면 항상 getter 함수로 감싼다(`packages/core/src/improver/index.ts:getCtrThreshold` 참조).
+
+### Helper 배치 규칙
+
+- 옵셔널 섹션(`platforms.meta`, `billing.stripe`, `ai.*` 등 — 없으면 throw해야 함)에 대한 접근은 `packages/core/src/config/helpers.ts`의 `requireX` 헬퍼로 통일한다.
+- `[defaults]`처럼 Zod 기본값이 있어 항상 존재하는 값의 trivial accessor는 소비자 모듈 안에 두어도 된다. 같은 종류의 getter가 2개 이상 생기는 시점에 `helpers.ts`로 일괄 이전한다.
+
 
 ## Subagent 호출 규칙 (MANDATORY)
 
