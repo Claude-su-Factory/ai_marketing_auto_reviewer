@@ -10,7 +10,9 @@ import {
 
 const platforms = await activePlatforms();
 if (platforms.length === 0) {
-  console.error("활성화된 플랫폼이 없습니다. .env의 AD_PLATFORMS 또는 credential을 확인하세요.");
+  console.error(
+    "활성화된 플랫폼이 없습니다. config.toml의 [platforms] enabled 또는 [platforms.meta] credential을 확인하세요."
+  );
   process.exit(1);
 }
 console.log(`활성 플랫폼: ${platforms.map((p) => p.name).join(", ")}`);

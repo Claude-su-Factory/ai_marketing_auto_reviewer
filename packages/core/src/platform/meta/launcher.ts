@@ -6,6 +6,8 @@ import type { VariantGroup, LaunchResult, LaunchLog } from "../types.js";
 import { assembleAssetFeedSpec } from "./assetFeedSpec.js";
 import { executeRollback, appendOrphansToDisk, type CreatedResource } from "./rollback.js";
 import { readJson, writeJson } from "../../storage.js";
+import { getConfig } from "../../config/index.js";
+import { requireMeta } from "../../config/helpers.js";
 
 const { AdAccount } = bizSdk as any;
 
@@ -15,9 +17,10 @@ export function buildCampaignName(product: Product): string {
 }
 
 export function buildAdSetTargeting() {
+  const cfg = getConfig();
   return {
-    age_min: Number(process.env.AD_TARGET_AGE_MIN ?? 20),
-    age_max: Number(process.env.AD_TARGET_AGE_MAX ?? 45),
+    age_min: cfg.defaults.target_age_min,
+    age_max: cfg.defaults.target_age_max,
     geo_locations: { countries: ["KR"] },
     publisher_platforms: ["instagram"],
     instagram_positions: ["stream", "story", "reels"],
@@ -25,9 +28,10 @@ export function buildAdSetTargeting() {
 }
 
 export function buildAdConfig() {
+  const cfg = getConfig();
   return {
-    dailyBudgetKRW: Number(process.env.AD_DAILY_BUDGET_KRW ?? 10000),
-    durationDays: Number(process.env.AD_DURATION_DAYS ?? 14),
+    dailyBudgetKRW: cfg.defaults.daily_budget_krw,
+    durationDays: cfg.defaults.duration_days,
     objective: "OUTCOME_SALES",
     optimizationGoal: "LINK_CLICKS",
     billingEvent: "IMPRESSIONS",
@@ -35,8 +39,9 @@ export function buildAdConfig() {
 }
 
 function initMeta() {
-  (bizSdk as any).FacebookAdsApi.init(process.env.META_ACCESS_TOKEN!);
-  return new AdAccount(process.env.META_AD_ACCOUNT_ID!);
+  const meta = requireMeta();
+  (bizSdk as any).FacebookAdsApi.init(meta.access_token);
+  return new AdAccount(meta.ad_account_id);
 }
 
 async function uploadImage(account: any, imagePath: string): Promise<string> {
@@ -115,11 +120,12 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
     });
 
     // 5. Create DCO ad creative
+    const meta = requireMeta();
     const adCreative = await account.createAdCreative([], {
       name: `${group.product.name} - DCO Creative`,
       object_story_spec: {
-        page_id: process.env.META_PAGE_ID!,
-        instagram_actor_id: process.env.META_INSTAGRAM_ACTOR_ID,
+        page_id: meta.page_id,
+        instagram_actor_id: meta.instagram_actor_id,
       },
       asset_feed_spec: assetFeedSpec,
     });

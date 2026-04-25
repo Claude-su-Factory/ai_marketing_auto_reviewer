@@ -3,6 +3,7 @@ import type { Creative } from "../../types.js";
 import type { VariantReport } from "../types.js";
 import { readJson, listJson, writeJson } from "../../storage.js";
 import { parseBodyAssetBreakdown } from "./breakdown.js";
+import { requireMeta } from "../../config/helpers.js";
 
 const { Ad } = bizSdk as any;
 
@@ -33,7 +34,7 @@ export async function fetchMetaVariantReports(
   campaignId: string,
   date: string,
 ): Promise<VariantReport[]> {
-  (bizSdk as any).FacebookAdsApi.init(process.env.META_ACCESS_TOKEN!);
+  (bizSdk as any).FacebookAdsApi.init(requireMeta().access_token);
 
   const campaign = await readJson<any>(`data/campaigns/${campaignId}.json`);
   if (!campaign) return [];

@@ -4,6 +4,7 @@ import { fetchMetaVariantReports } from "./monitor.js";
 import { executeRollback, appendOrphansToDisk } from "./rollback.js";
 import { readJson, writeJson } from "../../storage.js";
 import bizSdk from "facebook-nodejs-business-sdk";
+import { requireMeta } from "../../config/helpers.js";
 
 async function deleteMetaResource(_type: "campaign" | "adset" | "ad" | "creative", id: string): Promise<void> {
   // Meta SDK uses uniform DELETE-by-ID syntax; type is kept for caller-side documentation only.
@@ -22,7 +23,7 @@ export function createMetaAdapter(): AdPlatform {
       return fetchMetaVariantReports(campaignId, date);
     },
     async cleanup(campaignId: string): Promise<CleanupResult> {
-      (bizSdk as any).FacebookAdsApi.init(process.env.META_ACCESS_TOKEN!);
+      (bizSdk as any).FacebookAdsApi.init(requireMeta().access_token);
       const campaign = await readJson<any>(`data/campaigns/${campaignId}.json`);
       if (!campaign) return { deleted: [], orphans: [] };
 

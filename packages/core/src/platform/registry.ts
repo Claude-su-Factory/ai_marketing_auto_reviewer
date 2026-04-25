@@ -1,44 +1,29 @@
 import type { AdPlatform } from "./types.js";
+import { getConfig, type Config } from "../config/index.js";
 
-const REQUIRED_ENV: Record<string, string[]> = {
-  meta: ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "META_PAGE_ID"],
-};
-
-export function parseActivePlatformNames(raw: string | undefined): string[] {
-  if (!raw || raw.trim() === "") return ["meta"];
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const chunk of raw.split(",")) {
-    const name = chunk.trim().toLowerCase();
-    if (name && !seen.has(name)) {
-      seen.add(name);
-      result.push(name);
-    }
-  }
-  return result;
-}
 
 export type ValidationResult =
   | { ok: true }
   | { ok: false; missing: string[] };
 
-export function validatePlatformEnv(
-  name: string,
-  env: Record<string, string | undefined>,
-): ValidationResult {
-  const required = REQUIRED_ENV[name];
-  if (!required) {
+export function validatePlatform(name: string, cfg: Config = getConfig()): ValidationResult {
+  if (name !== "meta") {
     return { ok: false, missing: [`platform "${name}" not yet supported`] };
   }
-  const missing = required.filter((key) => !env[key]);
+  const meta = cfg.platforms.meta;
+  if (!meta) return { ok: false, missing: ["platforms.meta"] };
+  const missing: string[] = [];
+  if (!meta.access_token) missing.push("platforms.meta.access_token");
+  if (!meta.ad_account_id) missing.push("platforms.meta.ad_account_id");
+  if (!meta.page_id) missing.push("platforms.meta.page_id");
   return missing.length === 0 ? { ok: true } : { ok: false, missing };
 }
 
 export async function activePlatforms(): Promise<AdPlatform[]> {
-  const names = parseActivePlatformNames(process.env.AD_PLATFORMS);
+  const cfg = getConfig();
   const platforms: AdPlatform[] = [];
-  for (const name of names) {
-    const v = validatePlatformEnv(name, process.env);
+  for (const name of cfg.platforms.enabled) {
+    const v = validatePlatform(name, cfg);
     if (!v.ok) {
       console.warn(`[platform] skipping "${name}": ${v.missing.join(", ")}`);
       continue;

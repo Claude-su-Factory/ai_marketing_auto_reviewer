@@ -147,7 +147,13 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
   try {
     const platforms = await activePlatforms();
     if (platforms.length === 0) {
-      return { success: false, message: "Launch 실패", logs: ["활성화된 플랫폼이 없습니다. .env의 AD_PLATFORMS 또는 credential을 확인하세요."] };
+      return {
+        success: false,
+        message: "Launch 실패",
+        logs: [
+          "활성화된 플랫폼이 없습니다. config.toml의 [platforms] enabled 또는 [platforms.meta] credential을 확인하세요.",
+        ],
+      };
     }
     const creativePaths = await listJson("data/creatives");
     const allCreatives: Creative[] = [];

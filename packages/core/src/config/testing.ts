@@ -34,11 +34,24 @@ const BASE_CONFIG: Config = {
 
 // Note: undefined override values are skipped (cannot clear keys via undefined).
 // Use the `omit` parameter of makeTestConfig to remove optional sections.
+// Deep-copies all nested objects from base so that omit deletions never mutate BASE_CONFIG.
 function deepMerge<T>(base: T, overrides: DeepPartial<T>): T {
-  const out: any = Array.isArray(base) ? [...(base as any)] : { ...base };
-  for (const key of Object.keys(overrides) as (keyof T)[]) {
-    const ov = overrides[key];
+  const out: any = {};
+  // Deep-copy all keys from base first
+  for (const key of Object.keys(base as any) as (keyof T)[]) {
     const bv = (base as any)[key];
+    if (bv && typeof bv === "object" && !Array.isArray(bv)) {
+      out[key] = deepMerge(bv, {} as any);
+    } else if (Array.isArray(bv)) {
+      out[key] = [...bv];
+    } else {
+      out[key] = bv;
+    }
+  }
+  // Then apply overrides on top
+  for (const key of Object.keys(overrides as any) as (keyof T)[]) {
+    const ov = overrides[key];
+    const bv = out[key];
     if (
       ov &&
       typeof ov === "object" &&
@@ -51,7 +64,7 @@ function deepMerge<T>(base: T, overrides: DeepPartial<T>): T {
       out[key] = ov;
     }
   }
-  return out;
+  return out as T;
 }
 
 export function makeTestConfig(
