@@ -40,7 +40,8 @@ export interface Campaign {
   platform: string;                         // Plan A 신규 — "meta"
   /**
    * 플랫폼별 외부 리소스 ID 맵.
-   * Meta: { campaign, adSet, ad, creative? }
+   * Meta success: { campaign, adSet, ad, creative } — 모두 채워짐.
+   * Meta launch_failed: rollback 시점에 생성된 리소스만 (예: { campaign } 만 있을 수 있음).
    * TikTok / Google: 실 통합 시 정의.
    */
   externalIds: Record<string, string>;

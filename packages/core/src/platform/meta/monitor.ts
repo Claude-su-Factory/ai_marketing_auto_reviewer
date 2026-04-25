@@ -40,7 +40,18 @@ export async function fetchMetaVariantReports(
   if (!campaign) return [];
 
   const creatives = await loadCreativesForGroup(campaign.variantGroupId);
-  const ad = new Ad(campaign.externalIds?.ad);
+  const adId = campaign.externalIds?.ad;
+  if (!adId) {
+    // Campaign without ad ID — either launch_failed (rollback ran) or externally modified
+    // with corrupted record. Match pre-refactor 404 path behavior: mark externally_modified.
+    if (campaign.status !== "externally_modified") {
+      campaign.status = "externally_modified";
+      await writeJson(`data/campaigns/${campaignId}.json`, campaign);
+      console.warn(`[meta/monitor] campaign ${campaignId} has no externalIds.ad — marked externally_modified`);
+    }
+    return [];
+  }
+  const ad = new Ad(adId);
 
   try {
     const insights = await ad.getInsights(
