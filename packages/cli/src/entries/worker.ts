@@ -13,14 +13,19 @@ import {
 } from "@ad-ai/core/campaign/monitor.js";
 import { runScheduledImprovementCycle } from "@ad-ai/core/scheduler/improvementCycle.js";
 import { createQualifyJob } from "@ad-ai/core/rag/qualifyJob.js";
+import {
+  requireMeta,
+  requireAnthropicKey,
+  requireVoyageKey,
+} from "@ad-ai/core/config/helpers.js";
 
-const required = ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "ANTHROPIC_API_KEY", "VOYAGE_API_KEY"];
-for (const key of required) {
-  const v = process.env[key];
-  if (!v || v === "__INJECT__") {
-    console.error(`[worker] ${key} is missing or still set to placeholder "__INJECT__". Refusing to start.`);
-    process.exit(2);
-  }
+try {
+  requireMeta();
+  requireAnthropicKey();
+  requireVoyageKey();
+} catch (err) {
+  console.error(`[worker] config validation failed: ${(err as Error).message}. Refusing to start.`);
+  process.exit(2);
 }
 
 const mutex = createMutex();
