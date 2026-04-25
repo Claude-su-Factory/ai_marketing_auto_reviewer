@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { scrapeProduct } from "../scraper.js";
 
 const url = process.argv[2];

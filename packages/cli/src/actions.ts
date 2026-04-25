@@ -1,4 +1,3 @@
-import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { activePlatforms } from "@ad-ai/core/platform/registry.js";

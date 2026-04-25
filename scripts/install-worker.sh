@@ -23,14 +23,7 @@ else
   echo "Generated $PLIST_DST from template."
 fi
 
-if grep -q '__INJECT__' "$PLIST_DST"; then
-  echo ""
-  echo "NEXT STEP: Edit $PLIST_DST and replace __INJECT__ with real token"
-  echo "  values (META_ACCESS_TOKEN, META_AD_ACCOUNT_ID, ANTHROPIC_API_KEY, VOYAGE_API_KEY)."
-  echo "Then re-run this script to load the worker:"
-  echo "  bash scripts/install-worker.sh"
-  exit 0
-fi
+# Worker reads config.toml from PROJECT_ROOT cwd at runtime — no env injection needed.
 
 launchctl unload "$PLIST_DST" 2>/dev/null || true
 launchctl load "$PLIST_DST"

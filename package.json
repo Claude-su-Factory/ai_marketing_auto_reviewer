@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "app": "tsx packages/cli/src/entries/app.ts",
     "scrape": "tsx packages/cli/src/entries/scrape.ts",
@@ -20,9 +22,6 @@
     "migrate:creatives": "tsx scripts/migrate-creatives.ts",
     "test": "vitest run",
     "test:watch": "vitest"
-  },
-  "dependencies": {
-    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

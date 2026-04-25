@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express from "express";
 import { existsSync, mkdirSync } from "fs";
 import { createDb } from "./db.js";

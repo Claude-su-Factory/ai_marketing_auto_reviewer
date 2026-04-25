@@ -1,4 +1,3 @@
-import "dotenv/config";
 import cron from "node-cron";
 import { registerJobs } from "@ad-ai/core/scheduler/index.js";
 import { OWNER_CADENCE } from "@ad-ai/core/scheduler/cadence.js";

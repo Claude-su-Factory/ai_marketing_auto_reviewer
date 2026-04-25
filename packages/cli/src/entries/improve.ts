@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { readJson, listJson } from "@ad-ai/core/storage.js";
 import { runImprovementCycle } from "@ad-ai/core/improver/runner.js";
 import { shouldTriggerImprovement } from "@ad-ai/core/improver/index.js";

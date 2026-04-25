@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { runPipeline } from "../pipeline.js";
 
 const urls = process.argv.slice(2);

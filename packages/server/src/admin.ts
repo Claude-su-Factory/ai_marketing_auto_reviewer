@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { createDb } from "./db.js";
 import { createBillingService } from "./billing.js";
 import { createStripeClient, createStripeCustomer, createCheckoutSession } from "./stripe.js";

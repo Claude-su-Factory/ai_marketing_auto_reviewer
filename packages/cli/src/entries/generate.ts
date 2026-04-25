@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
 import { generateVideo } from "@ad-ai/core/creative/video.js";

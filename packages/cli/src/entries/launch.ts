@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { readJson, listJson } from "@ad-ai/core/storage.js";
 import type { Creative, Product } from "@ad-ai/core/types.js";
 import { activePlatforms } from "@ad-ai/core/platform/registry.js";

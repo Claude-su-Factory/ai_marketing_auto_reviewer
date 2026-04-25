@@ -16,10 +16,6 @@
   <key>StandardErrorPath</key><string>__PROJECT_ROOT__/logs/worker.err</string>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>META_ACCESS_TOKEN</key><string>__INJECT__</string>
-    <key>META_AD_ACCOUNT_ID</key><string>__INJECT__</string>
-    <key>ANTHROPIC_API_KEY</key><string>__INJECT__</string>
-    <key>VOYAGE_API_KEY</key><string>__INJECT__</string>
     <key>PATH</key><string>/usr/local/bin:/usr/bin:/bin</string>
   </dict>
 </dict>
