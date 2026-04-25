@@ -168,11 +168,11 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 
 ### 10. Platform Adapter 패턴 (2026-04-20)
 
-**Why:** Meta 외 플랫폼 (TikTok, Google Ads 등) 확장 가능성을 준비하되, 현재는 Meta만 구현. 플랫폼별 로직이 `cli/entries/launch.ts`나 `core/campaign/`에 섞여있으면 확장 시 코드 수정 범위가 커진다.
+**Why:** Meta 외 플랫폼 (TikTok, Google Ads 등) 확장 가능성을 준비하되, 현재는 Meta만 실 구현. TikTok/Google scaffold (NotImplementedError throw) 가 2026-04-25에 추가되어 실 통합 시 디렉토리/Config/Registry 작업이 미리 잡혀있다. 플랫폼별 로직이 `cli/entries/launch.ts`나 `core/campaign/`에 섞여있으면 확장 시 코드 수정 범위가 커진다.
 
-**How:** `packages/core/src/platform/types.ts`의 `AdPlatform` interface (launch/fetchReports/cleanup). `packages/core/src/platform/registry.ts`가 `config.toml`의 `[platforms] enabled = ["meta"]` 배열을 읽어 활성 어댑터 배열을 반환. 각 어댑터는 `packages/core/src/platform/<name>/` 하위에 자체 logic. 어댑터별 credential은 `[platforms.<name>]` 섹션에 분리 (`[platforms.meta]`, 추후 `[platforms.tiktok]`).
+**How:** `packages/core/src/platform/types.ts`의 `AdPlatform` interface (launch/fetchReports/cleanup). `packages/core/src/platform/registry.ts`가 `config.toml`의 `[platforms] enabled = ["meta"]` 배열을 읽어 활성 어댑터 배열을 반환. 각 어댑터는 `packages/core/src/platform/<name>/` 하위에 자체 logic. 어댑터별 credential은 `[platforms.<name>]` 섹션에 분리 (`[platforms.meta]`, `[platforms.tiktok]`, `[platforms.google]`). Scaffold 어댑터는 registry의 `NOT_YET_IMPLEMENTED` 집합에 의해 skip (실 통합 시 한 줄 제거 + dynamic import 분기 추가로 활성화).
 
-**Trade-off:** 현재는 어댑터 1개라 과도한 추상화처럼 보이지만, Plan B의 multi-variant 런칭과 Plan C의 Winner DB에서 플랫폼 중립 흐름을 요구하므로 지금 도입하는 것이 합리적.
+**Trade-off:** 현재는 Meta + 2 scaffold 구조라 인터페이스 일반화의 비용 일부를 미리 지불한 셈. `VariantReport.platformMetrics` (Meta-specific ranking 격리) + `LaunchResult.externalIds: Record<string,string>` (well-known keys: campaign, ad) 로 추상화. 두 번째 어댑터의 실 quality signal이 보일 때 qualifier를 platform-aware로 일반화 (Open Question, spec §13).
 
 ### 11. Owner-only CLI 전환 (2026-04-22)
 

@@ -34,7 +34,7 @@
 ## Tier 3 — 장기 (사용자 확정 필요)
 
 - 제품 카테고리 자동 분류 정확도 개선
-- Meta 외 플랫폼 지원 (TikTok ACO, Google Ads PMax, YouTube Shorts) — `[platforms.tiktok]`/`[platforms.google]` config 섹션 + Zod 스키마 확장 + `AdPlatform` 인터페이스에 어댑터 추가. 트리거: TOML 마이그레이션 완료(2026-04-25 ✅).
+- Meta 외 플랫폼 지원 (TikTok ACO, Google Ads PMax, YouTube Shorts) — Scaffold ✅ 완료 (2026-04-25, `packages/core/src/platform/tiktok/`, `google/` + Config 스키마 + Registry 가드). 실 API 통합은 미진행. 트리거: 사용자가 특정 플랫폼 실 운영 결정 시. 작업: NOT_YET_IMPLEMENTED 집합에서 제거 + dynamic import 분기 추가 + launcher/monitor/cleanup 본체 + breakdown.ts + 에러 분류 함수. 각 어댑터의 README.md에 SDK/OAuth/hierarchy/Implementation Checklist 정리됨.
 - 자율 개선 루프 강화 (launchd 인프라 구축 완료 — 2026-04-20. 추가 개선: 분석 히스토리 재주입, 개선 실패 알림 등)
 - 다국어 소재 생성 지원
 - Dev-time Agent Team Phase 1c — Architecture Steward subagent (대규모 리팩터 필요 시점에 도입)
