@@ -35,7 +35,7 @@ describe("types", () => {
 // ---- Plan A Task 3 additions ----
 
 describe("Creative (Plan A extensions)", () => {
-  it("has variantGroupId, variantLabel, metaAssetLabel fields", () => {
+  it("has variantGroupId, variantLabel, assetLabel fields", () => {
     const c: Creative = {
       id: "c1",
       productId: "p1",
@@ -46,7 +46,7 @@ describe("Creative (Plan A extensions)", () => {
         cta: "cta",
         hashtags: ["x"],
         variantLabel: "emotional",
-        metaAssetLabel: "variant-abc",
+        assetLabel: "variant-abc",
       },
       imageLocalPath: "/tmp/i.png",
       videoLocalPath: "/tmp/v.mp4",
@@ -55,26 +55,28 @@ describe("Creative (Plan A extensions)", () => {
     };
     expect(c.variantGroupId).toBe("g1");
     expect(c.copy.variantLabel).toBe("emotional");
-    expect(c.copy.metaAssetLabel).toBe("variant-abc");
+    expect(c.copy.assetLabel).toBe("variant-abc");
   });
 });
 
 describe("Campaign (Plan A extensions)", () => {
-  it("has variantGroupId, platform, metaAdId (singular), orphans", () => {
+  it("has variantGroupId, platform, externalIds map, orphans", () => {
     const c: Campaign = {
       id: "cam1",
       variantGroupId: "g1",
       productId: "p1",
       platform: "meta",
-      metaCampaignId: "meta-c1",
-      metaAdSetId: "meta-as1",
-      metaAdId: "meta-ad1",
+      externalIds: {
+        campaign: "meta-c1",
+        adSet: "meta-as1",
+        ad: "meta-ad1",
+      },
       launchedAt: "2026-04-20T00:00:00.000Z",
       status: "active",
       orphans: [],
     };
     expect(c.platform).toBe("meta");
-    expect(c.metaAdId).toBe("meta-ad1");
+    expect(c.externalIds.ad).toBe("meta-ad1");
     expect(c.orphans).toEqual([]);
   });
 

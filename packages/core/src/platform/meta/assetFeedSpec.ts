@@ -31,7 +31,7 @@ export function assembleAssetFeedSpec(input: AssetFeedSpecInput): AssetFeedSpec 
     const text = hashtags ? `${c.copy.body}\n\n${hashtags}` : c.copy.body;
     return {
       text,
-      adlabels: [{ name: c.copy.metaAssetLabel }],
+      adlabels: [{ name: c.copy.assetLabel }],
     };
   });
 

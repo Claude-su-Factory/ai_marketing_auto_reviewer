@@ -21,7 +21,7 @@ function mkCreative(
       cta: "c",
       hashtags: ["a"],
       variantLabel,
-      metaAssetLabel: `variant-${id}`,
+      assetLabel: `variant-${id}`,
     },
     imageLocalPath: "/tmp/i.png",
     videoLocalPath: "/tmp/v.mp4",

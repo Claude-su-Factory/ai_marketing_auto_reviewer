@@ -17,7 +17,7 @@ const group = {
   product: { id: "p1", name: "AI 부트캠프", description: "", targetUrl: "", currency: "KRW", tags: [], inputMethod: "manual" as const, createdAt: "" },
   creatives: [
     { id: "c1", productId: "p1", variantGroupId: "g1",
-      copy: { headline: "3개월 안에", body: "실전 프로젝트 12개", cta: "지금 신청", hashtags: ["AI"], variantLabel: "emotional" as const, metaAssetLabel: "" },
+      copy: { headline: "3개월 안에", body: "실전 프로젝트 12개", cta: "지금 신청", hashtags: ["AI"], variantLabel: "emotional" as const, assetLabel: "" },
       imageLocalPath: "img.jpg", videoLocalPath: "vid.mp4", status: "pending" as const, createdAt: "" },
   ],
 };

@@ -26,9 +26,10 @@ export interface VariantAggregate {
   impressions: number;
   clicks: number;
   inlineLinkClickCtr: number;
-  adQualityRanking: string | null;
-  adEngagementRanking: string | null;
-  adConversionRanking: string | null;
+  /** Meta-specific. 두 번째 어댑터의 quality signal 추가 시 platform-aware 흐름으로 일반화. */
+  qualityRanking: string | null;
+  engagementRanking: string | null;
+  conversionRanking: string | null;
 }
 
 export interface QualifyDeps {

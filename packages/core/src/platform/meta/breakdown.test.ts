@@ -9,7 +9,7 @@ const mockCreative = (label: "emotional" | "numerical", body: string, hashtags: 
   copy: {
     headline: "H", body, cta: "LEARN_MORE", hashtags,
     variantLabel: label,
-    metaAssetLabel: `variant-${label}-uuid`,
+    assetLabel: `variant-${label}-uuid`,
   },
   imageLocalPath: "", videoLocalPath: "",
   status: "approved", createdAt: "2026-04-20T00:00:00.000Z",
@@ -37,10 +37,10 @@ describe("parseBodyAssetBreakdown", () => {
 
     expect(reports).toHaveLength(1);
     expect(reports[0].variantLabel).toBe("emotional");
-    expect(reports[0].metaAssetLabel).toBe("variant-emotional-uuid");
+    expect(reports[0].assetLabel).toBe("variant-emotional-uuid");
     expect(reports[0].impressions).toBe(1000);
     expect(reports[0].inlineLinkClickCtr).toBe(4.2);
-    expect(reports[0].adQualityRanking).toBe("AVERAGE");
+    expect(reports[0].platformMetrics.meta?.qualityRanking).toBe("AVERAGE");
     expect(reports[0].id).toBe("cam1::emotional::2026-04-19");
   });
 
@@ -104,7 +104,7 @@ describe("parseBodyAssetBreakdown", () => {
       rows, creatives, campaignId: "cam1", productId: "p1", platform: "meta", date: "2026-04-19",
     });
     expect(reports).toHaveLength(2);
-    expect(reports[0].adQualityRanking).toBe("AVERAGE");
-    expect(reports[1].adQualityRanking).toBe("AVERAGE");
+    expect(reports[0].platformMetrics.meta?.qualityRanking).toBe("AVERAGE");
+    expect(reports[1].platformMetrics.meta?.qualityRanking).toBe("AVERAGE");
   });
 });

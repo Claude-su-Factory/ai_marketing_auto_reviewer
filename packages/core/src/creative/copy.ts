@@ -36,7 +36,7 @@ export async function generateCopy(
   return {
     ...parsed,
     variantLabel,
-    metaAssetLabel: "", // 호출자가 Creative를 조립할 때 채움
+    assetLabel: "", // 호출자가 Creative를 조립할 때 채움
   };
 }
 

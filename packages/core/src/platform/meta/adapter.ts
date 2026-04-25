@@ -27,11 +27,12 @@ export function createMetaAdapter(): AdPlatform {
       const campaign = await readJson<any>(`data/campaigns/${campaignId}.json`);
       if (!campaign) return { deleted: [], orphans: [] };
 
+      const ext: Record<string, string> = campaign.externalIds ?? {};
       const created: { type: "campaign" | "adset" | "ad" | "creative"; id: string }[] = [];
-      if (campaign.metaCampaignId) created.push({ type: "campaign", id: campaign.metaCampaignId });
-      if (campaign.metaAdSetId) created.push({ type: "adset", id: campaign.metaAdSetId });
-      if (campaign.metaAdCreativeId) created.push({ type: "creative", id: campaign.metaAdCreativeId });
-      if (campaign.metaAdId) created.push({ type: "ad", id: campaign.metaAdId });
+      if (ext.campaign) created.push({ type: "campaign", id: ext.campaign });
+      if (ext.adSet) created.push({ type: "adset", id: ext.adSet });
+      if (ext.creative) created.push({ type: "creative", id: ext.creative });
+      if (ext.ad) created.push({ type: "ad", id: ext.ad });
 
       const result = await executeRollback({ created, deleter: deleteMetaResource });
       await appendOrphansToDisk(result.orphans, writeJson, readJson);

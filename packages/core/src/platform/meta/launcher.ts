@@ -143,15 +143,18 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
     onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/ads", status: 200, refId: ad.id });
 
     // 7. Persist Campaign record
+    const externalIds: Record<string, string> = {
+      campaign: campaign.id as string,
+      adSet: adSet.id as string,
+      ad: ad.id as string,
+      creative: adCreative.id as string,
+    };
     const campaignRecord = {
       id: randomUUID(),
       variantGroupId: group.variantGroupId,
       productId: group.product.id,
       platform: "meta" as const,
-      metaCampaignId: campaign.id as string,
-      metaAdSetId: adSet.id as string,
-      metaAdId: ad.id as string,
-      metaAdCreativeId: adCreative.id as string,
+      externalIds,
       launchedAt: new Date().toISOString(),
       status: "paused" as const,
       orphans: [],
@@ -161,11 +164,7 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
     return {
       campaignId: campaignRecord.id,
       platform: "meta",
-      externalIds: {
-        campaign: campaign.id,
-        adSet: adSet.id,
-        ad: ad.id,
-      },
+      externalIds,
     };
   } catch (err) {
     console.error("[meta/launcher] launch failed; rolling back:", err);
@@ -177,15 +176,17 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
     // Persist a launch_failed Campaign record so operators can audit orphans.
     const idOf = (t: CreatedResource["type"]): string =>
       created.find((r) => r.type === t)?.id ?? "";
+    const failedExternalIds: Record<string, string> = {};
+    const cId = idOf("campaign"); if (cId) failedExternalIds.campaign = cId;
+    const asId = idOf("adset"); if (asId) failedExternalIds.adSet = asId;
+    const aId = idOf("ad"); if (aId) failedExternalIds.ad = aId;
+    const crId = idOf("creative"); if (crId) failedExternalIds.creative = crId;
     const failedRecord = {
       id: randomUUID(),
       variantGroupId: group.variantGroupId,
       productId: group.product.id,
       platform: "meta" as const,
-      metaCampaignId: idOf("campaign"),
-      metaAdSetId: idOf("adset"),
-      metaAdId: idOf("ad"),
-      metaAdCreativeId: idOf("creative"),
+      externalIds: failedExternalIds,
       launchedAt: new Date().toISOString(),
       status: "launch_failed" as const,
       orphans: cleanupResult.orphans,

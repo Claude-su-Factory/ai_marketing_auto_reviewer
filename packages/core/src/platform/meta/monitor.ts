@@ -40,7 +40,7 @@ export async function fetchMetaVariantReports(
   if (!campaign) return [];
 
   const creatives = await loadCreativesForGroup(campaign.variantGroupId);
-  const ad = new Ad(campaign.metaAdId);
+  const ad = new Ad(campaign.externalIds?.ad);
 
   try {
     const insights = await ad.getInsights(

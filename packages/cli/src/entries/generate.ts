@@ -30,7 +30,7 @@ for (const label of VARIANT_LABELS) {
     copy: {
       ...copy,
       variantLabel: label,
-      metaAssetLabel: `${variantGroupId}::${label}`,
+      assetLabel: `${variantGroupId}::${label}`,
     },
     imageLocalPath,
     videoLocalPath,

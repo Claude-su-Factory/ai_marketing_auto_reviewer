@@ -15,7 +15,7 @@ beforeEach(() => {
       cta: "지금 수강하기",
       hashtags: ["#TypeScript"],
       variantLabel: "emotional",
-      metaAssetLabel: "variant-group-1",
+      assetLabel: "variant-group-1",
     },
     imageLocalPath: "data/creatives/product-1-image.jpg",
     videoLocalPath: "data/creatives/product-1-video.mp4",

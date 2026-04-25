@@ -129,7 +129,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
           id: randomUUID(),
           productId: product.id,
           variantGroupId,
-          copy: { ...data, variantLabel: label, metaAssetLabel: `${variantGroupId}::${label}` },
+          copy: { ...data, variantLabel: label, assetLabel: `${variantGroupId}::${label}` },
           imageLocalPath, videoLocalPath, status: "pending",
           createdAt: new Date().toISOString(),
         };

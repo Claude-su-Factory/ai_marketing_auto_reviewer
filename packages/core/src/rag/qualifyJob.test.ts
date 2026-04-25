@@ -23,7 +23,7 @@ async function writeCreative(id: string, variantGroupId: string, variantLabel: C
       cta: "SHOP_NOW",
       hashtags: ["tag"],
       variantLabel,
-      metaAssetLabel: `${variantGroupId}::${variantLabel}`,
+      assetLabel: `${variantGroupId}::${variantLabel}`,
     },
     imageLocalPath: "/tmp/a.jpg",
     videoLocalPath: "/tmp/a.mp4",
@@ -54,16 +54,20 @@ function mkReport(overrides: Partial<VariantReport>): VariantReport {
     campaignId: "c1",
     variantGroupId: "g1",
     variantLabel: "emotional",
-    metaAssetLabel: "g1::emotional",
+    assetLabel: "g1::emotional",
     productId: "p1",
     platform: "meta",
     date: "2026-04-20",
     impressions: 1000,
     clicks: 40,
     inlineLinkClickCtr: 0.04,
-    adQualityRanking: "AVERAGE",
-    adEngagementRanking: "AVERAGE",
-    adConversionRanking: "AVERAGE",
+    platformMetrics: {
+      meta: {
+        qualityRanking: "AVERAGE",
+        engagementRanking: "AVERAGE",
+        conversionRanking: "AVERAGE",
+      },
+    },
     ...overrides,
   };
 }

@@ -21,9 +21,9 @@ vi.mock("@ad-ai/core/storage.js", () => ({
   listJson: vi.fn(async (_dir: string) => ["data/reports/2026-04-20.json"]),
   readJson: vi.fn(async (_p: string) => [{
     id: "v1", campaignId: "c1", variantGroupId: "g1", variantLabel: "A",
-    metaAssetLabel: "g1::A", productId: "p1", platform: "meta", date: "2026-04-20",
+    assetLabel: "g1::A", productId: "p1", platform: "meta", date: "2026-04-20",
     impressions: 10000, clicks: 200, inlineLinkClickCtr: 0.02,
-    adQualityRanking: null, adEngagementRanking: null, adConversionRanking: null,
+    platformMetrics: { meta: { qualityRanking: null, engagementRanking: null, conversionRanking: null } },
   }]),
 }));
 

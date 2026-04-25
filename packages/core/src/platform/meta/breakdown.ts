@@ -47,16 +47,20 @@ export function parseBodyAssetBreakdown(input: ParseBreakdownInput): VariantRepo
       campaignId,
       variantGroupId: match.variantGroupId,
       variantLabel: match.copy.variantLabel,
-      metaAssetLabel: match.copy.metaAssetLabel,
+      assetLabel: match.copy.assetLabel,
       productId,
       platform,
       date,
       impressions: Number(row.impressions ?? 0),
       clicks: Number(row.clicks ?? 0),
       inlineLinkClickCtr: Number(row.inline_link_click_ctr ?? 0),
-      adQualityRanking: row.quality_ranking ?? null,
-      adEngagementRanking: row.engagement_rate_ranking ?? null,
-      adConversionRanking: row.conversion_rate_ranking ?? null,
+      platformMetrics: {
+        meta: {
+          qualityRanking: row.quality_ranking ?? null,
+          engagementRanking: row.engagement_rate_ranking ?? null,
+          conversionRanking: row.conversion_rate_ranking ?? null,
+        },
+      },
     };
     return [report];
   });

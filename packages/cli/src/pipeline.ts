@@ -84,7 +84,7 @@ export async function runPipeline(urls: string[]): Promise<void> {
           copy: {
             ...copy,
             variantLabel: label,
-            metaAssetLabel: `${variantGroupId}::${label}`,
+            assetLabel: `${variantGroupId}::${label}`,
           },
           imageLocalPath,
           videoLocalPath,

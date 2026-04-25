@@ -22,7 +22,9 @@ export interface Creative {
     cta: string;
     hashtags: string[];
     variantLabel: "emotional" | "numerical" | "urgency"; // Plan A 신규 (Plan A는 "emotional" 기본값)
-    metaAssetLabel: string;                 // Plan A 신규 — e.g. "variant-<uuid>"
+    /** 변형 식별자. Meta DCO에서 `asset_feed_spec.bodies/titles[].adlabels.name`으로 사용되어
+     *  per-asset insights breakdown 키가 됨. 다른 플랫폼은 실 통합 시 사용처를 매핑한다. */
+    assetLabel: string;
   };
   imageLocalPath: string;
   videoLocalPath: string;
@@ -36,10 +38,12 @@ export interface Campaign {
   variantGroupId: string;                   // Plan A 신규 — creativeId 대체
   productId: string;
   platform: string;                         // Plan A 신규 — "meta"
-  metaCampaignId: string;
-  metaAdSetId: string;
-  metaAdId: string;                         // Plan A 신규 — DCO Ad 1개 (기존 metaAdIds[] 폐기)
-  metaAdCreativeId?: string;                // Plan A review fix — for cleanup rollback
+  /**
+   * 플랫폼별 외부 리소스 ID 맵.
+   * Meta: { campaign, adSet, ad, creative? }
+   * TikTok / Google: 실 통합 시 정의.
+   */
+  externalIds: Record<string, string>;
   launchedAt: string;
   status: "active" | "paused" | "completed" | "launch_failed" | "externally_modified";
   orphans: { type: "campaign" | "adset" | "ad" | "creative"; id: string }[];

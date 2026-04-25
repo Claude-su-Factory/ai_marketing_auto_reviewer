@@ -17,16 +17,20 @@ function mkReport(overrides: Partial<VariantReport>): VariantReport {
     campaignId: "c1",
     variantGroupId: "g1",
     variantLabel: "emotional",
-    metaAssetLabel: "g1::emotional",
+    assetLabel: "g1::emotional",
     productId: "p1",
     platform: "meta",
     date: "2026-04-20",
     impressions: 100,
     clicks: 2,
     inlineLinkClickCtr: 0.02,
-    adQualityRanking: "AVERAGE",
-    adEngagementRanking: "AVERAGE",
-    adConversionRanking: "AVERAGE",
+    platformMetrics: {
+      meta: {
+        qualityRanking: "AVERAGE",
+        engagementRanking: "AVERAGE",
+        conversionRanking: "AVERAGE",
+      },
+    },
     ...overrides,
   };
 }
@@ -48,11 +52,20 @@ describe("aggregateVariantReports", () => {
 
   it("copies ad-level ranking from the first row in each group", () => {
     const reports = [
-      mkReport({ campaignId: "c1", variantLabel: "emotional", adQualityRanking: "BELOW_AVERAGE_20_30" }),
-      mkReport({ campaignId: "c1", variantLabel: "emotional", adQualityRanking: "AVERAGE", date: "2026-04-21" }),
+      mkReport({
+        campaignId: "c1",
+        variantLabel: "emotional",
+        platformMetrics: { meta: { qualityRanking: "BELOW_AVERAGE_20_30", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE" } },
+      }),
+      mkReport({
+        campaignId: "c1",
+        variantLabel: "emotional",
+        date: "2026-04-21",
+        platformMetrics: { meta: { qualityRanking: "AVERAGE", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE" } },
+      }),
     ];
     const agg = aggregateVariantReports(reports);
-    expect(agg[0].adQualityRanking).toBe("BELOW_AVERAGE_20_30");
+    expect(agg[0].qualityRanking).toBe("BELOW_AVERAGE_20_30");
   });
 
   it("returns [] for empty input", () => {
@@ -89,46 +102,46 @@ describe("passesThreshold", () => {
   const medianCtr = 0.02;
 
   it("rejects impressions < 500", () => {
-    const agg = {
+    const agg: VariantAggregate = {
       campaignId: "c1", variantLabel: "emotional", variantGroupId: "g1", productId: "p1",
       impressions: 499, clicks: 20, inlineLinkClickCtr: 0.04,
-      adQualityRanking: "AVERAGE", adEngagementRanking: "AVERAGE", adConversionRanking: "AVERAGE",
+      qualityRanking: "AVERAGE", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(false);
   });
 
-  it("rejects when adQualityRanking is BELOW_AVERAGE_*", () => {
-    const agg = {
+  it("rejects when qualityRanking is BELOW_AVERAGE_*", () => {
+    const agg: VariantAggregate = {
       campaignId: "c1", variantLabel: "emotional", variantGroupId: "g1", productId: "p1",
       impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04,
-      adQualityRanking: "BELOW_AVERAGE_20_30", adEngagementRanking: "AVERAGE", adConversionRanking: "AVERAGE",
+      qualityRanking: "BELOW_AVERAGE_20_30", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(false);
   });
 
-  it("rejects when adEngagementRanking is BELOW_AVERAGE_*", () => {
-    const agg = {
+  it("rejects when engagementRanking is BELOW_AVERAGE_*", () => {
+    const agg: VariantAggregate = {
       campaignId: "c1", variantLabel: "emotional", variantGroupId: "g1", productId: "p1",
       impressions: 1000, clicks: 40, inlineLinkClickCtr: 0.04,
-      adQualityRanking: "AVERAGE", adEngagementRanking: "BELOW_AVERAGE_35_50", adConversionRanking: "AVERAGE",
+      qualityRanking: "AVERAGE", engagementRanking: "BELOW_AVERAGE_35_50", conversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(false);
   });
 
   it("rejects when CTR < median", () => {
-    const agg = {
+    const agg: VariantAggregate = {
       campaignId: "c1", variantLabel: "emotional", variantGroupId: "g1", productId: "p1",
       impressions: 1000, clicks: 10, inlineLinkClickCtr: 0.01,
-      adQualityRanking: "AVERAGE", adEngagementRanking: "AVERAGE", adConversionRanking: "AVERAGE",
+      qualityRanking: "AVERAGE", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(false);
   });
 
   it("passes at boundary impressions=500 and CTR=median", () => {
-    const agg = {
+    const agg: VariantAggregate = {
       campaignId: "c1", variantLabel: "emotional", variantGroupId: "g1", productId: "p1",
       impressions: 500, clicks: 10, inlineLinkClickCtr: 0.02,
-      adQualityRanking: "AVERAGE", adEngagementRanking: "AVERAGE", adConversionRanking: "AVERAGE",
+      qualityRanking: "AVERAGE", engagementRanking: "AVERAGE", conversionRanking: "AVERAGE",
     };
     expect(passesThreshold(agg, medianCtr)).toBe(true);
   });
@@ -167,7 +180,7 @@ function mkCreative(id: string, variantGroupId = "g1", variantLabel: Creative["c
     id, productId: "p1", variantGroupId,
     copy: {
       headline: `h-${id}`, body: `b-${id}`, cta: "SHOP_NOW",
-      hashtags: ["tag"], variantLabel, metaAssetLabel: `${variantGroupId}::${variantLabel}`,
+      hashtags: ["tag"], variantLabel, assetLabel: `${variantGroupId}::${variantLabel}`,
     },
     imageLocalPath: "/tmp/a.jpg", videoLocalPath: "/tmp/a.mp4",
     status: "approved", createdAt: "2026-04-20T00:00:00Z",
@@ -335,9 +348,9 @@ function mkAgg(overrides: Partial<VariantAggregate>): VariantAggregate {
     impressions: 1000,
     clicks: 50,
     inlineLinkClickCtr: 0.05,
-    adQualityRanking: "AVERAGE",
-    adEngagementRanking: "AVERAGE",
-    adConversionRanking: "AVERAGE",
+    qualityRanking: "AVERAGE",
+    engagementRanking: "AVERAGE",
+    conversionRanking: "AVERAGE",
     ...overrides,
   };
 }

@@ -14,6 +14,7 @@ export function aggregateVariantReports(reports: VariantReport[]): VariantAggreg
       cur.inlineLinkClickCtr =
         cur.impressions === 0 ? 0 : cur.clicks / cur.impressions;
     } else {
+      const meta = r.platformMetrics?.meta;
       byKey.set(key, {
         campaignId: r.campaignId,
         variantLabel: r.variantLabel,
@@ -23,9 +24,9 @@ export function aggregateVariantReports(reports: VariantReport[]): VariantAggreg
         clicks: r.clicks,
         inlineLinkClickCtr:
           r.impressions === 0 ? 0 : r.clicks / r.impressions,
-        adQualityRanking: r.adQualityRanking,
-        adEngagementRanking: r.adEngagementRanking,
-        adConversionRanking: r.adConversionRanking,
+        qualityRanking: meta?.qualityRanking ?? null,
+        engagementRanking: meta?.engagementRanking ?? null,
+        conversionRanking: meta?.conversionRanking ?? null,
       });
     }
   }
@@ -51,8 +52,8 @@ export function passesThreshold(
   medianCtr: number,
 ): boolean {
   if (agg.impressions < MIN_IMPRESSIONS) return false;
-  if (agg.adQualityRanking?.startsWith("BELOW_AVERAGE")) return false;
-  if (agg.adEngagementRanking?.startsWith("BELOW_AVERAGE")) return false;
+  if (agg.qualityRanking?.startsWith("BELOW_AVERAGE")) return false;
+  if (agg.engagementRanking?.startsWith("BELOW_AVERAGE")) return false;
   if (agg.inlineLinkClickCtr < medianCtr) return false;
   return true;
 }

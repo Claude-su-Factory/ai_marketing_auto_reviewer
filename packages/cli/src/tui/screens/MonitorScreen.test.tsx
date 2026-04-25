@@ -6,8 +6,8 @@ import { MonitorScreen } from "./MonitorScreen.js";
 vi.mock("../hooks/useReports.js", () => ({
   useReports: () => ({
     reports: [
-      { id: "r1", productId: "p1", variantLabel: "B", inlineLinkClickCtr: 0.0482, impressions: 22000, clicks: 1060, adQualityRanking: null, adEngagementRanking: null, adConversionRanking: null, campaignId: "c", variantGroupId: "g", metaAssetLabel: "m", platform: "meta", date: "2026-04-20" },
-      { id: "r2", productId: "p2", variantLabel: "A", inlineLinkClickCtr: 0.0071, impressions: 9000, clicks: 64, adQualityRanking: null, adEngagementRanking: null, adConversionRanking: null, campaignId: "c", variantGroupId: "g", metaAssetLabel: "m", platform: "meta", date: "2026-04-20" },
+      { id: "r1", productId: "p1", variantLabel: "B", inlineLinkClickCtr: 0.0482, impressions: 22000, clicks: 1060, platformMetrics: { meta: { qualityRanking: null, engagementRanking: null, conversionRanking: null } }, campaignId: "c", variantGroupId: "g", assetLabel: "m", platform: "meta", date: "2026-04-20" },
+      { id: "r2", productId: "p2", variantLabel: "A", inlineLinkClickCtr: 0.0071, impressions: 9000, clicks: 64, platformMetrics: { meta: { qualityRanking: null, engagementRanking: null, conversionRanking: null } }, campaignId: "c", variantGroupId: "g", assetLabel: "m", platform: "meta", date: "2026-04-20" },
     ],
     loading: false, lastRefreshAt: Date.now(),
   }),

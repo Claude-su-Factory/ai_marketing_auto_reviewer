@@ -10,11 +10,15 @@ export interface VariantGroup {
 export interface LaunchResult {
   campaignId: string;
   platform: string;
-  externalIds: {
-    campaign: string;
-    adSet: string;
-    ad: string;
-  };
+  /**
+   * 플랫폼이 정의하는 외부 리소스 ID 맵.
+   * 약속된 well-known 키: "campaign", "ad" (모든 플랫폼이 채움).
+   * 그 외는 플랫폼별:
+   *   Meta: "adSet", "creative"
+   *   TikTok: "adGroup"
+   *   Google: "adGroup", "asset"
+   */
+  externalIds: Record<string, string>;
 }
 
 export interface CleanupResult {
@@ -27,16 +31,28 @@ export interface VariantReport {
   campaignId: string;
   variantGroupId: string;
   variantLabel: string;
-  metaAssetLabel: string;
+  assetLabel: string;
   productId: string;
   platform: string;
   date: string;
   impressions: number;
   clicks: number;
   inlineLinkClickCtr: number;
-  adQualityRanking: string | null;
-  adEngagementRanking: string | null;
-  adConversionRanking: string | null;
+  /**
+   * 플랫폼 고유 지표. 키는 platform 식별자.
+   * Meta: { qualityRanking, engagementRanking, conversionRanking } (각 string|null,
+   *       e.g., "AVERAGE", "BELOW_AVERAGE_20_30", "ABOVE_AVERAGE", "UNKNOWN")
+   * TikTok/Google: 실 통합 시 정의.
+   */
+  platformMetrics: {
+    meta?: {
+      qualityRanking: string | null;
+      engagementRanking: string | null;
+      conversionRanking: string | null;
+    };
+    tiktok?: Record<string, unknown>;
+    google?: Record<string, unknown>;
+  };
 }
 
 export interface LaunchLog {

@@ -3,10 +3,10 @@ import { aggregateVariantReports, sortByCtr } from "./metrics.js";
 import type { VariantReport } from "@ad-ai/core/platform/types.js";
 
 const r = (id: string, impressions: number, clicks: number, ctr: number): VariantReport => ({
-  id, campaignId: "c", variantGroupId: "g", variantLabel: "A", metaAssetLabel: "m",
+  id, campaignId: "c", variantGroupId: "g", variantLabel: "A", assetLabel: "m",
   productId: "p", platform: "meta", date: "2026-04-20",
   impressions, clicks, inlineLinkClickCtr: ctr,
-  adQualityRanking: null, adEngagementRanking: null, adConversionRanking: null,
+  platformMetrics: { meta: { qualityRanking: null, engagementRanking: null, conversionRanking: null } },
 });
 
 describe("aggregateVariantReports", () => {
