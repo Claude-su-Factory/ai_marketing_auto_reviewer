@@ -87,11 +87,13 @@ port = 3000
 
 [defaults]
 daily_budget_krw = 10000
-duration_days = 7
-target_age_min = 18
-target_age_max = 65
-ctr_improvement_threshold = 0.1
+duration_days = 14
+target_age_min = 20
+target_age_max = 45
+ctr_improvement_threshold = 1.5
 ```
+
+(defaults는 기존 `.env.owner.example`/`packages/core/src/platform/meta/launcher.ts`/`packages/core/src/improver/index.ts`의 실제 값과 동일하게 유지)
 
 ### 17개 변수 매핑표
 
@@ -271,10 +273,10 @@ const ServerSection = z.object({
 
 const DefaultsSection = z.object({
   daily_budget_krw:          z.number().int().positive().default(10000),
-  duration_days:             z.number().int().positive().default(7),
-  target_age_min:            z.number().int().min(13).default(18),
-  target_age_max:            z.number().int().max(65).default(65),
-  ctr_improvement_threshold: z.number().positive().default(0.1),
+  duration_days:             z.number().int().positive().default(14),
+  target_age_min:            z.number().int().min(13).default(20),
+  target_age_max:            z.number().int().max(65).default(45),
+  ctr_improvement_threshold: z.number().positive().default(1.5),
 }).default({});
 
 export const ConfigSchema = z.object({
@@ -396,10 +398,10 @@ const BASE_CONFIG: Config = {
   server: { base_url: "http://localhost:3000", port: 3000 },
   defaults: {
     daily_budget_krw: 10000,
-    duration_days: 7,
-    target_age_min: 18,
-    target_age_max: 65,
-    ctr_improvement_threshold: 0.1,
+    duration_days: 14,
+    target_age_min: 20,
+    target_age_max: 45,
+    ctr_improvement_threshold: 1.5,
   },
 };
 
