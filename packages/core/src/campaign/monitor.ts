@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Report, Campaign } from "../types.js";
+import { requireAnthropicKey } from "../config/helpers.js";
 import type { VariantReport } from "../platform/types.js";
 import { readJson, writeJson, appendJson, listJson } from "../storage.js";
 import { activePlatforms } from "../platform/registry.js";
@@ -111,7 +112,7 @@ export function variantReportsToReports(vrs: VariantReport[]): Report[] {
 }
 
 export async function generateWeeklyAnalysis(): Promise<string> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const reportPaths = (await listJson("data/reports"))
     .filter((p) => !p.includes("weekly-analysis"));
   const allVariants: VariantReport[] = [];

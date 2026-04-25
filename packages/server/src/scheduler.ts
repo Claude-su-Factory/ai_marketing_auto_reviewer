@@ -12,12 +12,14 @@ import {
 } from "@ad-ai/core/campaign/monitor.js";
 import { runScheduledImprovementCycle } from "@ad-ai/core/scheduler/improvementCycle.js";
 import { createQualifyJob } from "@ad-ai/core/rag/qualifyJob.js";
+import { requireVoyageKey } from "@ad-ai/core/config/helpers.js";
 
 export async function startScheduler(): Promise<void> {
-  const voyageKey = process.env.VOYAGE_API_KEY;
-  if (!voyageKey || voyageKey === "__INJECT__") {
-    console.error("[scheduler] VOYAGE_API_KEY is missing or placeholder. Refusing to start scheduler (qualify stage would silently fail).");
-    throw new Error("VOYAGE_API_KEY not configured");
+  try {
+    requireVoyageKey();
+  } catch {
+    console.error("[scheduler] [ai.voyage.api_key] is missing. Refusing to start scheduler (qualify stage would silently fail).");
+    throw new Error("[ai.voyage.api_key] not configured");
   }
   const mutex = createMutex();
   const qualifyJob = createQualifyJob();

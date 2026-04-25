@@ -3,9 +3,10 @@ import { GoogleGenAI } from "@google/genai";
 import type { Product } from "@ad-ai/core/types.js";
 import { writeJson } from "@ad-ai/core/storage.js";
 import { parseProductWithGemini } from "@ad-ai/core/product/parser.js";
+import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 
 export async function scrapeProduct(url: string): Promise<Product> {
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+  const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   try {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { parseProductWithGemini } from "@ad-ai/core/product/parser.js";
+import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
@@ -20,7 +21,7 @@ export function createAiParseRouter(billing: BillingService) {
 
     const eventId = billing.deductAndRecord(licenseId, "parse", pricing.aiCost, pricing.charged);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+      const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
       const product = await parseProductWithGemini(ai, url, html);
       billing.confirmUsage(eventId);
 

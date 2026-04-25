@@ -8,6 +8,7 @@ import {
   buildImprovementPrompt,
   parseImprovements,
 } from "./index.js";
+import { requireAnthropicKey } from "../config/helpers.js";
 
 export function filterSafeImprovementFiles(files: string[]): string[] {
   return files.filter((f) => /^(core|cli|server)\/[\w./-]+\.ts$/.test(f));
@@ -35,7 +36,7 @@ export async function runImprovementCycle(
 ): Promise<void> {
   if (weakReports.length === 0) return;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const analysis = JSON.parse(analysisJson.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
   const improvements: ImprovementChange[] = [];
 

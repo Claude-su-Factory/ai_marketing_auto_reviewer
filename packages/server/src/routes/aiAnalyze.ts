@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { computeStats, buildAnalysisPrompt } from "@ad-ai/core/campaign/monitor.js";
+import { requireAnthropicKey } from "@ad-ai/core/config/helpers.js";
 import type { Report } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -8,7 +9,7 @@ import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export function createAiAnalyzeRouter(billing: BillingService) {
   const router = Router();
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const client = new Anthropic({ apiKey: requireAnthropicKey() });
 
   router.post("/ai/analyze", async (req, res) => {
     const { reports } = req.body as { reports: Report[] };

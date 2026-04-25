@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { generateCopy } from "@ad-ai/core/creative/copy.js";
+import { requireAnthropicKey } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { FewShotExample, VariantLabel } from "@ad-ai/core/creative/prompt.js";
 import type { BillingService } from "../billing.js";
@@ -9,7 +10,7 @@ import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
 
 export function createAiCopyRouter(billing: BillingService) {
   const router = Router();
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const client = new Anthropic({ apiKey: requireAnthropicKey() });
 
   router.post("/ai/copy", async (req, res) => {
     const { product, fewShot, variantLabel } = req.body as { product: Product; fewShot?: FewShotExample[]; variantLabel?: VariantLabel };

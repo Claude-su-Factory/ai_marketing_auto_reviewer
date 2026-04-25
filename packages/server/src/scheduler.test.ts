@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
+import { setConfigForTesting } from "@ad-ai/core/config/index.js";
+import { makeTestConfig } from "@ad-ai/core/config/testing.js";
 
 vi.mock("@ad-ai/core/scheduler/index.js", () => ({
   registerJobs: vi.fn(),
@@ -17,7 +19,7 @@ vi.mock("@ad-ai/core/improver/runner.js", () => ({
 
 describe("startScheduler", () => {
   it("SERVER_CADENCE 로 registerJobs 를 호출한다", async () => {
-    process.env.VOYAGE_API_KEY = "test-key";
+    // vitest.setup.ts already injected makeTestConfig() with voyage key — no setup needed
     const { startScheduler } = await import("./scheduler.js");
     const { registerJobs } = await import("@ad-ai/core/scheduler/index.js");
     const { SERVER_CADENCE } = await import("@ad-ai/core/scheduler/cadence.js");
@@ -27,11 +29,9 @@ describe("startScheduler", () => {
     expect(calledCadence).toEqual(SERVER_CADENCE);
   });
 
-  it("VOYAGE_API_KEY 부재 시 throws", async () => {
-    const prev = process.env.VOYAGE_API_KEY;
-    delete process.env.VOYAGE_API_KEY;
+  it("[ai.voyage.api_key] 부재 시 throws", async () => {
+    setConfigForTesting(makeTestConfig({}, ["ai.voyage"]));
     const { startScheduler } = await import("./scheduler.js");
-    await expect(startScheduler()).rejects.toThrow("VOYAGE_API_KEY not configured");
-    if (prev !== undefined) process.env.VOYAGE_API_KEY = prev;
+    await expect(startScheduler()).rejects.toThrow("[ai.voyage.api_key] not configured");
   });
 });

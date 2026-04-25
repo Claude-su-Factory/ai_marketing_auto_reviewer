@@ -1,3 +1,5 @@
+import { requireVoyageKey } from "../config/helpers.js";
+
 export interface VoyageClient {
   embed(texts: string[]): Promise<number[][]>;
 }
@@ -9,8 +11,7 @@ interface VoyageResponse {
 export function createVoyageClient(): VoyageClient {
   return {
     async embed(texts: string[]): Promise<number[][]> {
-      const apiKey = process.env.VOYAGE_API_KEY;
-      if (!apiKey) throw new Error("VOYAGE_API_KEY not set");
+      const apiKey = requireVoyageKey();
 
       const res = await fetch("https://api.voyageai.com/v1/embeddings", {
         method: "POST",

@@ -3,6 +3,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import type { Product } from "../types.js";
+import { requireGoogleAiKey } from "../config/helpers.js";
 
 export function buildVideoPrompt(product: Product): string {
   return `Short Instagram Reels advertisement (15 seconds), vertical 9:16 format.
@@ -22,7 +23,7 @@ async function saveVideoBytes(data: Uint8Array | string, productId: string): Pro
 }
 
 export async function generateVideo(product: Product, onProgress?: (msg: string) => void): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+  const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
   onProgress?.("Veo 3.1: 영상 생성 요청 중...");
   let operation = await ai.models.generateVideos({

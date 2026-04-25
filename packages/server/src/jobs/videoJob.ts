@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "@ad-ai/core/creative/video.js";
+import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -60,7 +61,7 @@ async function runVeoGeneration(
   billing: BillingService,
   eventId: string
 ) {
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+  const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
 
   let operation = await ai.models.generateVideos({

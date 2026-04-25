@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createVoyageClient } from "./voyage.js";
+import { setConfigForTesting } from "../config/index.js";
+import { makeTestConfig } from "../config/testing.js";
 
 describe("createVoyageClient", () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
-    process.env.VOYAGE_API_KEY = "test-key";
+    setConfigForTesting(makeTestConfig({ ai: { voyage: { api_key: "test-key" } } }));
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
-    delete process.env.VOYAGE_API_KEY;
+    // resetConfigForTesting handled by vitest.setup.ts afterEach
   });
 
   it("POSTs to voyage embeddings endpoint with api key header", async () => {

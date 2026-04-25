@@ -2,6 +2,7 @@ import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { activePlatforms } from "@ad-ai/core/platform/registry.js";
+import { requireAnthropicKey, requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { VariantGroup, VariantReport, LaunchLog } from "@ad-ai/core/platform/types.js";
 import {
   groupCreativesByVariantGroup,
@@ -44,7 +45,7 @@ export async function runScrape(url: string, onProgress: ProgressCallback): Prom
     try {
       await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
       const html = await page.content();
-      const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+      const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
       const product = await parseProductWithGemini(ai, url, html);
       await writeJson(`data/products/${product.id}.json`, product);
       return { success: true, message: "Scrape 완료", logs: [`${product.name} 저장됨`] };
@@ -212,7 +213,7 @@ export async function runMonitor(mode: "daily" | "weekly", onProgress: ProgressC
       return { success: true, message: "Monitor (weekly) 완료", logs: ["성과 데이터 없음"] };
     }
     const aggregated = variantReportsToReports(allVariants);
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+    const client = new Anthropic({ apiKey: requireAnthropicKey() });
     const stats = computeStats(aggregated);
     const prompt = buildAnalysisPrompt(aggregated, stats);
     const response = await client.messages.create({ model: "claude-sonnet-4-6", max_tokens: 1024, messages: [{ role: "user", content: prompt }] });
