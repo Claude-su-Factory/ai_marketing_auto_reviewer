@@ -1,0 +1,5 @@
+[platforms]
+enabled = ["meta"]
+
+[ai.anthropic]
+api_key = "sk-ant-test"

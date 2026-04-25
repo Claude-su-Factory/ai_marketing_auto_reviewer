@@ -1,0 +1,11 @@
+[platforms]
+enabled = ["meta"]
+
+[platforms.meta]
+access_token = "test-token"
+ad_account_id = "act_1234567890"
+page_id = "1234567890"
+instagram_actor_id = "1234567890"
+
+[ai.anthropic]
+api_key = "sk-ant-test"

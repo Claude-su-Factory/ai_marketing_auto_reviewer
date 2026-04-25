@@ -1,0 +1,48 @@
+# config.example.toml — ad_ai 설정 템플릿
+# 사용법: cp config.example.toml config.toml 후 실제 값 입력
+# config.toml은 .gitignore에 있어 커밋되지 않음
+
+[platforms]
+# 활성화할 광고 플랫폼 목록. 멀티플랫폼 어댑터 도입 시 "tiktok", "google" 추가
+enabled = ["meta"]
+
+[platforms.meta]
+# Meta Marketing API access token (System User token 권장)
+# 발급 가이드: docs/STATUS.md 또는 README의 Setup 섹션
+access_token = "EAA..."
+ad_account_id = "act_1234567890"  # "act_" 접두사 포함
+page_id = "1234567890"
+instagram_actor_id = "1234567890"
+
+[ai.anthropic]
+# Anthropic Claude — copy 생성, 주간 분석, improver
+# 발급: https://console.anthropic.com/settings/keys
+api_key = "sk-ant-..."
+
+[ai.google]
+# Google AI Studio — imagen/veo 생성, HTML 파싱
+# 발급: https://aistudio.google.com/app/apikey
+api_key = "AIza..."
+
+[ai.voyage]
+# Voyage AI — voyage-3-lite embedding (Winner DB RAG)
+# 발급: https://dash.voyageai.com/api-keys
+api_key = "pa-..."
+
+[billing.stripe]
+# Service 모드(웹 UI + 결제) 사용 시에만 필요. Owner 모드 전용이라면 섹션 생략 가능
+secret_key = "sk_test_..."
+webhook_secret = "whsec_..."
+
+[server]
+# Service 모드에서만 사용. 미설정 시 base_url=http://localhost:3000, port=3000
+base_url = "http://localhost:3000"
+port = 3000
+
+[defaults]
+# 광고 캠페인 기본값
+daily_budget_krw = 10000
+duration_days = 14
+target_age_min = 20
+target_age_max = 45
+ctr_improvement_threshold = 1.5

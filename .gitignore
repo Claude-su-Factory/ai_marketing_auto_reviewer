@@ -11,6 +11,10 @@ build/
 .env.*
 !.env.*.example
 
+# Config (secrets)
+config.toml
+!config.example.toml
+
 # Runtime data (user-specific, includes scraped content, generated media, campaigns)
 data/
 logs/
