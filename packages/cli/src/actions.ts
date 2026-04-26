@@ -21,11 +21,15 @@ import { readJson, writeJson, listJson } from "@ad-ai/core/storage.js";
 import type { Product, Creative } from "@ad-ai/core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./tui/AppTypes.js";
 import { randomUUID } from "crypto";
-import { VARIANT_LABELS } from "@ad-ai/core/creative/prompt.js";
+import { VARIANT_LABELS, type FewShotExample } from "@ad-ai/core/creative/prompt.js";
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
 import { generateVideo } from "@ad-ai/core/creative/video.js";
 import { parseProductWithGemini } from "@ad-ai/core/product/parser.js";
+import { retrieveFewShotForProduct } from "@ad-ai/core/rag/retriever.js";
+import { createVoyageClient } from "@ad-ai/core/rag/voyage.js";
+import { createCreativesDb } from "@ad-ai/core/rag/db.js";
+import { WinnerStore } from "@ad-ai/core/rag/store.js";
 
 export function buildOverallProgress(p: TaskProgress): number {
   return Math.round((p.copy + p.image + p.video) / 3);
@@ -59,6 +63,9 @@ export async function runScrape(url: string, onProgress: ProgressCallback): Prom
 }
 
 export async function runGenerate(onProgress: ProgressCallback): Promise<DoneResult> {
+  const voyage = createVoyageClient();
+  const creativesDb = createCreativesDb();
+  const winnerStore = new WinnerStore(creativesDb);
   try {
     const productPaths = await listJson("data/products");
     if (productPaths.length === 0) {
@@ -111,12 +118,16 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
       })();
 
       const copiesTask = (async () => {
+        const fewShot: FewShotExample[] = await retrieveFewShotForProduct(product, {
+          embed: (texts) => voyage.embed(texts),
+          loadAllWinners: () => winnerStore.loadAll(),
+        });
         const copies: { label: typeof VARIANT_LABELS[number]; data: Awaited<ReturnType<typeof generateCopy>> }[] = [];
         for (let v = 0; v < VARIANT_LABELS.length; v++) {
           const label = VARIANT_LABELS[v];
           tracks.copy = { status: "running", pct: Math.round((v / VARIANT_LABELS.length) * 100), label: `variant ${v + 1}/3` };
           emit(`카피 ${v + 1}/3 (${label})`);
-          const c = await generateCopy(anthropic, product, [], label);
+          const c = await generateCopy(anthropic, product, fewShot, label);
           copies.push({ label, data: c });
         }
         tracks.copy = { status: "done", pct: 100, label: "3 variants" };
@@ -142,6 +153,8 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
     return { success: true, message: `Generate 완료 — ${logs.length}개 제품`, logs };
   } catch (e) {
     return { success: false, message: "Generate 실패", logs: [String(e)] };
+  } finally {
+    creativesDb.close();
   }
 }
 

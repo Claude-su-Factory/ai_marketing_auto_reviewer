@@ -72,6 +72,23 @@ describe("runGenerate parallelism", () => {
       readJson: async () => ({ id: "p1", name: "AI 부트캠프", description: "d", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" }),
       writeJson: async () => {},
     }));
+    vi.doMock("@ad-ai/core/rag/voyage.js", () => ({
+      createVoyageClient: () => ({ embed: async (texts: string[]) => texts.map(() => new Array(512).fill(0)) }),
+    }));
+    vi.doMock("@ad-ai/core/rag/db.js", () => ({
+      createCreativesDb: () => ({ close: () => {}, prepare: () => ({ all: () => [], get: () => undefined, run: () => ({}) }) }),
+    }));
+    vi.doMock("@ad-ai/core/rag/store.js", () => ({
+      WinnerStore: class {
+        loadAll() { return []; }
+        hasCreative() { return false; }
+        insert() {}
+      },
+    }));
+    vi.doMock("@ad-ai/core/rag/retriever.js", () => ({
+      retrieveFewShotForProduct: async () => [],
+    }));
+
     vi.resetModules();
     const { runGenerate: fresh } = await import("./actions.js");
     await fresh((p: any) => events.push(p));
@@ -80,6 +97,58 @@ describe("runGenerate parallelism", () => {
     expect(withGen[0].generate.tracks.copy).toBeDefined();
     expect(withGen[0].generate.tracks.image).toBeDefined();
     expect(withGen[0].generate.tracks.video).toBeDefined();
+
+    vi.doUnmock("@ad-ai/core/rag/voyage.js");
+    vi.doUnmock("@ad-ai/core/rag/db.js");
+    vi.doUnmock("@ad-ai/core/rag/store.js");
+    vi.doUnmock("@ad-ai/core/rag/retriever.js");
+  });
+
+  it("retrieves fewShot for each product before generateCopy", async () => {
+    const fewShotSpy = vi.fn().mockResolvedValue([
+      { headline: "WINNER_H", body: "WINNER_B", cta: "WINNER_CTA" },
+    ]);
+    const generateCopySpy = vi.fn().mockResolvedValue({ headline: "h", body: "b", cta: "c", hashtags: [] });
+
+    vi.doMock("@ad-ai/core/creative/image.js", () => ({ generateImage: async () => "img.jpg" }));
+    vi.doMock("@ad-ai/core/creative/video.js", () => ({ generateVideo: async () => "vid.mp4" }));
+    vi.doMock("@ad-ai/core/creative/copy.js", () => ({
+      generateCopy: generateCopySpy,
+      createAnthropicClient: () => ({}),
+    }));
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      listJson: async () => ["data/products/p1.json"],
+      readJson: async () => ({ id: "p1", name: "X", description: "d", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" }),
+      writeJson: async () => {},
+    }));
+    vi.doMock("@ad-ai/core/rag/voyage.js", () => ({
+      createVoyageClient: () => ({ embed: async () => [[]] }),
+    }));
+    vi.doMock("@ad-ai/core/rag/db.js", () => ({
+      createCreativesDb: () => ({ close: () => {} }),
+    }));
+    vi.doMock("@ad-ai/core/rag/store.js", () => ({
+      WinnerStore: class { loadAll() { return [{ headline: "WINNER_H", body: "WINNER_B", cta: "WINNER_CTA" } as any]; } },
+    }));
+    vi.doMock("@ad-ai/core/rag/retriever.js", () => ({
+      retrieveFewShotForProduct: fewShotSpy,
+    }));
+
+    vi.resetModules();
+    const { runGenerate: fresh } = await import("./actions.js");
+    await fresh(() => {});
+
+    expect(fewShotSpy).toHaveBeenCalled();
+    // generateCopy 가 fewShot 받음 (3 variants × 1 product = 3 calls, 모두 same fewShot)
+    const calls = generateCopySpy.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const fewShotArg = calls[0][2];
+    expect(fewShotArg).toEqual([{ headline: "WINNER_H", body: "WINNER_B", cta: "WINNER_CTA" }]);
+
+    vi.doUnmock("@ad-ai/core/rag/voyage.js");
+    vi.doUnmock("@ad-ai/core/rag/db.js");
+    vi.doUnmock("@ad-ai/core/rag/store.js");
+    vi.doUnmock("@ad-ai/core/rag/retriever.js");
   });
 });
 
