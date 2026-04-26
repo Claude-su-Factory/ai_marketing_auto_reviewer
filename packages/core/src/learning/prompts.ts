@@ -70,13 +70,25 @@ export const DEFAULT_PROMPTS: Prompts = {
 };
 
 let cached: Prompts | null = null;
+let testPathOverride: string | null = null;
+
+export function setPromptsPathForTesting(path: string | null): void {
+  testPathOverride = path;
+  cached = null; // force re-read on next loadPrompts
+}
+
+function getPromptsPath(): string {
+  return testPathOverride ?? DEFAULT_PROMPTS_PATH;
+}
 
 export async function loadPrompts(): Promise<Prompts> {
   if (cached) return cached;
 
+  const promptsPath = getPromptsPath();
+
   let content: string;
   try {
-    content = await readFile(DEFAULT_PROMPTS_PATH, "utf-8");
+    content = await readFile(promptsPath, "utf-8");
   } catch {
     // File missing → use DEFAULT_PROMPTS (no warn — this is the zero-config happy path)
     cached = DEFAULT_PROMPTS;
@@ -87,14 +99,14 @@ export async function loadPrompts(): Promise<Prompts> {
   try {
     raw = JSON.parse(content);
   } catch (e) {
-    console.warn(`[prompts] ${DEFAULT_PROMPTS_PATH} JSON parse 실패, default 사용:`, e);
+    console.warn(`[prompts] ${promptsPath} JSON parse 실패, default 사용:`, e);
     cached = DEFAULT_PROMPTS;
     return cached;
   }
 
   const parsed = PromptsSchema.safeParse(raw);
   if (!parsed.success) {
-    console.warn(`[prompts] ${DEFAULT_PROMPTS_PATH} 검증 실패, default 사용:`, parsed.error.message);
+    console.warn(`[prompts] ${promptsPath} 검증 실패, default 사용:`, parsed.error.message);
     cached = DEFAULT_PROMPTS;
     return cached;
   }

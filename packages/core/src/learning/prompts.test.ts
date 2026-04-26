@@ -4,6 +4,7 @@ import path from "path";
 import {
   loadPrompts,
   setPromptsForTesting,
+  setPromptsPathForTesting,
   invalidatePromptsCache,
   validateUserTemplate,
   substitutePlaceholders,
@@ -12,7 +13,9 @@ import {
   type Prompts,
 } from "./prompts.js";
 
-const TMP_DIR = "data/learned";
+// 테스트 전용 path — production data/learned/prompts.json 을 절대 건드리지 않도록 격리.
+// afterAll 에서 디렉토리 자체를 정리한다.
+const TMP_DIR = "data/learned/__test__";
 const TMP_FILE = path.join(TMP_DIR, "prompts.json");
 
 async function writeTmpFile(content: string): Promise<void> {
@@ -25,13 +28,15 @@ async function clearTmpFile(): Promise<void> {
 }
 
 afterAll(async () => {
-  // Final guarantee — remove any test artifact that might survive
-  await clearTmpFile();
+  setPromptsPathForTesting(null);
+  // Final guarantee — remove the entire test directory
+  try { await rm(TMP_DIR, { recursive: true, force: true }); } catch {}
 });
 
 describe("loadPrompts", () => {
   beforeEach(async () => {
     setPromptsForTesting(null);
+    setPromptsPathForTesting(TMP_FILE);
     await clearTmpFile();
   });
   afterEach(async () => {
@@ -98,7 +103,10 @@ describe("loadPrompts", () => {
 });
 
 describe("setPromptsForTesting", () => {
-  beforeEach(() => setPromptsForTesting(null));
+  beforeEach(() => {
+    setPromptsForTesting(null);
+    setPromptsPathForTesting(TMP_FILE);
+  });
 
   it("injects custom prompts into the cache", async () => {
     const custom: Prompts = {
@@ -124,6 +132,7 @@ describe("setPromptsForTesting", () => {
 describe("invalidatePromptsCache", () => {
   beforeEach(async () => {
     setPromptsForTesting(null);
+    setPromptsPathForTesting(TMP_FILE);
     await clearTmpFile();
   });
   afterEach(async () => {

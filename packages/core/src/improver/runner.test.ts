@@ -1,18 +1,21 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { rm, readFile } from "fs/promises";
 import path from "path";
 import { runImprovementCycle } from "./runner.js";
 import {
   setPromptsForTesting,
+  setPromptsPathForTesting,
   loadPrompts,
   type Prompts,
 } from "../learning/prompts.js";
 import type { AnalysisResult } from "./index.js";
 import type { Report } from "../types.js";
 
-const PROMPTS_DIR = "data/learned";
+// 테스트 전용 path — production data/learned/prompts.json 와 data/improvements/ 를
+// 절대 건드리지 않도록 격리. afterAll 에서 디렉토리 자체를 정리한다.
+const PROMPTS_DIR = "data/learned/__test__";
 const PROMPTS_PATH = path.join(PROMPTS_DIR, "prompts.json");
-const IMPROVEMENTS_DIR = "data/improvements";
+const IMPROVEMENTS_DIR = "data/improvements/__test__";
 
 async function clearAll(): Promise<void> {
   try { await rm(PROMPTS_PATH, { force: true }); } catch {}
@@ -39,14 +42,22 @@ vi.mock("@anthropic-ai/sdk", () => ({
 
 beforeEach(async () => {
   setPromptsForTesting(null);
+  setPromptsPathForTesting(PROMPTS_PATH);
   await clearAll();
   mockClaudeResponse = "{}";
+});
+
+afterAll(async () => {
+  setPromptsPathForTesting(null);
+  // cleanup test dirs (afterAll 한 번만 실행)
+  try { await rm(PROMPTS_DIR, { recursive: true, force: true }); } catch {}
+  try { await rm(IMPROVEMENTS_DIR, { recursive: true, force: true }); } catch {}
 });
 
 describe("runImprovementCycle", () => {
   it("returns immediately when weakReports is empty", async () => {
     const analysis: AnalysisResult = { improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }] };
-    await runImprovementCycle([], analysis);
+    await runImprovementCycle([], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
     // No file written
     await expect(readFile(PROMPTS_PATH, "utf-8")).rejects.toThrow();
   });
@@ -58,7 +69,7 @@ describe("runImprovementCycle", () => {
         { campaignId: "c2", issue: "x", suggestion: "y", promptKey: "unknown.key" as any },
       ],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
     await expect(readFile(PROMPTS_PATH, "utf-8")).rejects.toThrow();
   });
 
@@ -80,7 +91,7 @@ describe("runImprovementCycle", () => {
     const orig = console.log;
     console.log = (m: string) => { logs.push(m); };
     try {
-      await runImprovementCycle([mkWeak("c0", 0.5)], analysis);
+      await runImprovementCycle([mkWeak("c0", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
     } finally {
       console.log = orig;
     }
@@ -99,7 +110,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "weak emotional", suggestion: "stronger emotion", promptKey: "copy.angleHints.emotional" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     // 파일 작성 확인
     const written = await readFile(PROMPTS_PATH, "utf-8");
@@ -124,7 +135,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.emotional" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -142,7 +153,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.emotional" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -160,7 +171,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -179,7 +190,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.userTemplate" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -202,7 +213,7 @@ describe("runImprovementCycle", () => {
         { campaignId: "c2", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }, // mock 응답의 emotional 과 mismatch
       ],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     // accepted 파일
@@ -222,7 +233,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.emotional" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -240,7 +251,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -258,7 +269,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const acceptedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}.json`);
@@ -276,7 +287,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -294,7 +305,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     const dateKey = new Date().toISOString().split("T")[0];
     const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
@@ -312,7 +323,7 @@ describe("runImprovementCycle", () => {
     const analysis: AnalysisResult = {
       improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
     };
-    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
 
     // 정상 처리되어 prompts.json 에 반영됨 (rejected 파일 없음)
     const dateKey = new Date().toISOString().split("T")[0];
@@ -335,7 +346,7 @@ describe("runImprovementCycle", () => {
     const orig = console.log;
     console.log = (m: string) => { logs.push(m); };
     try {
-      await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+      await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
     } finally {
       console.log = orig;
     }

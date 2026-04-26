@@ -18,10 +18,16 @@ import {
 } from "./index.js";
 import type { Report, Improvement, ImprovementChange } from "../types.js";
 
-const PROMPTS_PATH = "data/learned/prompts.json";
+const DEFAULT_PROMPTS_PATH = "data/learned/prompts.json";
+const DEFAULT_IMPROVEMENTS_DIR = "data/improvements";
 const MAX_PROPOSALS_PER_CYCLE = 5;
 const ANALYSIS_CALL_USD = 0.005;
 const PROPOSAL_CALL_USD = 0.01;
+
+interface RunImprovementCycleConfig {
+  promptsPath?: string;
+  improvementsDir?: string;
+}
 
 function getPromptValue(prompts: Prompts, key: PromptKey): string {
   const parts = key.split(".");
@@ -71,12 +77,16 @@ function validateUpdate(updated: Prompts, key: PromptKey, newValue: string): Val
 export async function runImprovementCycle(
   weakReports: Report[],
   analysis: AnalysisResult,
+  config: RunImprovementCycleConfig = {},
 ): Promise<void> {
   if (weakReports.length === 0) return;
   const proposals = (analysis.improvements ?? [])
     .filter((it) => isAllowedPromptKey(it.promptKey))
     .slice(0, MAX_PROPOSALS_PER_CYCLE);
   if (proposals.length === 0) return;
+
+  const promptsPath = config.promptsPath ?? DEFAULT_PROMPTS_PATH;
+  const improvementsDir = config.improvementsDir ?? DEFAULT_IMPROVEMENTS_DIR;
 
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
   let currentPrompts = await loadPrompts();
@@ -128,18 +138,18 @@ export async function runImprovementCycle(
   }
 
   if (accepted.length > 0) {
-    await writeJson(PROMPTS_PATH, currentPrompts);
+    await writeJson(promptsPath, currentPrompts);
     invalidatePromptsCache();
     const improvement: Improvement = {
       date: dateKey,
       trigger: `${weakReports.length}개 캠페인 CTR 임계값 미달`,
       changes: accepted,
     };
-    await appendJson(`data/improvements/${dateKey}.json`, improvement);
-    console.log(`[improver] ${accepted.length}개 prompt 업데이트 적용 — ${PROMPTS_PATH}`);
+    await appendJson(`${improvementsDir}/${dateKey}.json`, improvement);
+    console.log(`[improver] ${accepted.length}개 prompt 업데이트 적용 — ${promptsPath}`);
   }
   if (rejected.length > 0) {
-    await appendJson(`data/improvements/${dateKey}-rejected.json`, { date: dateKey, rejected });
+    await appendJson(`${improvementsDir}/${dateKey}-rejected.json`, { date: dateKey, rejected });
     console.warn(`[improver] ${rejected.length}개 제안 거부 (검증 실패)`);
   }
 
