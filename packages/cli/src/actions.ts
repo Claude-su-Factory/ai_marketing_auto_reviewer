@@ -15,6 +15,8 @@ import {
 } from "@ad-ai/core/campaign/monitor.js";
 import { runImprovementCycle } from "@ad-ai/core/improver/runner.js";
 import { shouldTriggerImprovement } from "@ad-ai/core/improver/index.js";
+import type { AnalysisResult } from "@ad-ai/core/improver/index.js";
+import { loadPrompts } from "@ad-ai/core/learning/prompts.js";
 import { readJson, writeJson, listJson } from "@ad-ai/core/storage.js";
 import type { Product, Creative } from "@ad-ai/core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./tui/AppTypes.js";
@@ -214,7 +216,8 @@ export async function runMonitor(mode: "daily" | "weekly", onProgress: ProgressC
     const aggregated = variantReportsToReports(allVariants);
     const client = new Anthropic({ apiKey: requireAnthropicKey() });
     const stats = computeStats(aggregated);
-    const prompt = buildAnalysisPrompt(aggregated, stats);
+    const currentPrompts = await loadPrompts();
+    const prompt = buildAnalysisPrompt(aggregated, stats, currentPrompts);
     const response = await client.messages.create({ model: "claude-sonnet-4-6", max_tokens: 1024, messages: [{ role: "user", content: prompt }] });
     const analysis = response.content[0].type === "text" ? response.content[0].text : "";
     await writeJson(`data/reports/weekly-analysis-${new Date().toISOString().split("T")[0]}.json`, JSON.parse(analysis.match(/\{[\s\S]*\}/)?.[0] ?? "{}"));
@@ -237,11 +240,14 @@ export async function runImprove(onProgress: ProgressCallback): Promise<DoneResu
     if (!weeklyPath) {
       return { success: false, message: "Improve 실패", logs: ["주간 분석 없음. Monitor weekly를 먼저 실행하세요."] };
     }
-    const analysis = await readJson<object>(weeklyPath);
+    const analysis = await readJson<AnalysisResult>(weeklyPath);
+    if (!analysis) {
+      return { success: false, message: "Improve 실패", logs: ["주간 분석 읽기 실패."] };
+    }
     const aggregated = variantReportsToReports(allVariants);
     const weakReports = aggregated.filter(shouldTriggerImprovement);
     onProgress({ message: `개선 대상 ${weakReports.length}개 캠페인 분석 중...` });
-    await runImprovementCycle(weakReports, JSON.stringify(analysis));
+    await runImprovementCycle(weakReports, analysis);
     return { success: true, message: "Improve 완료", logs: [`${weakReports.length}개 캠페인 기반 개선 적용`] };
   } catch (e) {
     return { success: false, message: "Improve 실패", logs: [String(e)] };

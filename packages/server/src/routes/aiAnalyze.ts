@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { computeStats, buildAnalysisPrompt } from "@ad-ai/core/campaign/monitor.js";
+import { loadPrompts } from "@ad-ai/core/learning/prompts.js";
 import { requireAnthropicKey } from "@ad-ai/core/config/helpers.js";
 import type { Report } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
@@ -24,7 +25,8 @@ export function createAiAnalyzeRouter(billing: BillingService) {
     const eventId = billing.deductAndRecord(licenseId, "analyze", pricing.aiCost, pricing.charged);
     try {
       const stats = computeStats(reports);
-      const prompt = buildAnalysisPrompt(reports, stats);
+      const currentPrompts = await loadPrompts();
+      const prompt = buildAnalysisPrompt(reports, stats, currentPrompts);
       const response = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 1024,

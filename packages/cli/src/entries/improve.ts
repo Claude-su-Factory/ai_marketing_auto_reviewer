@@ -1,6 +1,7 @@
 import { readJson, listJson } from "@ad-ai/core/storage.js";
 import { runImprovementCycle } from "@ad-ai/core/improver/runner.js";
 import { shouldTriggerImprovement } from "@ad-ai/core/improver/index.js";
+import type { AnalysisResult } from "@ad-ai/core/improver/index.js";
 import type { Report } from "@ad-ai/core/types.js";
 
 const reportPaths = await listJson("data/reports");
@@ -18,8 +19,12 @@ if (!weeklyAnalysisPath) {
   process.exit(0);
 }
 
-const analysis = await readJson<object>(weeklyAnalysisPath);
+const analysis = await readJson<AnalysisResult>(weeklyAnalysisPath);
+if (!analysis) {
+  console.log("주간 분석 읽기 실패.");
+  process.exit(1);
+}
 const weakReports = allReports.filter(shouldTriggerImprovement);
 
 console.log(`개선 대상: ${weakReports.length}개 캠페인`);
-await runImprovementCycle(weakReports, JSON.stringify(analysis));
+await runImprovementCycle(weakReports, analysis);
