@@ -1,6 +1,6 @@
 # 로드맵
 
-마지막 업데이트: 2026-04-25
+마지막 업데이트: 2026-04-26
 
 ---
 
@@ -35,7 +35,7 @@
 
 - 제품 카테고리 자동 분류 정확도 개선
 - Meta 외 플랫폼 지원 (TikTok ACO, Google Ads PMax, YouTube Shorts) — Scaffold ✅ 완료 (2026-04-25, `packages/core/src/platform/tiktok/`, `google/` + Config 스키마 + Registry 가드). 실 API 통합은 미진행. 트리거: 사용자가 특정 플랫폼 실 운영 결정 시. 작업: NOT_YET_IMPLEMENTED 집합에서 제거 + dynamic import 분기 추가 + launcher/monitor/cleanup 본체 + breakdown.ts + 에러 분류 함수. 각 어댑터의 README.md에 SDK/OAuth/hierarchy/Implementation Checklist 정리됨.
-- 자율 개선 루프 강화 (launchd 인프라 구축 완료 — 2026-04-20. 추가 개선: 분석 히스토리 재주입, 개선 실패 알림 등)
+- 자율 개선 루프 강화 — prompt-as-data 모델 기반 (2026-04-26 ✅ CLI scaffold 완료). 학습 대상 5개 prompt 키 (`copy.systemPrompt` / `userTemplate` / `angleHints.{emotional,numerical,urgency}`). 4-gate validation (parse/schema/placeholder/banned-pattern) + 2-layer banned-pattern 방어 (personalization + unverified-hyperbole). launchd 인프라 (2026-04-20) 위에서 동작. Server 활성화 시 시스템-wide DB 모델로 확장 — `learned_prompts` 테이블 1행 (multi-tenant 가 아닌 system-wide). Premium tier 의 사용자별 fine-tuning 은 future feature (`loadPrompts(userId?)` 시그니처 미리 호환). 추가 개선 후보: 분석 히스토리 재주입, 개선 실패 알림, R-B 결함 일괄 cleanup.
 - 다국어 소재 생성 지원
 - Dev-time Agent Team Phase 1c — Architecture Steward subagent (대규모 리팩터 필요 시점에 도입)
 

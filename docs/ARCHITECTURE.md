@@ -1,6 +1,6 @@
 # 아키텍처
 
-마지막 업데이트: 2026-04-25
+마지막 업데이트: 2026-04-26
 
 ---
 
@@ -194,6 +194,20 @@ Pure 함수와 side-effect 러너는 **분리해서** 둔다. 예: `packages/cor
 - 모듈-스코프 상수에서 `getConfig()`를 호출하지 않는다. `export const X = getConfig().X` 형태는 import 시점에 평가되는데, vitest가 `setupFiles`의 `beforeEach`로 `setConfigForTesting`을 호출하기 전이므로 실 `config.toml`을 ENOENT로 찾으려다 테스트가 깨진다. 이런 값은 항상 getter 함수(`packages/core/src/improver/index.ts:getCtrThreshold` 참조)로 노출해 호출 시점에 lazy 평가한다.
 
 **Trade-off:** TOML 파일 누락 시 첫 `getConfig()` 호출이 throw하므로 fail-fast가 명시적. 단점: 호출이 여러 모듈에 흩어진 경우 어떤 키가 필요한지 schema와 helper.ts를 함께 봐야 한다.
+
+### 13. 자기학습 루프 — Prompt-as-Data 패턴 (2026-04-26)
+
+**Why:** 자기학습 루프가 *코드 자율 패치* 모델일 때 Claude 가 임의 TS 파일을 수정할 수 있고, 보안 가드는 path regex 1개에 의존했다. 멀티모듈 리팩터에서 regex 가 깨졌고 (실제 경로는 `packages/core/src/...` 인데 regex 는 `core/...` 시작 패턴 기대), 보안 체크 위치도 잘못됨 (writeFile 후 git commit 전). server multi-user 환경에서 자기 자신 코드 수정은 위험.
+
+**How:** 자기학습 *대상* 을 데이터로 격리. `packages/core/src/learning/prompts.ts` 의 `loadPrompts()` 가 `data/learned/prompts.json` (CLI) 또는 (미래) DB row (Server) 에서 lazy 로드. `creative/copy.ts`, `creative/prompt.ts` 가 하드코딩 const 대신 loader 사용. Improver 는 `data/learned/prompts.json` 한 파일만 read/write — 다른 코드 파일 접근 불가. **4-gate validation** (parse → schema → placeholder → banned-pattern) + `MAX_PROPOSALS_PER_CYCLE=5` + `MIN_CAMPAIGNS_FOR_LEARNING=3` 가드. Banned pattern 은 personalization (회원님 등) 과 unverified-hyperbole (100% 효과, 1위 등) 두 카테고리 — Layer A (prompt 레벨) 와 Layer B (validator 레벨) 의 2-layer 방어.
+
+**Trade-off:** "Claude 가 임의 코드 버그도 자율 수정" 시나리오 포기 — 그 시나리오는 처음부터 위험했고 regex 깨짐 상태로 미동작 중이었음. 학습 대상 5개 키 (`copy.systemPrompt`, `copy.userTemplate`, `copy.angleHints.{emotional,numerical,urgency}`) 로 좁힘 — analysis/improver 메타 프롬프트는 부트스트랩 루프 회피로 학습 대상 외. CLI/Server 가 동일 인터페이스 (`loadPrompts()`) 공유하되 저장소만 다름 — server 활성화 시 시스템-wide 1행 DB 모델 (사용자별 fine-tuning 은 미래 premium tier).
+
+**파일 위치:** `data/learned/prompts.json` 은 `.gitignore` 의 `data/` 규칙으로 자동 git 제외. 새 머신 → 즉시 default 동작 → 시간 지나며 학습 누적. 백업은 사용자가 `data/` 동기화로.
+
+**fewShot 통합:** TUI/CLI Generate 경로 (`actions.ts:runGenerate`, `entries/generate.ts`) 가 `retrieveFewShotForProduct` 로 winner DB 에서 top-K=3 fewShot 회수 후 `generateCopy` 에 주입. self-learning 의 *prompt 진화* 와 *winner DB* 는 별개 학습 채널이지만 둘 다 자기학습 루프의 일부.
+
+자세한 설계는 [`docs/superpowers/specs/2026-04-26-prompt-as-data-design.md`](superpowers/specs/2026-04-26-prompt-as-data-design.md) 참조.
 
 ---
 

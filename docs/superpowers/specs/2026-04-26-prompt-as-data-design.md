@@ -335,10 +335,11 @@ Improvement Generator (Claude #2)
   Input:  promptKey + current value at that key + issue + suggestion + perfContext
   Output: { promptKey, newValue, reason }
                   ↓
-3-Gate Validation:
+4-Gate Validation:
   Gate 1: parsePromptUpdate (newValue/promptKey 존재)
   Gate 2: setPromptValue → 전체 PromptsSchema.safeParse (string min 길이)
   Gate 3: validateUserTemplate (REQUIRED_PLACEHOLDERS, userTemplate 만)
+  Gate 4: BANNED_PATTERNS 검사 (personalization + unverified-hyperbole)
                   ↓
 통과: writeJson(prompts.json) + invalidatePromptsCache() + audit append
 실패: data/improvements/{date}-rejected.json 에 사유 기록 + skip
@@ -541,12 +542,25 @@ function setPromptValue(prompts: Prompts, key: PromptKey, value: string): Prompt
 interface ValidationFail { ok: false; reason: string; }
 interface ValidationPass { ok: true; prompts: Prompts; }
 
+// Gate 4: banned-pattern check (personalization + unverified hyperbole)
+// 정책 근거: CLAUDE.md "broad non-personalized exposure" + 한국 표시광고법 + Meta 광고 정책.
+// improver 가 학습으로 prompts.json 에 이런 표현을 도입하면 모든 미래 카피 생성이 오염되므로 fail-safe 로 차단.
+const BANNED_PATTERNS: { pattern: RegExp; label: string }[] = [
+  { pattern: /당신만을 위한|회원[님사]|[가-힣A-Za-z]+님(?:께|에게|을(?!\s*뜻하|\s*의미)|이\s|만(?:\s|$|의))/u, label: "personalization" },
+  { pattern: /100%\s*효과|1위(?!,)|최고의?\s|유일한\s/u, label: "unverified-hyperbole" },
+];
+
 function validateUpdate(updated: Prompts, key: PromptKey, newValue: string): ValidationFail | ValidationPass {
   const parsed = PromptsSchema.safeParse(updated);
   if (!parsed.success) return { ok: false, reason: `schema validation: ${parsed.error.message}` };
   if (key === "copy.userTemplate") {
     const missing = validateUserTemplate(newValue);
     if (missing.length > 0) return { ok: false, reason: `missing required placeholders: ${missing.join(", ")}` };
+  }
+  for (const { pattern, label } of BANNED_PATTERNS) {
+    if (pattern.test(newValue)) {
+      return { ok: false, reason: `banned pattern (${label}): ${pattern.source}` };
+    }
   }
   return { ok: true, prompts: parsed.data };
 }
@@ -682,7 +696,7 @@ export async function defaultRunCycleAdapter(
 
 본 작업 범위에 포함. winner DB 학습 결과를 카피 생성에 실제 활용하기 위한 필수 wiring.
 
-**Lifecycle**: voyage 클라이언트와 creativesDb 핸들은 `runGenerate` *진입 시 1회* 생성, products loop 가 모두 끝난 후 `finally` 에서 close. fewShot 회수만 product 별로 호출. winner DB 핸들이 매 product 마다 open/close 되면 SQLite 오버헤드 누적.
+**Lifecycle**: voyage 클라이언트와 creativesDb 핸들은 `runGenerate` 의 try 블록 안에서 1회 생성, products loop 가 모두 끝난 후 `finally` 에서 optional chain 으로 close. constructors 가 try 밖에 있으면 `createCreativesDb` 자체가 throw 할 때 (예: 디스크 권한 문제) catch/finally 가 우회되어 caller 에 raw exception 이 전파된다. fewShot 회수만 product 별로 호출. winner DB 핸들이 매 product 마다 open/close 되면 SQLite 오버헤드 누적.
 
 ```ts
 // packages/cli/src/actions.ts: runGenerate (변경 후 — 골격)
@@ -692,10 +706,11 @@ import { createCreativesDb } from "@ad-ai/core/rag/db.js";
 import { WinnerStore } from "@ad-ai/core/rag/store.js";
 
 export async function runGenerate(...): Promise<DoneResult> {
-  const voyage = createVoyageClient();
-  const creativesDb = createCreativesDb("data/creatives.db");
-  const winnerStore = new WinnerStore(creativesDb);
+  let creativesDb: ReturnType<typeof createCreativesDb> | null = null;
   try {
+    const voyage = createVoyageClient();
+    creativesDb = createCreativesDb();
+    const winnerStore = new WinnerStore(creativesDb);
     // ... 기존 product loop ...
     for (const product of products) {
       // (existing image/video 3-track 시작 전 또는 copiesTask 안에서 1회 회수)
@@ -707,8 +722,10 @@ export async function runGenerate(...): Promise<DoneResult> {
       const c = await generateCopy(anthropic, product, fewShot, label);
       // ...
     }
+  } catch (e) {
+    return { success: false, message: "Generate 실패", logs: [String(e)] };
   } finally {
-    creativesDb.close();
+    creativesDb?.close();
   }
 }
 ```
@@ -723,7 +740,7 @@ export async function runGenerate(...): Promise<DoneResult> {
 
 ## 6. 테스트 전략
 
-### 6.1 안전 메커니즘 3중 가드
+### 6.1 안전 메커니즘 4중 가드
 
 ```
 Claude 응답
@@ -733,6 +750,8 @@ Gate 1: parsePromptUpdate (JSON parse, newValue/promptKey 존재)
 Gate 2: setPromptValue → 전체 PromptsSchema.safeParse
    ↓ 실패 → reject log, skip
 Gate 3: validateUserTemplate (REQUIRED_PLACEHOLDERS, userTemplate 만)
+   ↓ 실패 → reject log, skip
+Gate 4: BANNED_PATTERNS 검사 (personalization + unverified-hyperbole)
    ↓ 실패 → reject log, skip
    ↓
 WriteJson + invalidatePromptsCache + audit
@@ -1090,3 +1109,26 @@ CLI 단일 사용자 환경에서는 무시 가능.
 - Minor: 4건 (Section 3/5/6 + 스펙 자체 검토 1건). 인라인 처리 또는 implementation 단계 deferral
 
 다음 단계: 사용자 검토 → 승인 시 `superpowers:writing-plans` 스킬로 implementation plan 작성.
+
+### 2026-04-26 — Implementation 완료 + 추가 review findings
+
+implementation 사이클 (5 commits + fix-ups, baseline 358 → 392 tests) 에서 spec 외 추가 발견된 review findings:
+
+**Commit 3 marketing-copy-reviewer Critical 2건** (`ba41d67` / `96cf3cd` / `1f3f18b` 으로 fix):
+- 개인화 가드 부재 — `DEFAULT_PROMPTS.systemPrompt` + `buildAnalysisPrompt` + `buildImprovementPrompt` + `validateUpdate` Gate 4 의 4-layer 추가
+- Hyperbole 가드 부재 — 동일 4-layer 적용
+- Korean word-boundary regex bug — `\b최고의?\s` 가 한국어에서 dead code, `\b` 제거
+- Personalization regex literal `~` 요구 — `[가-힣A-Za-z]+님(?:...)` 으로 generic noun + 님 패턴 매칭
+
+**Commit 4 code-reviewer Important 1건** (`7f047b4` 으로 fix):
+- voyage/creativesDb lifecycle 이 try 블록 밖에 있어 `createCreativesDb` throw 시 catch/finally 우회 — `actions.ts` / `entries/generate.ts` / `pipeline.ts` 3 파일에 lifecycle restructure (`let creativesDb | null` + try 안으로 이동 + finally `creativesDb?.close()`)
+
+본 spec 의 §5.1 / §5.4 / §6.1 Gate 추가 (3 → 4) 및 §5.7 lifecycle 예시 코드 inline 갱신됨.
+
+### 종합 (재집계)
+
+- Critical: 0건 (모든 implementation 사이클 발견 항목 fix 완료)
+- Important: 11건 — Section 1-4 brainstorming 4건 + spec 자체 검토 1건 + Commit 3 marketing reviewer 2건 + Commit 3 code reviewer 2건 + Commit 4 code reviewer 1건 + 외 spec drift (3-gate → 4-gate 표기) 1건. Critical/Important 모두 인라인 수정 완료.
+- Minor: STATUS.md 의 "Prompt-as-Data refactor review-deferred items" 통합 entry 에 R-A1~R-A3, R-B1~R-B10, R-C1~R-C5 등 18개 항목 deferred 기록.
+
+다음 cleanup 사이클에 일괄 처리.
