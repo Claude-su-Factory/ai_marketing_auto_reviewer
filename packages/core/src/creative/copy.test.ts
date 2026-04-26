@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateCopy, COPY_SYSTEM_PROMPT } from "./copy.js";
+import { generateCopy } from "./copy.js";
+import { DEFAULT_PROMPTS } from "../learning/prompts.js";
 import type { Product } from "../types.js";
 
 const mockProduct: Product = {
@@ -58,19 +59,28 @@ describe("generateCopy", () => {
     expect(userContent).toContain("WINNER_HEADLINE");
   });
 
-  it("COPY_SYSTEM_PROMPT does not mention 온라인 강의 specifically", () => {
-    expect(COPY_SYSTEM_PROMPT).not.toContain("온라인 강의");
+  it("DEFAULT_PROMPTS.copy.systemPrompt does not mention 온라인 강의 specifically", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).not.toContain("온라인 강의");
   });
 
-  it("COPY_SYSTEM_PROMPT specifies 40-char headline limit", () => {
-    expect(COPY_SYSTEM_PROMPT).toContain("40");
+  it("DEFAULT_PROMPTS.copy.systemPrompt specifies 40-char headline limit", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).toContain("40");
   });
 
-  it("COPY_SYSTEM_PROMPT specifies 125-char body limit", () => {
-    expect(COPY_SYSTEM_PROMPT).toContain("125");
+  it("DEFAULT_PROMPTS.copy.systemPrompt specifies 125-char body limit", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).toContain("125");
   });
 
-  it("COPY_SYSTEM_PROMPT specifies exactly 3 hashtags", () => {
-    expect(COPY_SYSTEM_PROMPT).toContain("3");
+  it("DEFAULT_PROMPTS.copy.systemPrompt specifies exactly 3 hashtags", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).toContain("3");
+  });
+
+  it("passes loaded systemPrompt to Anthropic system field", async () => {
+    const client = mockClient(JSON.stringify({
+      headline: "h", body: "b", cta: "c", hashtags: ["a", "b", "c"],
+    }));
+    await generateCopy(client as any, mockProduct, [], "emotional");
+    const call = (client.messages.create as any).mock.calls[0][0];
+    expect(call.system[0].text).toBe(DEFAULT_PROMPTS.copy.systemPrompt);
   });
 });

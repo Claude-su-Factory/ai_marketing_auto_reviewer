@@ -1,4 +1,5 @@
 import type { Product } from "../types.js";
+import { loadPrompts, substitutePlaceholders } from "../learning/prompts.js";
 
 export type VariantLabel = "emotional" | "numerical" | "urgency";
 
@@ -15,17 +16,12 @@ export const VARIANT_LABELS: readonly VariantLabel[] = [
   "urgency",
 ] as const;
 
-const ANGLE_HINTS: Record<VariantLabel, string> = {
-  emotional: "감정 호소 중심으로 독자의 욕구·공감대를 자극하세요.",
-  numerical: "수치·통계·비교를 전면에 배치하세요.",
-  urgency: "긴급성·희소성(기한, 한정 수량 등)을 강조하세요.",
-};
-
-export function buildCopyPrompt(
+export async function buildCopyPrompt(
   product: Product,
   fewShot: FewShotExample[],
   variantLabel: VariantLabel,
-): string {
+): Promise<string> {
+  const prompts = await loadPrompts();
   const priceText = product.price
     ? `${product.currency} ${product.price.toLocaleString()}`
     : "가격 미정";
@@ -40,14 +36,14 @@ export function buildCopyPrompt(
           .join("\n")}\n`
       : "";
 
-  return `다음 제품/서비스에 대한 Instagram 광고 카피를 작성해주세요.
-
-제품명: ${product.name}
-설명: ${product.description}
-가격: ${priceText}
-카테고리: ${product.category ?? "기타"}
-태그: ${product.tags.join(", ")}
-링크: ${product.targetUrl}
-
-이 variant의 톤 가이드: ${ANGLE_HINTS[variantLabel]}${fewShotBlock}`;
+  return substitutePlaceholders(prompts.copy.userTemplate, {
+    name: product.name,
+    description: product.description,
+    priceText,
+    category: product.category ?? "기타",
+    tags: product.tags.join(", "),
+    targetUrl: product.targetUrl,
+    angleHint: prompts.copy.angleHints[variantLabel],
+    fewShotBlock,
+  });
 }
