@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { computeStats, buildAnalysisPrompt } from "./monitor.js";
+import { DEFAULT_PROMPTS } from "../learning/prompts.js";
 import type { Report } from "../types.js";
 
 const mockReports: Report[] = [
@@ -28,11 +29,21 @@ describe("computeStats", () => {
 });
 
 describe("buildAnalysisPrompt", () => {
-  it("includes performance data", () => {
+  it("includes performance data and current prompts", () => {
     const stats = computeStats(mockReports);
-    const prompt = buildAnalysisPrompt(mockReports, stats);
+    const prompt = buildAnalysisPrompt(mockReports, stats, DEFAULT_PROMPTS);
     expect(prompt).toContain("4.2");
     expect(prompt).toContain("0.9");
+    // 현재 prompt 내용 일부가 분석 컨텍스트에 포함됨
+    expect(prompt).toContain("감정 호소");
+  });
+
+  it("lists allowed promptKey enum values", () => {
+    const stats = computeStats(mockReports);
+    const prompt = buildAnalysisPrompt(mockReports, stats, DEFAULT_PROMPTS);
+    expect(prompt).toContain("copy.systemPrompt");
+    expect(prompt).toContain("copy.userTemplate");
+    expect(prompt).toContain("copy.angleHints.emotional");
   });
 });
 

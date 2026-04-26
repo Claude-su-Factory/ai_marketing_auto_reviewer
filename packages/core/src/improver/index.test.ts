@@ -1,5 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { buildImprovementPrompt, parseImprovements, shouldTriggerImprovement } from "./index.js";
+import { describe, it, expect } from "vitest";
+import {
+  buildImprovementPrompt,
+  parsePromptUpdate,
+  shouldTriggerImprovement,
+  isAllowedPromptKey,
+  ALLOWED_PROMPT_KEYS,
+} from "./index.js";
 import type { Report } from "../types.js";
 
 const lowPerformanceReport: Report = {
@@ -24,40 +30,90 @@ describe("shouldTriggerImprovement", () => {
   });
 });
 
+describe("isAllowedPromptKey", () => {
+  it("accepts all 5 enum values", () => {
+    expect(isAllowedPromptKey("copy.systemPrompt")).toBe(true);
+    expect(isAllowedPromptKey("copy.userTemplate")).toBe(true);
+    expect(isAllowedPromptKey("copy.angleHints.emotional")).toBe(true);
+    expect(isAllowedPromptKey("copy.angleHints.numerical")).toBe(true);
+    expect(isAllowedPromptKey("copy.angleHints.urgency")).toBe(true);
+  });
+
+  it("rejects unknown keys", () => {
+    expect(isAllowedPromptKey("copy.unknown")).toBe(false);
+    expect(isAllowedPromptKey("analysis.userTemplate")).toBe(false);
+    expect(isAllowedPromptKey("")).toBe(false);
+  });
+
+  it("ALLOWED_PROMPT_KEYS contains exactly 5 entries", () => {
+    expect(ALLOWED_PROMPT_KEYS).toHaveLength(5);
+  });
+});
+
 describe("buildImprovementPrompt", () => {
-  it("includes file content and performance context", () => {
+  it("includes promptKey, currentValue, issue, suggestion, performanceContext", () => {
     const prompt = buildImprovementPrompt(
-      "core/creative/copy.ts",
-      "const prompt = 'old prompt';",
-      "CTR 0.8% — 임계값 1.5% 미달",
-      "카피 헤드라인이 너무 추상적"
+      "copy.angleHints.emotional",
+      "기존 angle hint 값입니다",
+      "감정 호소가 약함",
+      "더 구체적인 페인 포인트 강조",
+      "5개 캠페인 CTR 0.8% 미달",
     );
-    expect(prompt).toContain("old prompt");
-    expect(prompt).toContain("0.8%");
+    expect(prompt).toContain("copy.angleHints.emotional");
+    expect(prompt).toContain("기존 angle hint 값입니다");
+    expect(prompt).toContain("감정 호소가 약함");
+    expect(prompt).toContain("더 구체적인 페인 포인트");
+    expect(prompt).toContain("5개 캠페인");
+  });
+
+  it("specifies userTemplate placeholder requirements", () => {
+    const prompt = buildImprovementPrompt(
+      "copy.userTemplate",
+      "{{name}} {{description}}",
+      "issue",
+      "suggestion",
+      "ctx",
+    );
+    expect(prompt).toContain("{{name}}");
+    expect(prompt).toContain("{{description}}");
+    expect(prompt).toContain("{{angleHint}}");
+  });
+
+  it("requires JSON response format", () => {
+    const prompt = buildImprovementPrompt(
+      "copy.systemPrompt",
+      "v",
+      "i",
+      "s",
+      "c",
+    );
+    expect(prompt).toContain("JSON 형식");
+    expect(prompt).toContain('"promptKey"');
+    expect(prompt).toContain('"newValue"');
   });
 });
 
-describe("parseImprovements", () => {
-  it("extracts file edits from Claude response", () => {
+describe("parsePromptUpdate", () => {
+  it("extracts promptKey/newValue/reason from Claude response", () => {
     const response = `{
-      "file": "core/creative/copy.ts",
-      "oldCode": "const a = 1;",
-      "newCode": "const a = 2;"
+      "promptKey": "copy.systemPrompt",
+      "newValue": "새 시스템 프롬프트",
+      "reason": "더 구체적으로"
     }`;
-    const result = parseImprovements(response);
-    expect(result.file).toBe("core/creative/copy.ts");
-    expect(result.newCode).toBe("const a = 2;");
+    const result = parsePromptUpdate(response);
+    expect(result.promptKey).toBe("copy.systemPrompt");
+    expect(result.newValue).toBe("새 시스템 프롬프트");
+    expect(result.reason).toBe("더 구체적으로");
   });
-});
 
-describe("buildImprovementPrompt safety", () => {
-  it("explicitly prohibits modifying external platform pages", () => {
-    const prompt = buildImprovementPrompt(
-      "core/creative/copy.ts",
-      "const x = 1;",
-      "CTR 0.5%",
-      "카피가 약함"
-    );
-    expect(prompt).toMatch(/인프런|class101|외부.*수정.*금지|절대.*수정/);
+  it("returns empty object when JSON malformed", () => {
+    const result = parsePromptUpdate("not json");
+    expect(result).toEqual({});
+  });
+
+  it("returns partial when fields missing", () => {
+    const result = parsePromptUpdate(`{"promptKey": "copy.systemPrompt"}`);
+    expect(result.promptKey).toBe("copy.systemPrompt");
+    expect(result.newValue).toBeUndefined();
   });
 });

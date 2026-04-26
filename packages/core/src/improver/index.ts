@@ -1,6 +1,33 @@
 import type { Report } from "../types.js";
 import { getConfig } from "@ad-ai/core/config/index.js";
 
+export const ALLOWED_PROMPT_KEYS = [
+  "copy.systemPrompt",
+  "copy.userTemplate",
+  "copy.angleHints.emotional",
+  "copy.angleHints.numerical",
+  "copy.angleHints.urgency",
+] as const;
+export type PromptKey = (typeof ALLOWED_PROMPT_KEYS)[number];
+
+export interface AnalysisImprovement {
+  campaignId?: string;
+  issue: string;
+  suggestion: string;
+  promptKey: PromptKey;
+}
+
+export interface AnalysisResult {
+  summary?: string;
+  improvements?: AnalysisImprovement[];
+}
+
+export interface PromptUpdateProposal {
+  promptKey: PromptKey;
+  newValue: string;
+  reason: string;
+}
+
 export function getCtrThreshold(): number {
   return getConfig().defaults.ctr_improvement_threshold;
 }
@@ -9,43 +36,52 @@ export function shouldTriggerImprovement(report: Report): boolean {
   return report.ctr < getCtrThreshold();
 }
 
+export function isAllowedPromptKey(key: string): key is PromptKey {
+  return (ALLOWED_PROMPT_KEYS as readonly string[]).includes(key);
+}
+
 export function buildImprovementPrompt(
-  filePath: string,
-  currentCode: string,
+  promptKey: PromptKey,
+  currentValue: string,
+  issue: string,
+  suggestion: string,
   performanceContext: string,
-  issue: string
 ): string {
-  return `당신은 광고 자동화 파이프라인 코드를 개선하는 엔지니어입니다.
+  return `당신은 광고 카피 생성 프롬프트를 개선하는 엔지니어입니다.
 
 ## 성과 문제
 ${performanceContext}
 
-## 식별된 문제
+## 식별된 이슈
 ${issue}
 
-## 현재 코드 (${filePath})
-\`\`\`typescript
-${currentCode}
-\`\`\`
+## 개선 방향 (분석 단계에서 제안됨)
+${suggestion}
 
-위 코드에서 광고 성과를 개선할 수 있는 최소한의 변경을 제안해주세요.
-강의 플랫폼(인프런, 클래스101) 외부 페이지는 절대 수정하지 마세요.
+## 변경 대상 프롬프트 키
+${promptKey}
 
-반드시 아래 JSON 형식으로만 응답하세요:
+## 현재 값
+"""
+${currentValue}
+"""
+
+위 prompt 값을 issue/suggestion 에 맞게 다시 작성하세요. 의미를 보존하되 카피 성과가 개선되도록 표현을 조정합니다.
+
+규칙:
+- userTemplate 을 수정하는 경우 반드시 {{name}}, {{description}}, {{angleHint}} placeholder 가 포함되어야 합니다.
+- systemPrompt 는 최소 50자 이상.
+- 다른 placeholder ({{priceText}}, {{category}}, {{tags}}, {{targetUrl}}, {{fewShotBlock}}) 는 빼도 OK.
+
+반드시 아래 JSON 형식으로만 응답:
 {
-  "file": "${filePath}",
-  "oldCode": "변경 전 코드 (exact match)",
-  "newCode": "변경 후 코드",
-  "reason": "변경 이유"
+  "promptKey": "${promptKey}",
+  "newValue": "새 값 (전체 텍스트)",
+  "reason": "변경 이유 (한 문장)"
 }`;
 }
 
-export function parseImprovements(claudeResponse: string): {
-  file: string;
-  oldCode: string;
-  newCode: string;
-  reason: string;
-} {
+export function parsePromptUpdate(claudeResponse: string): Partial<PromptUpdateProposal> {
   const jsonMatch = claudeResponse.match(/\{[\s\S]*\}/);
   return JSON.parse(jsonMatch?.[0] ?? "{}");
 }

@@ -67,10 +67,10 @@ export interface Report {
 }
 
 export interface ImprovementChange {
-  file: string;
-  type: "prompt_update" | "param_update" | "bug_fix";
+  promptKey: string;
   before: string;
   after: string;
+  reason?: string;
 }
 
 export interface Improvement {

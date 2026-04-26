@@ -5,6 +5,8 @@ import type { VariantReport } from "../platform/types.js";
 import { readJson, writeJson, appendJson, listJson } from "../storage.js";
 import { activePlatforms } from "../platform/registry.js";
 import { randomUUID } from "crypto";
+import type { Prompts } from "../learning/prompts.js";
+import { loadPrompts } from "../learning/prompts.js";
 
 export interface PerformanceStats {
   top: Report[];
@@ -28,7 +30,11 @@ export function computeStats(reports: Report[]): PerformanceStats {
   };
 }
 
-export function buildAnalysisPrompt(reports: Report[], stats: PerformanceStats): string {
+export function buildAnalysisPrompt(
+  reports: Report[],
+  stats: PerformanceStats,
+  currentPrompts: Prompts,
+): string {
   return `다음 인스타그램 광고 성과 데이터를 분석하고 개선 제안을 JSON으로 반환해주세요.
 
 ## 성과 데이터
@@ -40,16 +46,26 @@ ${reports.map((r) => `캠페인 ${r.campaignId}: CTR ${r.ctr}%, CPC ₩${r.cpc},
 - 총 지출: ₩${stats.totalSpend.toLocaleString()}
 - 평균 CTR: ${stats.avgCtr.toFixed(2)}%
 
-개선이 필요한 캠페인과 구체적인 제안을 아래 형식으로 반환:
+## 현재 학습된 프롬프트 (개선 대상)
+${JSON.stringify(currentPrompts, null, 2)}
+
+위 데이터를 보고, 카피 생성 프롬프트의 어느 부분(promptKey)을 어떻게 바꿔야 성과가 좋아질지 제안해주세요.
+허용된 promptKey 만 사용 (그 외 값은 무시됨):
+- "copy.systemPrompt" — 시스템 프롬프트 전체
+- "copy.userTemplate" — 사용자 프롬프트 템플릿 (반드시 {{name}}/{{description}}/{{angleHint}} 포함)
+- "copy.angleHints.emotional" — 감정 호소 variant 톤
+- "copy.angleHints.numerical" — 수치 강조 variant 톤
+- "copy.angleHints.urgency" — 긴급성 variant 톤
+
+반드시 아래 JSON 형식으로만 응답:
 {
   "summary": "전체 요약",
   "improvements": [
     {
-      "campaignId": "",
+      "campaignId": "성과 부진 캠페인 ID (선택)",
       "issue": "문제점",
-      "suggestion": "개선 제안",
-      "targetFile": "수정할 파일 경로 (예: core/creative/copy.ts)",
-      "changeType": "prompt_update | param_update | bug_fix"
+      "suggestion": "개선 방향",
+      "promptKey": "위 enum 중 하나"
     }
   ]
 }`;
@@ -125,7 +141,8 @@ export async function generateWeeklyAnalysis(): Promise<string> {
 
   const reports = variantReportsToReports(allVariants);
   const stats = computeStats(reports);
-  const prompt = buildAnalysisPrompt(reports, stats);
+  const currentPrompts = await loadPrompts();
+  const prompt = buildAnalysisPrompt(reports, stats, currentPrompts);
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",

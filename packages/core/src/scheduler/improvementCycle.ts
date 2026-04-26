@@ -1,6 +1,6 @@
 import { readJson, listJson } from "../storage.js";
 import { runImprovementCycle as defaultRunCycle } from "../improver/runner.js";
-import { shouldTriggerImprovement } from "../improver/index.js";
+import { shouldTriggerImprovement, type AnalysisResult } from "../improver/index.js";
 import { variantReportsToReports } from "../campaign/monitor.js";
 import type { VariantReport } from "../platform/types.js";
 
@@ -14,6 +14,8 @@ export interface ImprovementCycleDeps {
   qualify: (reports: VariantReport[]) => Promise<{ inserted: number; skipped: number }>;
   runCycle: (analysis: object | null, reports: VariantReport[]) => Promise<void>;
 }
+
+const MIN_CAMPAIGNS_FOR_LEARNING = 3;
 
 export async function defaultAggregate(): Promise<AggregateResult> {
   const reportPaths = await listJson("data/reports");
@@ -34,8 +36,15 @@ export async function defaultRunCycleAdapter(
 ): Promise<void> {
   if (!analysis) return;
   const aggregated = variantReportsToReports(reports);
+  if (aggregated.length < MIN_CAMPAIGNS_FOR_LEARNING) {
+    console.log(
+      `[improvementCycle] insufficient data (${aggregated.length}/${MIN_CAMPAIGNS_FOR_LEARNING}), skipping cycle`,
+    );
+    return;
+  }
   const weak = aggregated.filter(shouldTriggerImprovement);
-  await defaultRunCycle(weak, JSON.stringify(analysis));
+  if (weak.length === 0) return;
+  await defaultRunCycle(weak, analysis as AnalysisResult);
 }
 
 export async function runScheduledImprovementCycle(

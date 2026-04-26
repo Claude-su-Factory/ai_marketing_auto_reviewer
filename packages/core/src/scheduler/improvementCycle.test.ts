@@ -39,7 +39,7 @@ describe("runScheduledImprovementCycle", () => {
     expect(runCycle).not.toHaveBeenCalled();
   });
 
-  it("weekly-analysis 가 있으면 weak reports 와 stringified analysis 로 runCycle 호출", async () => {
+  it("weekly-analysis 가 있으면 weak reports 와 analysis object 로 runCycle 호출", async () => {
     const { listJson, readJson } = await import("../storage.js");
     const { runImprovementCycle: runCycle } = await import(
       "../improver/runner.js"
@@ -70,7 +70,33 @@ describe("runScheduledImprovementCycle", () => {
     expect(runCycle).toHaveBeenCalledTimes(1);
     const [weakArg, analysisArg] = (runCycle as any).mock.calls[0];
     expect(weakArg).toEqual([weakReport, weakReport]);
-    expect(analysisArg).toBe(JSON.stringify(analysisObj));
+    expect(analysisArg).toEqual(analysisObj); // object directly, not stringified
+  });
+});
+
+describe("defaultRunCycleAdapter — MIN_CAMPAIGNS gate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("skips cycle when aggregated reports < 3", async () => {
+    vi.doMock("../campaign/monitor.js", () => ({
+      variantReportsToReports: vi.fn(() => [{ id: "r1", ctr: 0.5 } as any, { id: "r2", ctr: 0.4 } as any]),  // 2 only
+    }));
+    vi.resetModules();
+    const { defaultRunCycleAdapter } = await import("./improvementCycle.js");
+    const { runImprovementCycle } = await import("../improver/runner.js");
+    const logs: string[] = [];
+    const orig = console.log;
+    console.log = (m: string) => { logs.push(m); };
+    try {
+      await defaultRunCycleAdapter({ summary: "x" }, []);
+    } finally {
+      console.log = orig;
+    }
+    expect(runImprovementCycle).not.toHaveBeenCalled();
+    expect(logs.some((l) => l.includes("insufficient data"))).toBe(true);
+    vi.doUnmock("../campaign/monitor.js");
   });
 });
 
