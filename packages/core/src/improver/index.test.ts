@@ -91,6 +91,18 @@ describe("buildImprovementPrompt", () => {
     expect(prompt).toContain('"promptKey"');
     expect(prompt).toContain('"newValue"');
   });
+
+  it("explicitly forbids personalization and hyperbole in newValue", () => {
+    const prompt = buildImprovementPrompt(
+      "copy.systemPrompt",
+      "v",
+      "i",
+      "s",
+      "c",
+    );
+    expect(prompt).toMatch(/당신만을 위한|회원님|~님/);
+    expect(prompt).toMatch(/100%|1위|최고|과장/);
+  });
 });
 
 describe("parsePromptUpdate", () => {

@@ -45,12 +45,25 @@ function setPromptValue(prompts: Prompts, key: PromptKey, value: string): Prompt
 interface ValidationFail { ok: false; reason: string; }
 interface ValidationPass { ok: true; prompts: Prompts; }
 
+// Gate 4: banned-pattern check (personalization + unverified hyperbole)
+// 정책 근거: CLAUDE.md "broad non-personalized exposure" + 한국 표시광고법 + Meta 광고 정책.
+// improver 가 학습으로 prompts.json 에 이런 표현을 도입하면 모든 미래 카피 생성이 오염되므로 fail-safe 로 차단.
+const BANNED_PATTERNS: { pattern: RegExp; label: string }[] = [
+  { pattern: /당신만을 위한|회원님|~님(?:께|에게|을|을\s|을$)/u, label: "personalization" },
+  { pattern: /100%\s*효과|1위(?!,)|\b최고의?\s|유일한\s/u, label: "unverified-hyperbole" },
+];
+
 function validateUpdate(updated: Prompts, key: PromptKey, newValue: string): ValidationFail | ValidationPass {
   const parsed = PromptsSchema.safeParse(updated);
   if (!parsed.success) return { ok: false, reason: `schema validation: ${parsed.error.message}` };
   if (key === "copy.userTemplate") {
     const missing = validateUserTemplate(newValue);
     if (missing.length > 0) return { ok: false, reason: `missing required placeholders: ${missing.join(", ")}` };
+  }
+  for (const { pattern, label } of BANNED_PATTERNS) {
+    if (pattern.test(newValue)) {
+      return { ok: false, reason: `banned pattern (${label}): ${pattern.source}` };
+    }
   }
   return { ok: true, prompts: parsed.data };
 }

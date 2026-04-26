@@ -213,6 +213,42 @@ describe("runImprovementCycle", () => {
     expect(JSON.parse(rejRaw)[0].rejected).toHaveLength(1);
   });
 
+  it("rejects newValue with personalization tokens (Gate 4)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.angleHints.emotional",
+      newValue: "회원님께만 드리는 특별한 감정 호소 가이드 — 충분히 긴 길이",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.emotional" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
+    const raw = await readFile(rejectedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*personalization/);
+  });
+
+  it("rejects newValue with unverified hyperbole (Gate 4)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.angleHints.numerical",
+      newValue: "100% 효과 보장 + 1위 입증된 수치 강조 가이드 — 충분히 긴 길이",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
+    const raw = await readFile(rejectedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*hyperbole/);
+  });
+
   it("emits cost log at end of cycle", async () => {
     mockClaudeResponse = JSON.stringify({
       promptKey: "copy.angleHints.emotional",

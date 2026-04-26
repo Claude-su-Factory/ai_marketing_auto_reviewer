@@ -72,6 +72,7 @@ ${currentValue}
 - userTemplate 을 수정하는 경우 반드시 {{name}}, {{description}}, {{angleHint}} placeholder 가 포함되어야 합니다.
 - systemPrompt 는 최소 50자 이상.
 - 다른 placeholder ({{priceText}}, {{category}}, {{tags}}, {{targetUrl}}, {{fewShotBlock}}) 는 빼도 OK.
+- 절대 금지 표현: "당신만을 위한", "회원님께", "~님" (개인화), "100%", "1위", "최고" 등 검증 안 된 과장 표현. newValue 에 이런 표현이 포함되면 거부됩니다.
 
 반드시 아래 JSON 형식으로만 응답:
 {

@@ -161,6 +161,16 @@ describe("validateUserTemplate", () => {
   });
 });
 
+describe("DEFAULT_PROMPTS personalization + hyperbole guards", () => {
+  it("systemPrompt 가 개인화 표현 금지 규칙 포함", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).toMatch(/개인화|당신만을 위한|회원님|~님/);
+  });
+
+  it("systemPrompt 가 과장/superlative 금지 규칙 포함", () => {
+    expect(DEFAULT_PROMPTS.copy.systemPrompt).toMatch(/100%|1위|최고|유일한|과장|superlative|표시광고법/);
+  });
+});
+
 describe("substitutePlaceholders", () => {
   it("substitutes a single placeholder", () => {
     expect(substitutePlaceholders("hi {{name}}", { name: "X" })).toBe("hi X");

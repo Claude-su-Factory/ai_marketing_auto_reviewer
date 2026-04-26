@@ -57,6 +57,10 @@ ${JSON.stringify(currentPrompts, null, 2)}
 - "copy.angleHints.numerical" — 수치 강조 variant 톤
 - "copy.angleHints.urgency" — 긴급성 variant 톤
 
+주의: 다음 항목은 절대 변경 제안에 포함하지 말 것. 광고 정책 위반 위험.
+- 개인화 표현 ("당신만을 위한", "회원님께", "~님" 등): broad 비개인화 노출 정책 위반.
+- 과장/superlative ("100%", "1위", "최고" 등 검증 안 된 표현): 한국 표시광고법 + Meta 광고 정책 위반.
+
 반드시 아래 JSON 형식으로만 응답:
 {
   "summary": "전체 요약",
