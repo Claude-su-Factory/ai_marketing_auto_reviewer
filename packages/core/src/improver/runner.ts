@@ -49,7 +49,7 @@ interface ValidationPass { ok: true; prompts: Prompts; }
 // 정책 근거: CLAUDE.md "broad non-personalized exposure" + 한국 표시광고법 + Meta 광고 정책.
 // improver 가 학습으로 prompts.json 에 이런 표현을 도입하면 모든 미래 카피 생성이 오염되므로 fail-safe 로 차단.
 const BANNED_PATTERNS: { pattern: RegExp; label: string }[] = [
-  { pattern: /당신만을 위한|회원님|~님(?:께|에게|을)/u, label: "personalization" },
+  { pattern: /당신만을 위한|회원[님사]|[가-힣A-Za-z]+님(?:께|에게|을(?!\s*뜻하|\s*의미)|이\s|만(?:\s|$|의))/u, label: "personalization" },
   { pattern: /100%\s*효과|1위(?!,)|최고의?\s|유일한\s/u, label: "unverified-hyperbole" },
 ];
 

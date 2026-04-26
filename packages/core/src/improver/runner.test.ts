@@ -231,6 +231,42 @@ describe("runImprovementCycle", () => {
     expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*personalization/);
   });
 
+  it("rejects newValue with generic [name]+님 honorific (Gate 4 regression)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.systemPrompt",
+      newValue: "이 광고는 고객님께 직접 추천하는 메시지로 작성하세요. 헤드라인 본문 CTA 해시태그 가이드 — 충분히 긴 길이.",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
+    const raw = await readFile(rejectedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*personalization/);
+  });
+
+  it("does NOT reject legitimate '회원가입' / '부모님과' (boundary positive control)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.angleHints.numerical",
+      newValue: "회원가입 시 즉시 할인 혜택. 부모님과 함께 즐기는 수치 강조 가이드 — 충분히 긴 길이.",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const acceptedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}.json`);
+    const raw = await readFile(acceptedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].changes[0].after).toContain("회원가입");
+  });
+
   it("rejects newValue with unverified hyperbole (Gate 4)", async () => {
     mockClaudeResponse = JSON.stringify({
       promptKey: "copy.angleHints.numerical",
