@@ -16,12 +16,13 @@ if (!productId) { console.error("Usage: npm run generate <productId>"); process.
 const product = await readJson<Product>(`data/products/${productId}.json`);
 if (!product) { console.error("제품을 찾을 수 없습니다:", productId); process.exit(1); }
 
-const client = createAnthropicClient();
-const voyage = createVoyageClient();
-const creativesDb = createCreativesDb();
-const winnerStore = new WinnerStore(creativesDb);
-
+let creativesDb: ReturnType<typeof createCreativesDb> | null = null;
 try {
+  const client = createAnthropicClient();
+  const voyage = createVoyageClient();
+  creativesDb = createCreativesDb();
+  const winnerStore = new WinnerStore(creativesDb);
+
   console.log("이미지 생성 중...");
   const imageLocalPath = await generateImage(product);
   console.log("영상 생성 중... (최대 10분 소요)");
@@ -55,6 +56,9 @@ try {
     console.log("완료:", creative.id);
   }
   console.log(`완료: 3 variants (group=${variantGroupId})`);
+} catch (e) {
+  console.error("Generate 실패:", e);
+  process.exit(1);
 } finally {
-  creativesDb.close();
+  creativesDb?.close();
 }

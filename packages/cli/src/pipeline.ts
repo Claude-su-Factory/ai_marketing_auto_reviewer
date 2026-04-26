@@ -51,9 +51,10 @@ export async function runPipeline(urls: string[]): Promise<void> {
   // Step 2: Generate
   update("generate", "소재 생성 시작...");
 
-  const voyage = createVoyageClient();
-  const creativesDb = createCreativesDb();
+  let creativesDb: ReturnType<typeof createCreativesDb> | null = null;
   try {
+    const voyage = createVoyageClient();
+    creativesDb = createCreativesDb();
     const winnerStore = new WinnerStore(creativesDb);
 
     for (let i = 0; i < products.length; i++) {
@@ -95,7 +96,7 @@ export async function runPipeline(urls: string[]): Promise<void> {
       }
     }
   } finally {
-    creativesDb.close();
+    creativesDb?.close();
   }
   update("generate", "소재 생성 완료 — 검토 대기 중");
 

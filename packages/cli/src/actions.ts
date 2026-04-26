@@ -63,10 +63,11 @@ export async function runScrape(url: string, onProgress: ProgressCallback): Prom
 }
 
 export async function runGenerate(onProgress: ProgressCallback): Promise<DoneResult> {
-  const voyage = createVoyageClient();
-  const creativesDb = createCreativesDb();
-  const winnerStore = new WinnerStore(creativesDb);
+  let creativesDb: ReturnType<typeof createCreativesDb> | null = null;
   try {
+    const voyage = createVoyageClient();
+    creativesDb = createCreativesDb();
+    const winnerStore = new WinnerStore(creativesDb);
     const productPaths = await listJson("data/products");
     if (productPaths.length === 0) {
       return { success: false, message: "Generate 실패", logs: ["data/products/에 제품이 없습니다. Scrape을 먼저 실행하세요."] };
@@ -154,7 +155,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
   } catch (e) {
     return { success: false, message: "Generate 실패", logs: [String(e)] };
   } finally {
-    creativesDb.close();
+    creativesDb?.close();
   }
 }
 
