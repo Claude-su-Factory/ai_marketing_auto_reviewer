@@ -249,6 +249,43 @@ describe("runImprovementCycle", () => {
     expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*hyperbole/);
   });
 
+  it("rejects newValue with '최고의 X' superlative (Gate 4 regression)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.systemPrompt",
+      newValue: "이 광고는 최고의 성능을 강조하세요. 헤드라인 본문 CTA 해시태그 가이드 — 충분히 긴 길이로 유지.",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.systemPrompt" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const rejectedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}-rejected.json`);
+    const raw = await readFile(rejectedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*hyperbole/);
+  });
+
+  it("does NOT reject legitimate '최고급' / '최고온도' (boundary positive control)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.angleHints.numerical",
+      newValue: "최고급 원단으로 만든 제품의 수치 강조 가이드 — 보장 최고온도 100도까지.",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.numerical" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis);
+
+    // 정상 처리되어 prompts.json 에 반영됨 (rejected 파일 없음)
+    const dateKey = new Date().toISOString().split("T")[0];
+    const acceptedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}.json`);
+    const raw = await readFile(acceptedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].changes[0].after).toContain("최고급");
+  });
+
   it("emits cost log at end of cycle", async () => {
     mockClaudeResponse = JSON.stringify({
       promptKey: "copy.angleHints.emotional",
