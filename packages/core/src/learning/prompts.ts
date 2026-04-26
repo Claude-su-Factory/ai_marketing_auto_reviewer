@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { readJson } from "../storage.js";
+import { readFile } from "fs/promises";
 
 export const PromptsSchema = z.object({
   copy: z.object({
@@ -29,11 +29,9 @@ export function substitutePlaceholders(
   template: string,
   values: Record<string, string>,
 ): string {
-  let result = template;
-  for (const [key, val] of Object.entries(values)) {
-    result = result.replaceAll(`{{${key}}}`, val);
-  }
-  return result;
+  return template.replace(/\{\{([a-zA-Z_]+)\}\}/g, (match, key: string) => {
+    return key in values ? values[key] : match;
+  });
 }
 
 const DEFAULT_PROMPTS_PATH = "data/learned/prompts.json";
@@ -73,11 +71,25 @@ let cached: Prompts | null = null;
 
 export async function loadPrompts(): Promise<Prompts> {
   if (cached) return cached;
-  const raw = await readJson<unknown>(DEFAULT_PROMPTS_PATH);
-  if (!raw) {
+
+  let content: string;
+  try {
+    content = await readFile(DEFAULT_PROMPTS_PATH, "utf-8");
+  } catch {
+    // File missing → use DEFAULT_PROMPTS (no warn — this is the zero-config happy path)
     cached = DEFAULT_PROMPTS;
     return cached;
   }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content);
+  } catch (e) {
+    console.warn(`[prompts] ${DEFAULT_PROMPTS_PATH} JSON parse 실패, default 사용:`, e);
+    cached = DEFAULT_PROMPTS;
+    return cached;
+  }
+
   const parsed = PromptsSchema.safeParse(raw);
   if (!parsed.success) {
     console.warn(`[prompts] ${DEFAULT_PROMPTS_PATH} 검증 실패, default 사용:`, parsed.error.message);

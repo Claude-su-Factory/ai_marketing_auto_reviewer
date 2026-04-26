@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import { writeFile, mkdir, rm } from "fs/promises";
 import path from "path";
 import {
@@ -24,9 +24,17 @@ async function clearTmpFile(): Promise<void> {
   try { await rm(TMP_FILE, { force: true }); } catch {}
 }
 
+afterAll(async () => {
+  // Final guarantee — remove any test artifact that might survive
+  await clearTmpFile();
+});
+
 describe("loadPrompts", () => {
   beforeEach(async () => {
     setPromptsForTesting(null);
+    await clearTmpFile();
+  });
+  afterEach(async () => {
     await clearTmpFile();
   });
 
@@ -53,14 +61,15 @@ describe("loadPrompts", () => {
     expect(result.copy.angleHints.emotional).toBe("감정테스트값입니다요");
   });
 
-  it("returns DEFAULT_PROMPTS when file is corrupt JSON", async () => {
+  it("returns DEFAULT_PROMPTS + warns when file is corrupt JSON", async () => {
     const warns: string[] = [];
     const orig = console.warn;
-    console.warn = (m: string) => { warns.push(m); };
+    console.warn = (m: string, ..._rest: unknown[]) => { warns.push(m); };
     try {
       await writeTmpFile("not valid json {{{");
       const result = await loadPrompts();
       expect(result).toEqual(DEFAULT_PROMPTS);
+      expect(warns.some((w) => w.includes("JSON parse 실패"))).toBe(true);
     } finally {
       console.warn = orig;
     }
@@ -117,6 +126,9 @@ describe("invalidatePromptsCache", () => {
     setPromptsForTesting(null);
     await clearTmpFile();
   });
+  afterEach(async () => {
+    await clearTmpFile();
+  });
 
   it("after invalidation, next loadPrompts re-reads disk", async () => {
     await loadPrompts(); // cache = DEFAULT (file missing)
@@ -160,5 +172,9 @@ describe("substitutePlaceholders", () => {
 
   it("leaves undefined placeholders intact", () => {
     expect(substitutePlaceholders("{{name}} {{unknown}}", { name: "X" })).toBe("X {{unknown}}");
+  });
+
+  it("does not substitute placeholders that appear inside replacement values", () => {
+    expect(substitutePlaceholders("{{a}} {{b}}", { a: "{{b}}", b: "X" })).toBe("{{b}} X");
   });
 });
