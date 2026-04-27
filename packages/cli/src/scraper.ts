@@ -10,7 +10,7 @@ export async function scrapeProduct(url: string): Promise<Product> {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   try {
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
     const html = await page.content();
     const product = await parseProductWithGemini(ai, url, html);
     await writeJson(`data/products/${product.id}.json`, product);
