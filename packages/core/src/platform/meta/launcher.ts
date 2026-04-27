@@ -16,6 +16,17 @@ export function buildCampaignName(product: Product): string {
   return `[AD-AI] ${product.name} - ${date}`;
 }
 
+/**
+ * AdSet targeting + placements 동적 빌드.
+ *
+ * Caller invariant: `cfg.platforms.meta` 가 configured 상태 (registry 가 production 에서 gate).
+ * `cfg.platforms.meta` 자체가 undefined 인 경우 silent FB-only 반환 — 이는 test 가 `omit: ["platforms.meta"]`
+ * 한 시나리오에서 의도된 동작이지만, production path 외 호출에서는 programming error 시그널.
+ *
+ * `instagram_actor_id` 가 truthy 면 FB+IG 동시 게재, 아니면 FB-only.
+ * 3-way sync (publisher_platforms / instagram_positions / object_story_spec.instagram_actor_id) 는
+ * 단일 `igEnabled` flag 로 enforced — future placement 추가 시 drift 위험 있으므로 STATUS R-D1 참조.
+ */
 export function buildAdSetTargeting() {
   const cfg = getConfig();
   const igActorId = cfg.platforms.meta?.instagram_actor_id;
