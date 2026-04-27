@@ -14,7 +14,7 @@ export async function parseProductWithGemini(
   html: string
 ): Promise<Product> {
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-preview-05-20",
+    model: "gemini-2.5-flash",
     contents: `다음 HTML에서 제품/서비스 정보를 추출해 JSON으로 반환해주세요.
 반드시 아래 형식만 반환하고 다른 텍스트는 포함하지 마세요:
 {"name":"","description":"","price":0,"tags":[],"imageUrl":""}
