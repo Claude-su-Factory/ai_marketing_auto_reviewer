@@ -64,7 +64,7 @@ describe("withGeminiRetry", () => {
     expect(fn).toHaveBeenCalledTimes(3);
   });
 
-  it("uses exponential backoff (delay = baseDelayMs * attempt)", async () => {
+  it("uses linear-by-attempt delay (delay = baseDelayMs * attempt)", async () => {
     const fn = vi.fn().mockRejectedValue(new Error("503"));
     const promise = withGeminiRetry(fn, { maxRetries: 3, baseDelayMs: 1000, onAttempt: () => {} });
     promise.catch(() => {});
