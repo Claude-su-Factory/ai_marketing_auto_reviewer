@@ -95,4 +95,20 @@ describe("ConfigSchema", () => {
     });
     expect(r.success).toBe(true);
   });
+
+  it("accepts meta config without instagram_actor_id (optional)", () => {
+    const r = ConfigSchema.safeParse({
+      ...validBase,
+      platforms: {
+        enabled: ["meta"],
+        meta: {
+          access_token: "tok",
+          ad_account_id: "act_1234567890",
+          page_id: "1234567890",
+          // instagram_actor_id 의도적 누락
+        },
+      },
+    });
+    expect(r.success).toBe(true);
+  });
 });

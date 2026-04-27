@@ -18,13 +18,32 @@ export function buildCampaignName(product: Product): string {
 
 export function buildAdSetTargeting() {
   const cfg = getConfig();
-  return {
+  const igActorId = cfg.platforms.meta?.instagram_actor_id;
+  const igEnabled = Boolean(igActorId);
+
+  const publisher_platforms: string[] = ["facebook"];
+  if (igEnabled) publisher_platforms.push("instagram");
+
+  const targeting: {
+    age_min: number;
+    age_max: number;
+    geo_locations: { countries: string[] };
+    publisher_platforms: string[];
+    facebook_positions: string[];
+    instagram_positions?: string[];
+  } = {
     age_min: cfg.defaults.target_age_min,
     age_max: cfg.defaults.target_age_max,
     geo_locations: { countries: ["KR"] },
-    publisher_platforms: ["instagram"],
-    instagram_positions: ["stream", "story", "reels"],
+    publisher_platforms,
+    facebook_positions: ["feed", "story", "video_feeds", "marketplace"],
   };
+
+  if (igEnabled) {
+    targeting.instagram_positions = ["stream", "story", "reels"];
+  }
+
+  return targeting;
 }
 
 export function buildAdConfig() {
@@ -121,12 +140,15 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
 
     // 5. Create DCO ad creative
     const meta = requireMeta();
+    const objectStorySpec: { page_id: string; instagram_actor_id?: string } = {
+      page_id: meta.page_id,
+    };
+    if (meta.instagram_actor_id) {
+      objectStorySpec.instagram_actor_id = meta.instagram_actor_id;
+    }
     const adCreative = await account.createAdCreative([], {
       name: `${group.product.name} - DCO Creative`,
-      object_story_spec: {
-        page_id: meta.page_id,
-        instagram_actor_id: meta.instagram_actor_id,
-      },
+      object_story_spec: objectStorySpec,
       asset_feed_spec: assetFeedSpec,
     });
     created.push({ type: "creative", id: adCreative.id });

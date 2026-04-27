@@ -6,7 +6,7 @@ const MetaPlatform = z.object({
   access_token: z.string().min(1),
   ad_account_id: z.string().regex(/^act_\d+$/, 'must be "act_" + digits'),
   page_id: z.string().regex(/^\d+$/),
-  instagram_actor_id: z.string().regex(/^\d+$/),
+  instagram_actor_id: z.string().regex(/^\d+$/).optional(),
 });
 
 // Scaffold 전용 — 필드는 최소만. 실 통합 시 OAuth 등 추가 시 schema 확장.

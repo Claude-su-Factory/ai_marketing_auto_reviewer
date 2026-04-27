@@ -15,6 +15,12 @@ describe("validatePlatform", () => {
     if (!r.ok) expect(r.missing).toContain("platforms.meta");
   });
 
+  it("accepts meta config without instagram_actor_id (optional field)", () => {
+    const cfg = makeTestConfig({}, ["platforms.meta.instagram_actor_id"]);
+    const r = validatePlatform("meta", cfg);
+    expect(r.ok).toBe(true);
+  });
+
   it("rejects unconfigured tiktok", () => {
     const r = validatePlatform("tiktok", makeTestConfig());
     expect(r.ok).toBe(false);

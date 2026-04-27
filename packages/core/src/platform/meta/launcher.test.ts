@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildCampaignName, buildAdSetTargeting, buildAdConfig, launchMetaDco } from "./launcher.js";
+import { setConfigForTesting } from "../../config/index.js";
+import { makeTestConfig } from "../../config/testing.js";
 import type { Product } from "../../types.js";
 import type { LaunchLog } from "../types.js";
 
@@ -19,10 +21,26 @@ describe("buildCampaignName", () => {
 });
 
 describe("buildAdSetTargeting", () => {
-  it("targets South Korea on Instagram by default", () => {
+  it("includes facebook + instagram in publisher_platforms when IG actor configured (default)", () => {
+    // BASE_CONFIG already has instagram_actor_id; vitest.setup.ts injects it.
     const targeting = buildAdSetTargeting();
     expect(targeting.geo_locations.countries).toContain("KR");
-    expect(targeting.publisher_platforms).toContain("instagram");
+    expect(targeting.publisher_platforms).toEqual(["facebook", "instagram"]);
+    expect(targeting.facebook_positions).toEqual(
+      expect.arrayContaining(["feed", "story", "video_feeds", "marketplace"]),
+    );
+    expect(targeting.instagram_positions).toEqual(["stream", "story", "reels"]);
+  });
+
+  it("excludes instagram from publisher_platforms when IG actor missing", () => {
+    setConfigForTesting(makeTestConfig({}, ["platforms.meta.instagram_actor_id"]));
+    const targeting = buildAdSetTargeting();
+    expect(targeting.publisher_platforms).toEqual(["facebook"]);
+    expect(targeting.facebook_positions).toEqual(
+      expect.arrayContaining(["feed", "story", "video_feeds", "marketplace"]),
+    );
+    // instagram_positions 가 undefined 또는 미존재
+    expect((targeting as any).instagram_positions).toBeUndefined();
   });
 });
 

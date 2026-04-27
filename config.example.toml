@@ -15,7 +15,7 @@ enabled = ["meta"]
 access_token = "EAA..."
 ad_account_id = "act_1234567890"  # "act_" 접두사 포함
 page_id = "1234567890"
-instagram_actor_id = "1234567890"
+# instagram_actor_id = "1234567890"  # optional. 미설정 시 Facebook 전용 광고. 설정 시 FB+IG 동시 게재.
 
 # Scaffold-only — 실 통합 전까지 주석 유지. 활성화하려면:
 #   1. enabled 배열에 "tiktok" 추가

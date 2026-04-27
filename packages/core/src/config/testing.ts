@@ -69,12 +69,22 @@ function deepMerge<T>(base: T, overrides: DeepPartial<T>): T {
 
 export function makeTestConfig(
   overrides: DeepPartial<Config> = {},
-  omit: ReadonlyArray<"billing" | "platforms.meta" | "ai.anthropic" | "ai.google" | "ai.voyage"> = []
+  omit: ReadonlyArray<
+    | "billing"
+    | "platforms.meta"
+    | "platforms.meta.instagram_actor_id"
+    | "ai.anthropic"
+    | "ai.google"
+    | "ai.voyage"
+  > = []
 ): Config {
   const merged = deepMerge(BASE_CONFIG, overrides);
   for (const path of omit) {
     if (path === "billing") delete (merged as any).billing;
     else if (path === "platforms.meta") delete (merged as any).platforms.meta;
+    else if (path === "platforms.meta.instagram_actor_id") {
+      if (merged.platforms.meta) delete merged.platforms.meta.instagram_actor_id;
+    }
     else if (path === "ai.anthropic") delete (merged as any).ai.anthropic;
     else if (path === "ai.google") delete (merged as any).ai.google;
     else if (path === "ai.voyage") delete (merged as any).ai.voyage;

@@ -26,4 +26,12 @@ describe("makeTestConfig", () => {
     expect(c.ai.voyage).toBeUndefined();
     expect(c.ai.anthropic).toBeDefined();
   });
+
+  it("omits platforms.meta.instagram_actor_id when in omit list, preserves other meta fields", () => {
+    const cfg = makeTestConfig({}, ["platforms.meta.instagram_actor_id"]);
+    expect(cfg.platforms.meta?.instagram_actor_id).toBeUndefined();
+    expect(cfg.platforms.meta?.access_token).toBe("test-meta-token");
+    expect(cfg.platforms.meta?.ad_account_id).toBe("act_0000000000");
+    expect(cfg.platforms.meta?.page_id).toBe("0000000000");
+  });
 });
