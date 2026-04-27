@@ -1,42 +1,77 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseProductWithGemini, detectCategory } from "./parser.js";
+import { parseProductWithClaude, detectCategory } from "./parser.js";
 
-describe("detectCategory", () => {
-  it("detects course from inflearn URL", () => {
-    expect(detectCategory("https://www.inflearn.com/course/typescript")).toBe("course");
+function mockClient(responseText: string) {
+  return {
+    messages: {
+      create: vi.fn().mockResolvedValue({
+        content: [{ type: "text", text: responseText }],
+      }),
+    },
+  };
+}
+
+describe("parseProductWithClaude", () => {
+  it("parses JSON response into Product shape", async () => {
+    const client = mockClient(JSON.stringify({
+      name: "Redis 강의",
+      description: "트래픽 처리 노하우",
+      price: 99000,
+      tags: ["Redis", "백엔드"],
+      imageUrl: "https://example.com/cover.jpg",
+    }));
+    const product = await parseProductWithClaude(
+      client as any,
+      "https://www.inflearn.com/course/redis",
+      "<html>...</html>",
+    );
+    expect(product.name).toBe("Redis 강의");
+    expect(product.description).toBe("트래픽 처리 노하우");
+    expect(product.price).toBe(99000);
+    expect(product.tags).toEqual(["Redis", "백엔드"]);
+    expect(product.imageUrl).toBe("https://example.com/cover.jpg");
+    expect(product.targetUrl).toBe("https://www.inflearn.com/course/redis");
+    expect(product.category).toBe("course");
+    expect(product.currency).toBe("KRW");
+    expect(product.inputMethod).toBe("scraped");
+    expect(product.id).toBeTruthy();
+    expect(product.createdAt).toBeTruthy();
   });
-  it("detects course from class101 URL", () => {
-    expect(detectCategory("https://class101.net/products/abc123")).toBe("course");
+
+  it("falls back to safe defaults when Claude returns malformed JSON", async () => {
+    const client = mockClient("not JSON at all");
+    const product = await parseProductWithClaude(
+      client as any,
+      "https://example.com",
+      "<html>...</html>",
+    );
+    expect(product.name).toBe("");
+    expect(product.description).toBe("");
+    expect(product.price).toBe(0);
+    expect(product.tags).toEqual([]);
+    expect(product.imageUrl).toBe("");
   });
-  it("returns other for unknown URLs", () => {
-    expect(detectCategory("https://example.com/product")).toBe("other");
+
+  it("uses claude-sonnet-4-6 model with system prompt + ephemeral cache", async () => {
+    const client = mockClient(JSON.stringify({ name: "x", description: "y", price: 0, tags: [] }));
+    await parseProductWithClaude(client as any, "https://example.com", "<html>");
+    const callArgs = (client.messages.create as any).mock.calls[0][0];
+    expect(callArgs.model).toBe("claude-sonnet-4-6");
+    expect(callArgs.system[0].text).toContain("JSON");
+    expect(callArgs.system[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(callArgs.messages[0].role).toBe("user");
+    expect(callArgs.messages[0].content).toContain("HTML:");
   });
 });
 
-describe("parseProductWithGemini", () => {
-  it("extracts structured product data from raw HTML", async () => {
-    const mockGemini = {
-      models: {
-        generateContent: vi.fn().mockResolvedValue({
-          text: JSON.stringify({
-            name: "TypeScript 완전 정복",
-            description: "TypeScript를 처음부터 끝까지",
-            price: 55000,
-            tags: ["typescript", "javascript"],
-            imageUrl: "https://example.com/thumb.jpg",
-          }),
-        }),
-      },
-    };
-    const result = await parseProductWithGemini(
-      mockGemini as any,
-      "https://www.inflearn.com/course/typescript",
-      "<html>TypeScript 완전 정복 ₩55,000</html>"
-    );
-    expect(result.name).toBe("TypeScript 완전 정복");
-    expect(result.price).toBe(55000);
-    expect(result.category).toBe("course");
-    expect(result.inputMethod).toBe("scraped");
-    expect(result.currency).toBe("KRW");
+describe("detectCategory", () => {
+  it("detects course for inflearn", () => {
+    expect(detectCategory("https://www.inflearn.com/course/x")).toBe("course");
+  });
+  it("detects course for class101", () => {
+    expect(detectCategory("https://class101.net/x")).toBe("course");
+  });
+  it("returns other for unknown", () => {
+    expect(detectCategory("https://example.com")).toBe("other");
   });
 });

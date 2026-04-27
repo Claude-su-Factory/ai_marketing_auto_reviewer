@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { GoogleGenAI } from "@google/genai";
 import { activePlatforms } from "@ad-ai/core/platform/registry.js";
-import { requireAnthropicKey, requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
+import { requireAnthropicKey } from "@ad-ai/core/config/helpers.js";
 import type { VariantGroup, VariantReport, LaunchLog } from "@ad-ai/core/platform/types.js";
 import {
   groupCreativesByVariantGroup,
@@ -25,7 +24,7 @@ import { VARIANT_LABELS, type FewShotExample } from "@ad-ai/core/creative/prompt
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
 import { generateVideo } from "@ad-ai/core/creative/video.js";
-import { parseProductWithGemini } from "@ad-ai/core/product/parser.js";
+import { parseProductWithClaude } from "@ad-ai/core/product/parser.js";
 import { retrieveFewShotForProduct } from "@ad-ai/core/rag/retriever.js";
 import { createVoyageClient } from "@ad-ai/core/rag/voyage.js";
 import { createCreativesDb } from "@ad-ai/core/rag/db.js";
@@ -43,15 +42,20 @@ export function validateMonitorMode(input: string): "daily" | "weekly" | null {
 
 export async function runScrape(url: string, onProgress: ProgressCallback): Promise<DoneResult> {
   try {
-    onProgress({ message: `스크래핑 중... ${url.slice(0, 40)}` });
+    onProgress({ message: "Playwright 브라우저 실행 중..." });
     const { chromium } = await import("playwright");
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     try {
+      onProgress({ message: `페이지 로드 중: ${url.slice(0, 40)}` });
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
       const html = await page.content();
-      const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
-      const product = await parseProductWithGemini(ai, url, html);
+
+      onProgress({ message: "Claude 파싱 중..." });
+      const client = createAnthropicClient();
+      const product = await parseProductWithClaude(client, url, html);
+
+      onProgress({ message: `제품 저장 중: ${product.name.slice(0, 30)}` });
       await writeJson(`data/products/${product.id}.json`, product);
       return { success: true, message: "Scrape 완료", logs: [`${product.name} 저장됨`] };
     } finally {

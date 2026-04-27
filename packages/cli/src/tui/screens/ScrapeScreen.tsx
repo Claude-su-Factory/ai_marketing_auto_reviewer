@@ -16,8 +16,8 @@ interface Props {
 const STAGES = [
   { key: "playwright", label: "Playwright 실행", match: /Playwright|브라우저/i },
   { key: "pageload",   label: "페이지 로드",     match: /networkidle|페이지/i },
-  { key: "parse",      label: "Gemini 파싱",     match: /Gemini|파싱/i },
-  { key: "save",       label: "제품 저장",       match: /저장됨|Scrape 완료/i },
+  { key: "parse",      label: "Claude 파싱",     match: /Gemini|Claude|파싱/i },
+  { key: "save",       label: "제품 저장",       match: /저장됨|저장 중|Scrape 완료/i },
 ];
 
 export function ScrapeScreen({ stage, inputValue, progress }: Props) {
@@ -26,7 +26,7 @@ export function ScrapeScreen({ stage, inputValue, progress }: Props) {
       React.createElement(Header, { rightSlot: "Scrape" }),
       React.createElement(Box, { paddingX: 2, paddingY: 1, flexDirection: "column" },
         React.createElement(Text, { color: colors.accent, bold: true }, `${icons.header} Scrape — URL 입력`),
-        React.createElement(Text, { color: colors.dim }, "URL 자동 감지 (Gemini 파싱) — 어떤 제품 페이지든 시도"),
+        React.createElement(Text, { color: colors.dim }, "URL 자동 감지 (Claude 파싱) — 어떤 제품 페이지든 시도"),
         React.createElement(Text, null, " "),
         React.createElement(Text, null, `URL: ${inputValue}▌`),
       ),

@@ -186,3 +186,55 @@ describe("runLaunch emits launchLogs to progress callback", () => {
     vi.doUnmock("@ad-ai/core/storage.js");
   });
 });
+
+describe("runScrape emits 4-stage onProgress", () => {
+  it("emits progress at playwright/pageload/parse/save stages", async () => {
+    const messages: string[] = [];
+    vi.doMock("playwright", () => ({
+      chromium: {
+        launch: async () => ({
+          newPage: async () => ({
+            goto: async () => {},
+            content: async () => "<html>mock</html>",
+          }),
+          close: async () => {},
+        }),
+      },
+    }));
+    vi.doMock("@ad-ai/core/creative/copy.js", () => ({
+      createAnthropicClient: () => ({}),
+    }));
+    vi.doMock("@ad-ai/core/product/parser.js", () => ({
+      parseProductWithClaude: async () => ({
+        id: "test-id",
+        name: "Mock Product",
+        description: "d",
+        imageUrl: "",
+        targetUrl: "https://example.com",
+        category: "course",
+        price: 0,
+        currency: "KRW",
+        tags: [],
+        inputMethod: "scraped",
+        createdAt: "2026-04-27T00:00:00.000Z",
+      }),
+    }));
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      writeJson: async () => {},
+    }));
+
+    vi.resetModules();
+    const { runScrape: fresh } = await import("./actions.js");
+    await fresh("https://example.com", (p: any) => messages.push(p.message));
+
+    expect(messages.some((m) => /Playwright|브라우저/i.test(m))).toBe(true);
+    expect(messages.some((m) => /페이지 로드/i.test(m))).toBe(true);
+    expect(messages.some((m) => /Claude 파싱/i.test(m))).toBe(true);
+    expect(messages.some((m) => /제품 저장 중/i.test(m))).toBe(true);
+
+    vi.doUnmock("playwright");
+    vi.doUnmock("@ad-ai/core/creative/copy.js");
+    vi.doUnmock("@ad-ai/core/product/parser.js");
+    vi.doUnmock("@ad-ai/core/storage.js");
+  });
+});

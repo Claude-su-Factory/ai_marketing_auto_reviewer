@@ -8,13 +8,13 @@ vi.mock("../hooks/useTodayStats.js", () => ({ useTodayStats: () => ({ todayCount
 vi.mock("@ad-ai/core/storage.js", () => ({ listJson: async () => [] }));
 
 describe("ScrapeScreen", () => {
-  it("renders URL prompt with generic Gemini hint (no site whitelist)", () => {
+  it("renders URL prompt with generic Claude hint (no site whitelist)", () => {
     const { lastFrame } = render(React.createElement(ScrapeScreen, {
       stage: "input", inputValue: "", onSubmit: () => {}, onCancel: () => {},
     }));
     const f = lastFrame() ?? "";
     expect(f).toContain("URL");
-    expect(f).toContain("Gemini 파싱");
+    expect(f).toContain("Claude 파싱");
     expect(f).not.toContain("inflearn");
     expect(f).not.toContain("fastcampus");
   });
@@ -27,7 +27,7 @@ describe("ScrapeScreen", () => {
     const f = lastFrame() ?? "";
     expect(f).toContain("Playwright");
     expect(f).toContain("페이지 로드");
-    expect(f).toContain("Gemini 파싱");
+    expect(f).toContain("Claude 파싱");
     expect(f).toContain("제품 저장");
   });
 });
