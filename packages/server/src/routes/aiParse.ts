@@ -1,7 +1,6 @@
 import { Router } from "express";
-import Anthropic from "@anthropic-ai/sdk";
 import { parseProductWithClaude } from "@ad-ai/core/product/parser.js";
-import { requireAnthropicKey } from "@ad-ai/core/config/helpers.js";
+import { createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
@@ -21,7 +20,7 @@ export function createAiParseRouter(billing: BillingService) {
 
     const eventId = billing.deductAndRecord(licenseId, "parse", pricing.aiCost, pricing.charged);
     try {
-      const client = new Anthropic({ apiKey: requireAnthropicKey() });
+      const client = createAnthropicClient();
       const product = await parseProductWithClaude(client, url, html);
       billing.confirmUsage(eventId);
 
