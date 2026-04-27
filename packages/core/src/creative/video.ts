@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type { Product } from "../types.js";
 import { requireGoogleAiKey } from "../config/helpers.js";
+import { withGeminiRetry } from "./geminiRetry.js";
 
 export function buildVideoPrompt(product: Product): string {
   return `Short Instagram Reels advertisement (15 seconds), vertical 9:16 format.
@@ -26,17 +27,19 @@ export async function generateVideo(product: Product, onProgress?: (msg: string)
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
   onProgress?.("Veo 3.1: 영상 생성 요청 중...");
-  let operation = await ai.models.generateVideos({
-    model: "veo-3.1-generate-preview",
-    prompt,
-    config: { aspectRatio: "9:16", durationSeconds: 15 },
-  });
+  let operation = await withGeminiRetry(() =>
+    ai.models.generateVideos({
+      model: "veo-3.1-generate-preview",
+      prompt,
+      config: { aspectRatio: "9:16", durationSeconds: 15 },
+    })
+  );
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
     if (operation.done) break;
     onProgress?.(`Veo 3.1: 영상 생성 중... (${i + 1}/${maxAttempts})`);
     await new Promise((r) => setTimeout(r, 10000));
-    operation = await ai.operations.get({ operation });
+    operation = await withGeminiRetry(() => ai.operations.get({ operation }));
   }
   if (!operation.done) throw new Error("Veo 3.1: 영상 생성 타임아웃");
   const videoData = operation.result?.generatedVideos?.[0]?.video?.videoBytes;

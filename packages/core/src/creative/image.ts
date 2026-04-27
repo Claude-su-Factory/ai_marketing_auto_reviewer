@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type { Product } from "../types.js";
 import { requireGoogleAiKey } from "../config/helpers.js";
+import { withGeminiRetry } from "./geminiRetry.js";
 
 export function buildImagePrompt(product: Product): string {
   return `Instagram advertisement image for a product or service.
@@ -25,11 +26,13 @@ export async function saveBase64Image(base64Data: string, productId: string): Pr
 export async function generateImage(product: Product): Promise<string> {
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildImagePrompt(product);
-  const response = await ai.models.generateImages({
-    model: "imagen-3.0-generate-002",
-    prompt,
-    config: { numberOfImages: 1, aspectRatio: "1:1", outputMimeType: "image/jpeg" },
-  });
+  const response = await withGeminiRetry(() =>
+    ai.models.generateImages({
+      model: "imagen-3.0-generate-002",
+      prompt,
+      config: { numberOfImages: 1, aspectRatio: "1:1", outputMimeType: "image/jpeg" },
+    })
+  );
   const imageData = response.generatedImages?.[0]?.image?.imageBytes;
   if (!imageData) throw new Error("Imagen 3: 이미지 생성 실패");
   return saveBase64Image(

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { buildImagePrompt } from "@ad-ai/core/creative/image.js";
+import { withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
 import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
@@ -25,11 +26,13 @@ export function createAiImageRouter(billing: BillingService) {
       const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
       const prompt = buildImagePrompt(product);
 
-      const response = await ai.models.generateImages({
-        model: "imagen-3.0-generate-002",
-        prompt,
-        config: { numberOfImages: 1, aspectRatio: "1:1", outputMimeType: "image/jpeg" },
-      });
+      const response = await withGeminiRetry(() =>
+        ai.models.generateImages({
+          model: "imagen-3.0-generate-002",
+          prompt,
+          config: { numberOfImages: 1, aspectRatio: "1:1", outputMimeType: "image/jpeg" },
+        })
+      );
 
       const imageData = response.generatedImages?.[0]?.image?.imageBytes;
       if (!imageData) {
