@@ -29,6 +29,7 @@ import { retrieveFewShotForProduct } from "@ad-ai/core/rag/retriever.js";
 import { createVoyageClient } from "@ad-ai/core/rag/voyage.js";
 import { createCreativesDb } from "@ad-ai/core/rag/db.js";
 import { WinnerStore } from "@ad-ai/core/rag/store.js";
+import { MODEL_ANALYSIS } from "@ad-ai/core/config/claudeModels.js";
 
 export function buildOverallProgress(p: TaskProgress): number {
   return Math.round((p.copy + p.image) / 2);
@@ -262,7 +263,7 @@ export async function runMonitor(mode: "daily" | "weekly", onProgress: ProgressC
     const stats = computeStats(aggregated);
     const currentPrompts = await loadPrompts();
     const prompt = buildAnalysisPrompt(aggregated, stats, currentPrompts);
-    const response = await client.messages.create({ model: "claude-sonnet-4-6", max_tokens: 1024, messages: [{ role: "user", content: prompt }] });
+    const response = await client.messages.create({ model: MODEL_ANALYSIS, max_tokens: 1024, messages: [{ role: "user", content: prompt }] });
     const analysis = response.content[0].type === "text" ? response.content[0].text : "";
     await writeJson(`data/reports/weekly-analysis-${new Date().toISOString().split("T")[0]}.json`, JSON.parse(analysis.match(/\{[\s\S]*\}/)?.[0] ?? "{}"));
     return { success: true, message: "Monitor (weekly) 완료", logs: [analysis.slice(0, 200)] };

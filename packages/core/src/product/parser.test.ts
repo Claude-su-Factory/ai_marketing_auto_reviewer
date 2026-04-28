@@ -52,11 +52,11 @@ describe("parseProductWithClaude", () => {
     expect(product.imageUrl).toBe("");
   });
 
-  it("uses claude-sonnet-4-6 model with system prompt + ephemeral cache", async () => {
+  it("uses Haiku tier (MODEL_PARSER) with system prompt + ephemeral cache", async () => {
     const client = mockClient(JSON.stringify({ name: "x", description: "y", price: 0, tags: [] }));
     await parseProductWithClaude(client as any, "https://example.com", "<html>");
     const callArgs = (client.messages.create as any).mock.calls[0][0];
-    expect(callArgs.model).toBe("claude-sonnet-4-6");
+    expect(callArgs.model).toMatch(/haiku/);
     expect(callArgs.system[0].text).toContain("JSON");
     expect(callArgs.system[0].text).toContain("learningOutcomes");
     expect(callArgs.system[0].text).toContain("differentiators");

@@ -7,6 +7,7 @@ import { activePlatforms } from "../platform/registry.js";
 import { randomUUID } from "crypto";
 import type { Prompts } from "../learning/prompts.js";
 import { loadPrompts } from "../learning/prompts.js";
+import { MODEL_ANALYSIS } from "../config/claudeModels.js";
 
 export interface PerformanceStats {
   top: Report[];
@@ -149,7 +150,7 @@ export async function generateWeeklyAnalysis(): Promise<string> {
   const prompt = buildAnalysisPrompt(reports, stats, currentPrompts);
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_ANALYSIS,
     max_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
   });

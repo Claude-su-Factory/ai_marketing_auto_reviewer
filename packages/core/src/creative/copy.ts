@@ -3,6 +3,7 @@ import type { Product, Creative } from "../types.js";
 import { buildCopyPrompt, type FewShotExample, type VariantLabel } from "./prompt.js";
 import { loadPrompts } from "../learning/prompts.js";
 import { requireAnthropicKey } from "../config/helpers.js";
+import { MODEL_COPY } from "../config/claudeModels.js";
 
 export async function generateCopy(
   client: Anthropic,
@@ -14,7 +15,7 @@ export async function generateCopy(
   const userPrompt = await buildCopyPrompt(product, fewShot, variantLabel);
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_COPY,
     max_tokens: 512,
     system: [{ type: "text", text: prompts.copy.systemPrompt, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],

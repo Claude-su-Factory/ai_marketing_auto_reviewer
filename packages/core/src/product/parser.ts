@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Product } from "../types.js";
 import { randomUUID } from "crypto";
+import { MODEL_PARSER } from "../config/claudeModels.js";
 
 export function detectCategory(url: string): string {
   if (url.includes("inflearn.com")) return "course";
@@ -35,7 +36,7 @@ HTML:
 ${html.slice(0, 8000)}`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_PARSER,
     max_tokens: 1024,
     system: [{ type: "text", text: PARSER_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],

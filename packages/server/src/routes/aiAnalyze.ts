@@ -7,6 +7,7 @@ import type { Report } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
 import { createStripeClient, triggerAutoRecharge } from "../stripe.js";
+import { MODEL_ANALYSIS } from "@ad-ai/core/config/claudeModels.js";
 
 export function createAiAnalyzeRouter(billing: BillingService) {
   const router = Router();
@@ -28,7 +29,7 @@ export function createAiAnalyzeRouter(billing: BillingService) {
       const currentPrompts = await loadPrompts();
       const prompt = buildAnalysisPrompt(reports, stats, currentPrompts);
       const response = await client.messages.create({
-        model: "claude-sonnet-4-6",
+        model: MODEL_ANALYSIS,
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       });

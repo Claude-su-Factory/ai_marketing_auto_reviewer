@@ -17,6 +17,7 @@ import {
   type PromptKey,
 } from "./index.js";
 import type { Report, Improvement, ImprovementChange } from "../types.js";
+import { MODEL_IMPROVER } from "../config/claudeModels.js";
 
 const DEFAULT_PROMPTS_PATH = "data/learned/prompts.json";
 const DEFAULT_IMPROVEMENTS_DIR = "data/improvements";
@@ -106,7 +107,7 @@ export async function runImprovementCycle(
     const userPrompt = buildImprovementPrompt(it.promptKey, before, it.issue, it.suggestion, performanceContext);
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: MODEL_IMPROVER,
       max_tokens: 2048,
       messages: [{ role: "user", content: userPrompt }],
     });
