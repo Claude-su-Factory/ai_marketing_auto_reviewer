@@ -102,7 +102,7 @@ describe("buildImprovementPrompt", () => {
     );
     expect(prompt).toMatch(/당신만을 위한|회원님|~님/);
     expect(prompt).toMatch(/100%|1위|최고|과장/);
-    expect(prompt).toMatch(/100%\s*마스터|완벽\s*정복|보장/);
+    expect(prompt).toMatch(/100%\s*마스터|완벽\s*정복|효과\/결과 보장/);
     expect(prompt).toMatch(/역대\s*최저|최대\s*할인|유례\s*없는/);
   });
 });

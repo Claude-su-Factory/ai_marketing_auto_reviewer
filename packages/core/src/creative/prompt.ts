@@ -14,6 +14,7 @@ function buildPriceText(product: Product): string {
   if (!product.price) return "가격 미정";
   const base = `${product.currency} ${product.price.toLocaleString()}`;
   if (product.originalPrice && product.originalPrice > product.price) {
+    // Math.floor (not round): 표시광고법상 표시 할인율은 실제 할인율을 초과하면 안 됨
     const discount = Math.floor(
       ((product.originalPrice - product.price) / product.originalPrice) * 100
     );
@@ -22,11 +23,14 @@ function buildPriceText(product: Product): string {
   return base;
 }
 
+/** Returns "" or "\n학습 결과:\n- a\n- b". Leading \n intentional —
+ *  helper concatenates onto {{priceText}} with no separator, so block owns its line break. */
 function buildLearningOutcomesBlock(items: string[]): string {
   if (items.length === 0) return "";
   return `\n학습 결과:\n${items.map((s) => `- ${s}`).join("\n")}`;
 }
 
+/** Returns "" or "\n차별점:\n- a\n- b". Leading \n intentional (same pattern as outcomes block). */
 function buildDifferentiatorsBlock(items: string[]): string {
   if (items.length === 0) return "";
   return `\n차별점:\n${items.map((s) => `- ${s}`).join("\n")}`;
