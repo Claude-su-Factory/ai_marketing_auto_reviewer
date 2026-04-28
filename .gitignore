@@ -46,7 +46,7 @@ coverage/
 
 # Superpowers / Claude session artifacts
 .superpowers/
-.claude/cache/
+.claude/
 
 # OS
 .DS_Store
