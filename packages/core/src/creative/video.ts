@@ -8,11 +8,18 @@ import { callGoogleModel, withGeminiRetry } from "./geminiRetry.js";
 import { discoverVideoModel } from "./modelDiscovery.js";
 
 export function buildVideoPrompt(product: Product): string {
-  return `Short Instagram Reels advertisement (15 seconds), vertical 9:16 format.
+  return `Short Instagram Reels advertisement (8 seconds), vertical 9:16 format.
 Product/service promotion for "${product.name}".
 Topics: ${product.tags.slice(0, 3).join(", ")}.
-Visual style: Dynamic, modern. Show someone benefiting from the product/service.
-No voiceover needed. Cinematic quality. Ends with clear call-to-action moment.`;
+
+Strict visual rules (these are mandatory):
+- NO people, no faces, no hands, no human figures of any kind
+- NO on-screen text, captions, logos, watermarks, written letters, or typed characters in any language. The model cannot render text reliably (Korean and English will appear corrupted or misspelled). Any UI/screen content shown must be abstract patterns, never readable text.
+- NO speech bubbles, no chat windows with words, no graphs with labeled axes
+
+Style: Natural and grounded, soft realistic lighting, slow organic camera movement (gentle pan or zoom). Avoid flashy/dramatic/cinematic staging.
+Content: Abstract or symbolic imagery related to the topic — environments, objects, materials, light, flowing motion patterns. Texture and atmosphere over storytelling.
+End with a calm, steady final frame.`;
 }
 
 async function saveVideoBytes(data: Uint8Array | string, productId: string): Promise<string> {

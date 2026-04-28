@@ -20,6 +20,25 @@ describe("buildVideoPrompt", () => {
     const prompt = buildVideoPrompt(mockProduct);
     expect(prompt.toLowerCase()).toContain("vertical");
   });
+  it("explicitly forbids people / faces / human figures", () => {
+    const prompt = buildVideoPrompt(mockProduct);
+    expect(prompt).toMatch(/NO people/);
+    expect(prompt).toMatch(/no faces|no human/i);
+  });
+  it("explicitly forbids on-screen text rendering (Veo limitation — Korean/English garbles)", () => {
+    const prompt = buildVideoPrompt(mockProduct);
+    expect(prompt).toMatch(/NO on-screen text|no.*captions|no.*letters/i);
+    expect(prompt.toLowerCase()).toMatch(/korean|english/);
+  });
+  it("specifies 8 seconds (matches Veo 4-8s API constraint)", () => {
+    const prompt = buildVideoPrompt(mockProduct);
+    expect(prompt).toMatch(/8 seconds/);
+  });
+  it("avoids 'cinematic' / 'dramatic' staging language (less artificial)", () => {
+    const prompt = buildVideoPrompt(mockProduct);
+    expect(prompt).not.toMatch(/cinematic quality/i);
+    expect(prompt).toMatch(/natural|grounded|realistic/i);
+  });
 });
 
 describe("fetchVeoVideoData (handles inline bytes vs URI dual response shape)", () => {
