@@ -24,7 +24,6 @@ import { unlink } from "fs/promises";
 import { VARIANT_LABELS, type FewShotExample } from "@ad-ai/core/creative/prompt.js";
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
-import { generateVideo } from "@ad-ai/core/creative/video.js";
 import { parseProductWithClaude } from "@ad-ai/core/product/parser.js";
 import { retrieveFewShotForProduct } from "@ad-ai/core/rag/retriever.js";
 import { createVoyageClient } from "@ad-ai/core/rag/voyage.js";
@@ -32,7 +31,7 @@ import { createCreativesDb } from "@ad-ai/core/rag/db.js";
 import { WinnerStore } from "@ad-ai/core/rag/store.js";
 
 export function buildOverallProgress(p: TaskProgress): number {
-  return Math.round((p.copy + p.image + p.video) / 3);
+  return Math.round((p.copy + p.image) / 2);
 }
 
 export function validateMonitorMode(input: string): "daily" | "weekly" | null {
@@ -89,10 +88,9 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
       const variantGroupId = randomUUID();
 
       type Track = { status: "pending" | "running" | "done"; pct: number; label: string };
-      const tracks: { copy: Track; image: Track; video: Track } = {
+      const tracks: { copy: Track; image: Track } = {
         copy:  { status: "running", pct: 0, label: "대기" },
         image: { status: "running", pct: 0, label: "시작" },
-        video: { status: "running", pct: 0, label: "시작" },
       };
       const emit = (msg: string) => onProgress({
         message: msg,
@@ -109,17 +107,6 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         const p = await generateImage(product);
         tracks.image = { status: "done", pct: 100, label: "done" };
         emit(`${product.name} 이미지 완료`);
-        return p;
-      })();
-
-      const videoTask = (async () => {
-        const p = await generateVideo(product, (msg) => {
-          const match = msg.match(/\((\d+)\/(\d+)\)/);
-          if (match) tracks.video = { status: "running", pct: Math.round((Number(match[1]) / Number(match[2])) * 95), label: msg };
-          emit(msg);
-        });
-        tracks.video = { status: "done", pct: 100, label: "done" };
-        emit(`${product.name} 영상 완료`);
         return p;
       })();
 
@@ -141,23 +128,20 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         return copies;
       })();
 
-      const [imageRes, videoRes, copyRes] = await Promise.allSettled([imageTask, videoTask, copiesTask]);
+      const [imageRes, copyRes] = await Promise.allSettled([imageTask, copiesTask]);
 
-      // 부분 실패 시 성공한 image/video 파일을 cleanup — 다음 단계 (Review) 가 고아 파일을 보지 않도록
-      const failed = [imageRes, videoRes, copyRes].some((r) => r.status === "rejected");
+      // 부분 실패 시 성공한 image 파일을 cleanup — 다음 단계 (Review) 가 고아 파일을 보지 않도록
+      const failed = [imageRes, copyRes].some((r) => r.status === "rejected");
       if (failed) {
         if (imageRes.status === "fulfilled") await unlink(imageRes.value).catch(() => {});
-        if (videoRes.status === "fulfilled") await unlink(videoRes.value).catch(() => {});
         const reasons = [
           imageRes.status === "rejected" ? `image: ${String(imageRes.reason).slice(0, 200)}` : null,
-          videoRes.status === "rejected" ? `video: ${String(videoRes.reason).slice(0, 200)}` : null,
           copyRes.status === "rejected" ? `copy: ${String(copyRes.reason).slice(0, 200)}` : null,
         ].filter((s): s is string => s !== null);
         throw new Error(`Generate 부분 실패 (${product.name}) — ${reasons.join(" | ")}`);
       }
 
       const imageLocalPath = (imageRes as PromiseFulfilledResult<string>).value;
-      const videoLocalPath = (videoRes as PromiseFulfilledResult<string>).value;
       const copies = (copyRes as PromiseFulfilledResult<typeof VARIANT_LABELS extends readonly (infer L)[] ? { label: L; data: Awaited<ReturnType<typeof generateCopy>> }[] : never>).value;
 
       for (const { label, data } of copies) {
@@ -166,7 +150,7 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
           productId: product.id,
           variantGroupId,
           copy: { ...data, variantLabel: label, assetLabel: `${variantGroupId}::${label}` },
-          imageLocalPath, videoLocalPath, status: "pending",
+          imageLocalPath, status: "pending",
           createdAt: new Date().toISOString(),
         };
         await writeJson(`data/creatives/${creative.id}.json`, creative);
@@ -227,7 +211,7 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
         orphanSkipped++;
         continue;
       }
-      const group: VariantGroup = { variantGroupId: groupId, product, creatives: approved, assets: { image: approved[0].imageLocalPath, video: approved[0].videoLocalPath } };
+      const group: VariantGroup = { variantGroupId: groupId, product, creatives: approved, assets: { image: approved[0].imageLocalPath } };
       onProgress({ message: `게재 중: ${product.name} (${approved.length} variants)`, launchLogs: [...launchLogs] });
       for (const platform of platforms) {
         const result = await platform.launch(group, (log) => {

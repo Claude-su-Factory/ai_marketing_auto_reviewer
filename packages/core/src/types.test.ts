@@ -49,7 +49,6 @@ describe("Creative (Plan A extensions)", () => {
         assetLabel: "variant-abc",
       },
       imageLocalPath: "/tmp/i.png",
-      videoLocalPath: "/tmp/v.mp4",
       status: "pending",
       createdAt: "2026-04-20T00:00:00.000Z",
     };

@@ -1,5 +1,4 @@
 import express from "express";
-import { existsSync, mkdirSync } from "fs";
 import { createDb } from "./db.js";
 import { createBillingService } from "./billing.js";
 import { createStripeClient } from "./stripe.js";
@@ -8,17 +7,14 @@ import { createRateLimiter } from "./rateLimit.js";
 import { createLicenseRouter } from "./routes/license.js";
 import { createAiCopyRouter } from "./routes/aiCopy.js";
 import { createAiImageRouter } from "./routes/aiImage.js";
-import { createAiVideoRouter } from "./routes/aiVideo.js";
 import { createAiParseRouter } from "./routes/aiParse.js";
 import { createAiAnalyzeRouter } from "./routes/aiAnalyze.js";
 import { createUsageRouter } from "./routes/usage.js";
 import { createStripeWebhookRouter } from "./routes/stripeWebhook.js";
-import { cleanupOldFiles } from "./jobs/videoJob.js";
 import { startScheduler } from "./scheduler.js";
 import { getConfig } from "@ad-ai/core/config/index.js";
 
 const PORT = getConfig().server.port;
-const SERVER_URL = getConfig().server.base_url;
 
 const db = createDb();
 const billing = createBillingService(db);
@@ -39,11 +35,6 @@ if (stripeCfg) {
 }
 
 app.use(express.json({ limit: "10mb" }));
-
-// Static file serving for video downloads
-const tmpDir = "server/tmp";
-if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
-app.use("/files", express.static(tmpDir));
 
 // License route (no auth required)
 app.use(createLicenseRouter(db, sessions));
@@ -82,17 +73,12 @@ app.use("/usage", authMiddleware);
 // Routes
 app.use(createAiCopyRouter(billing));
 app.use(createAiImageRouter(billing));
-app.use(createAiVideoRouter(billing, SERVER_URL));
 app.use(createAiParseRouter(billing));
 app.use(createAiAnalyzeRouter(billing));
 app.use(createUsageRouter(db));
 
-// Cleanup old video files
-setInterval(cleanupOldFiles, 60 * 60 * 1000);
-cleanupOldFiles();
-
 app.listen(PORT, () => {
-  console.log(`[Usage Server] Running on ${SERVER_URL}`);
+  console.log(`[Usage Server] Running on ${getConfig().server.base_url}`);
   console.log(`[Usage Server] DB: data/licenses.db`);
 });
 

@@ -18,21 +18,19 @@ const baseProgress: RunProgress = {
     tracks: {
       copy:  { status: "running", pct: 62, label: "variant 2/3" },
       image: { status: "done", pct: 100, label: "done (2.1s)" },
-      video: { status: "running", pct: 78, label: "polling Veo" },
     },
     elapsedMs: 47_000,
   },
 };
 
 describe("GenerateScreen", () => {
-  it("renders product name, queue count, 3 track labels, and elapsed", () => {
+  it("renders product name, queue count, 2 track labels, and elapsed", () => {
     const { lastFrame } = render(React.createElement(GenerateScreen, { progress: baseProgress }));
     const f = lastFrame() ?? "";
     expect(f).toContain("AI 부트캠프");
     expect(f).toContain("2/3");
     expect(f).toContain("카피");
     expect(f).toContain("이미지");
-    expect(f).toContain("영상");
     expect(f).toContain("elapsed 47s");
   });
 });

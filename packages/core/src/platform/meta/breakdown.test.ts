@@ -11,7 +11,7 @@ const mockCreative = (label: "emotional" | "numerical", body: string, hashtags: 
     variantLabel: label,
     assetLabel: `variant-${label}-uuid`,
   },
-  imageLocalPath: "", videoLocalPath: "",
+  imageLocalPath: "",
   status: "approved", createdAt: "2026-04-20T00:00:00.000Z",
 });
 

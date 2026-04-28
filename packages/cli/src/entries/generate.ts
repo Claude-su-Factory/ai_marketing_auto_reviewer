@@ -1,6 +1,5 @@
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
-import { generateVideo } from "@ad-ai/core/creative/video.js";
 import { readJson, writeJson } from "@ad-ai/core/storage.js";
 import type { Product, Creative } from "@ad-ai/core/types.js";
 import { randomUUID } from "crypto";
@@ -25,8 +24,6 @@ try {
 
   console.log("이미지 생성 중...");
   const imageLocalPath = await generateImage(product);
-  console.log("영상 생성 중... (최대 10분 소요)");
-  const videoLocalPath = await generateVideo(product, console.log);
 
   const fewShot: FewShotExample[] = await retrieveFewShotForProduct(product, {
     embed: (texts) => voyage.embed(texts),
@@ -48,7 +45,6 @@ try {
         assetLabel: `${variantGroupId}::${label}`,
       },
       imageLocalPath,
-      videoLocalPath,
       status: "pending",
       createdAt: new Date().toISOString(),
     };

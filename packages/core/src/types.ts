@@ -30,7 +30,6 @@ export interface Creative {
     assetLabel: string;
   };
   imageLocalPath: string;
-  videoLocalPath: string;
   status: "pending" | "approved" | "rejected" | "edited";
   reviewNote?: string;
   createdAt: string;

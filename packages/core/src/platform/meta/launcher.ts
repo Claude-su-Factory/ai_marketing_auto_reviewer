@@ -82,15 +82,6 @@ async function uploadImage(account: any, imagePath: string): Promise<string> {
   return hash.hash as string;
 }
 
-async function uploadVideo(account: any, videoPath: string): Promise<string> {
-  const videoBuffer = await readFile(videoPath);
-  const video = await account.createAdVideo([], {
-    source: videoBuffer,
-    title: "Ad Video",
-  });
-  return video.id as string;
-}
-
 async function deleteMetaResource(
   _type: "campaign" | "adset" | "ad" | "creative",
   id: string,
@@ -135,18 +126,15 @@ export async function launchMetaDco(group: VariantGroup, onLog?: (log: LaunchLog
     created.push({ type: "adset", id: adSet.id });
     onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adsets", status: 200, refId: adSet.id });
 
-    // 3. Upload assets (image + video)
+    // 3. Upload image asset
     const imageHash = await uploadImage(account, group.assets.image);
     onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/adimages", status: 200, refId: imageHash });
-    const videoId = await uploadVideo(account, group.assets.video);
-    onLog?.({ ts: new Date().toISOString(), method: "POST", path: "/act/advideos", status: 200, refId: videoId });
 
     // 4. Assemble asset_feed_spec
     const assetFeedSpec = assembleAssetFeedSpec({
       product: group.product,
       creatives: group.creatives,
       imageHash,
-      videoId,
     });
 
     // 5. Create DCO ad creative

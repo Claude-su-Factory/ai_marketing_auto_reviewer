@@ -22,26 +22,23 @@ const mockCreative = (label: "emotional" | "numerical" | "urgency"): Creative =>
     assetLabel: `variant-${label}-uuid`,
   },
   imageLocalPath: "/tmp/i.png",
-  videoLocalPath: "/tmp/v.mp4",
   status: "approved",
   createdAt: "2026-04-20T00:00:00.000Z",
 });
 
 describe("assembleAssetFeedSpec", () => {
-  it("assembles a spec with 1 title, N bodies, 1 image, 1 video", () => {
+  it("assembles a spec with 1 title, N bodies, 1 image", () => {
     const creatives = [mockCreative("emotional"), mockCreative("numerical")];
     const spec = assembleAssetFeedSpec({
       product: mockProduct,
       creatives,
       imageHash: "IMG_HASH_123",
-      videoId: "VID_ID_123",
     });
 
     expect(spec.titles).toHaveLength(1);
     expect(spec.titles[0].text).toBe("Common Headline");
     expect(spec.bodies).toHaveLength(2);
     expect(spec.images).toEqual([{ hash: "IMG_HASH_123" }]);
-    expect(spec.videos).toEqual([{ video_id: "VID_ID_123" }]);
     expect(spec.link_urls).toEqual([{ website_url: "https://example.com" }]);
     expect(spec.call_to_action_types).toEqual(["LEARN_MORE"]);
   });
@@ -52,7 +49,6 @@ describe("assembleAssetFeedSpec", () => {
       product: mockProduct,
       creatives,
       imageHash: "IMG",
-      videoId: "VID",
     });
 
     expect(spec.bodies[0].text).toBe("Body for emotional\n\n#ad #promo");
@@ -65,7 +61,6 @@ describe("assembleAssetFeedSpec", () => {
         product: mockProduct,
         creatives: [],
         imageHash: "IMG",
-        videoId: "VID",
       }),
     ).toThrow(/at least one creative/i);
   });
@@ -96,7 +91,6 @@ describe("assembleAssetFeedSpec", () => {
         assetLabel: `variant-${id}`,
       },
       imageLocalPath: "/tmp/a.jpg",
-      videoLocalPath: "/tmp/a.mp4",
       status: "approved",
       createdAt: "2026-04-20T00:00:00Z",
     });
@@ -108,7 +102,7 @@ describe("assembleAssetFeedSpec", () => {
     ];
 
     expect(() =>
-      assembleAssetFeedSpec({ product, creatives, imageHash: "h", videoId: "v" }),
+      assembleAssetFeedSpec({ product, creatives, imageHash: "h" }),
     ).toThrow(/duplicate body text/i);
   });
 
@@ -138,7 +132,6 @@ describe("assembleAssetFeedSpec", () => {
         assetLabel: `variant-${id}`,
       },
       imageLocalPath: "/tmp/a.jpg",
-      videoLocalPath: "/tmp/a.mp4",
       status: "approved",
       createdAt: "2026-04-20T00:00:00Z",
     });
@@ -149,7 +142,7 @@ describe("assembleAssetFeedSpec", () => {
     ];
 
     expect(() =>
-      assembleAssetFeedSpec({ product, creatives, imageHash: "h", videoId: "v" }),
+      assembleAssetFeedSpec({ product, creatives, imageHash: "h" }),
     ).toThrow(/duplicate body text/i);
   });
 });

@@ -18,7 +18,7 @@ const group = {
   creatives: [
     { id: "c1", productId: "p1", variantGroupId: "g1",
       copy: { headline: "3개월 안에", body: "실전 프로젝트 12개", cta: "지금 신청", hashtags: ["AI"], variantLabel: "emotional" as const, assetLabel: "" },
-      imageLocalPath: "img.jpg", videoLocalPath: "vid.mp4", status: "pending" as const, createdAt: "" },
+      imageLocalPath: "img.jpg", status: "pending" as const, createdAt: "" },
   ],
 };
 
@@ -32,7 +32,6 @@ describe("ReviewScreen badge + ASSETS", () => {
     expect(f).toContain("pending");
     expect(f).toContain("1080×1080");
     expect(f).toContain("342KB");
-    expect(f).toContain("mp4");
   });
 });
 

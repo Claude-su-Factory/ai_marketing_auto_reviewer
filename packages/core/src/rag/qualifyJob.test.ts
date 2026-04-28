@@ -26,7 +26,6 @@ async function writeCreative(id: string, variantGroupId: string, variantLabel: C
       assetLabel: `${variantGroupId}::${variantLabel}`,
     },
     imageLocalPath: "/tmp/a.jpg",
-    videoLocalPath: "/tmp/a.mp4",
     status: "approved",
     createdAt: "2026-04-20T00:00:00Z",
   };

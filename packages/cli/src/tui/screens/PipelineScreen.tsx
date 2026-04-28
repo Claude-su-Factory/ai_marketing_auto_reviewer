@@ -27,8 +27,7 @@ export function PipelineScreen({ progress, currentStage }: PipelineScreenProps) 
     const total = gp.queue.length;
     const copyPct = gp.tracks.copy.pct;
     const imagePct = gp.tracks.image.pct;
-    const videoPct = gp.tracks.video.pct;
-    genSummary = `gen: copies ${Math.round(copyPct)}/${100} | images ${Math.round(imagePct)}/${100} | videos ${Math.round(videoPct)}/${100}  [${doneCount}/${total}]`;
+    genSummary = `gen: copies ${Math.round(copyPct)}/${100} | images ${Math.round(imagePct)}/${100}  [${doneCount}/${total}]`;
   }
 
   return React.createElement(Box, { flexDirection: "column" },

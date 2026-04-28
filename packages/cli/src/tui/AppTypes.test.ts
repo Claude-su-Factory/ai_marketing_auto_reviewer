@@ -48,7 +48,6 @@ describe("RunProgress optional extensions", () => {
         tracks: {
           copy:  { status: "running", pct: 50, label: "variant 2/3" },
           image: { status: "done", pct: 100, label: "done (2.1s)" },
-          video: { status: "running", pct: 78, label: "polling Veo" },
         },
         elapsedMs: 47_000,
       },

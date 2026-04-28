@@ -6,7 +6,6 @@ export type AppState = "menu" | "input" | "running" | "done" | "review" | "monit
 export interface TaskProgress {
   copy: number;    // 0-100
   image: number;   // 0-100
-  video: number;   // 0-100
 }
 
 export interface RunProgress {
@@ -62,7 +61,6 @@ export interface GenerateProgress {
   tracks: {
     copy:  { status: "pending" | "running" | "done"; pct: number; label: string };
     image: { status: "pending" | "running" | "done"; pct: number; label: string };
-    video: { status: "pending" | "running" | "done"; pct: number; label: string };
   };
   elapsedMs: number;
 }

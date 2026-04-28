@@ -4,18 +4,18 @@ import type { TaskProgress } from "./tui/AppTypes.js";
 
 describe("buildOverallProgress", () => {
   it("returns 0 when all tasks are 0", () => {
-    const p: TaskProgress = { copy: 0, image: 0, video: 0 };
+    const p: TaskProgress = { copy: 0, image: 0 };
     expect(buildOverallProgress(p)).toBe(0);
   });
 
   it("returns 100 when all tasks are 100", () => {
-    const p: TaskProgress = { copy: 100, image: 100, video: 100 };
+    const p: TaskProgress = { copy: 100, image: 100 };
     expect(buildOverallProgress(p)).toBe(100);
   });
 
-  it("averages the three task percentages", () => {
-    const p: TaskProgress = { copy: 100, image: 50, video: 0 };
-    expect(buildOverallProgress(p)).toBe(50);
+  it("averages the two task percentages", () => {
+    const p: TaskProgress = { copy: 100, image: 50 };
+    expect(buildOverallProgress(p)).toBe(75);
   });
 });
 
@@ -56,13 +56,12 @@ describe("actions no longer require AiProxy", () => {
 });
 
 describe("runGenerate parallelism", () => {
-  it("emits progress.generate with 3 tracks", async () => {
+  it("emits progress.generate with copy + image tracks", async () => {
     // NOTE: 실제 SDK 호출은 mock. core/creative/* 모듈을 vi.mock 으로 stub
-    // generateImage/generateVideo/generateCopy 를 instant resolve 로 대체
+    // generateImage/generateCopy 를 instant resolve 로 대체
     // 아래 mock 은 beforeEach 에서 vi.resetModules 후 재주입
     const events: any[] = [];
     vi.doMock("@ad-ai/core/creative/image.js", () => ({ generateImage: async () => "img.jpg" }));
-    vi.doMock("@ad-ai/core/creative/video.js", () => ({ generateVideo: async () => "vid.mp4" }));
     vi.doMock("@ad-ai/core/creative/copy.js", () => ({
       generateCopy: async () => ({ headline: "h", body: "b", cta: "c", hashtags: [] }),
       createAnthropicClient: () => ({}),
@@ -96,7 +95,6 @@ describe("runGenerate parallelism", () => {
     expect(withGen.length).toBeGreaterThan(0);
     expect(withGen[0].generate.tracks.copy).toBeDefined();
     expect(withGen[0].generate.tracks.image).toBeDefined();
-    expect(withGen[0].generate.tracks.video).toBeDefined();
 
     vi.doUnmock("@ad-ai/core/rag/voyage.js");
     vi.doUnmock("@ad-ai/core/rag/db.js");
@@ -111,7 +109,6 @@ describe("runGenerate parallelism", () => {
     const generateCopySpy = vi.fn().mockResolvedValue({ headline: "h", body: "b", cta: "c", hashtags: [] });
 
     vi.doMock("@ad-ai/core/creative/image.js", () => ({ generateImage: async () => "img.jpg" }));
-    vi.doMock("@ad-ai/core/creative/video.js", () => ({ generateVideo: async () => "vid.mp4" }));
     vi.doMock("@ad-ai/core/creative/copy.js", () => ({
       generateCopy: generateCopySpy,
       createAnthropicClient: () => ({}),
@@ -153,7 +150,7 @@ describe("runGenerate parallelism", () => {
 });
 
 describe("runGenerate cleanup on partial failure", () => {
-  it("unlinks fulfilled image/video files when video task rejects", async () => {
+  it("unlinks fulfilled image file when copy task rejects", async () => {
     const unlinkedPaths: string[] = [];
     vi.doMock("fs/promises", () => ({
       unlink: async (p: string) => { unlinkedPaths.push(p); },
@@ -161,11 +158,8 @@ describe("runGenerate cleanup on partial failure", () => {
     vi.doMock("@ad-ai/core/creative/image.js", () => ({
       generateImage: async () => "data/creatives/p1-image.jpg",
     }));
-    vi.doMock("@ad-ai/core/creative/video.js", () => ({
-      generateVideo: async () => { throw new Error("400 Bad Request — durationSeconds out of bound"); },
-    }));
     vi.doMock("@ad-ai/core/creative/copy.js", () => ({
-      generateCopy: async () => ({ headline: "h", body: "b", cta: "c", hashtags: [] }),
+      generateCopy: async () => { throw new Error("429 rate-limited — Anthropic"); },
       createAnthropicClient: () => ({}),
     }));
     const writtenJsons: string[] = [];
@@ -193,14 +187,13 @@ describe("runGenerate cleanup on partial failure", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toBe("Generate 실패");
-    // 이미지 파일이 cleanup 됨 (video 실패 후 image fulfilled 의 파일을 unlink)
+    // 이미지 파일이 cleanup 됨 (copy 실패 후 image fulfilled 의 파일을 unlink)
     expect(unlinkedPaths).toContain("data/creatives/p1-image.jpg");
     // creative JSON 은 written 되지 않음 (부분 실패 → variant 저장 skip)
     expect(writtenJsons.filter((p) => p.includes("creatives") && p.endsWith(".json"))).toEqual([]);
 
     vi.doUnmock("fs/promises");
     vi.doUnmock("@ad-ai/core/creative/image.js");
-    vi.doUnmock("@ad-ai/core/creative/video.js");
     vi.doUnmock("@ad-ai/core/creative/copy.js");
     vi.doUnmock("@ad-ai/core/storage.js");
     vi.doUnmock("@ad-ai/core/rag/voyage.js");
@@ -241,7 +234,7 @@ describe("runLaunch failure messages distinguish data state", () => {
     vi.doMock("@ad-ai/core/storage.js", () => ({
       listJson: async () => ["data/creatives/c.json"],
       readJson: async (p: string) => p.endsWith("c.json")
-        ? { id: "c", productId: "p1", variantGroupId: "g1", status: "pending", imageLocalPath: "i", videoLocalPath: "v" }
+        ? { id: "c", productId: "p1", variantGroupId: "g1", status: "pending", imageLocalPath: "i" }
         : null,
       writeJson: async () => {},
     }));
@@ -261,12 +254,12 @@ describe("runLaunch failure messages distinguish data state", () => {
     }));
     vi.doMock("@ad-ai/core/launch/groupApproval.js", () => ({
       groupCreativesByVariantGroup: (cs: any[]) => new Map([["g1", cs]]),
-      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "missing", imageLocalPath: "i", videoLocalPath: "v" }] }),
+      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "missing", imageLocalPath: "i" }] }),
     }));
     vi.doMock("@ad-ai/core/storage.js", () => ({
       listJson: async () => ["data/creatives/c.json"],
       readJson: async (p: string) => p.endsWith("c.json")
-        ? { id: "c", productId: "missing", variantGroupId: "g1", status: "approved", imageLocalPath: "i", videoLocalPath: "v" }
+        ? { id: "c", productId: "missing", variantGroupId: "g1", status: "approved", imageLocalPath: "i" }
         : null, // product file not found
       writeJson: async () => {},
     }));
@@ -295,12 +288,12 @@ describe("runLaunch emits launchLogs to progress callback", () => {
     }));
     vi.doMock("@ad-ai/core/launch/groupApproval.js", () => ({
       groupCreativesByVariantGroup: (cs: any[]) => new Map([["g1", cs]]),
-      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "p1", imageLocalPath: "i", videoLocalPath: "v" }] }),
+      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "p1", imageLocalPath: "i" }] }),
     }));
     vi.doMock("@ad-ai/core/storage.js", () => ({
       listJson: async () => ["data/creatives/c.json"],
       readJson: async (p: string) => p.endsWith("c.json")
-        ? { id: "c", productId: "p1", status: "approved", imageLocalPath: "i", videoLocalPath: "v" }
+        ? { id: "c", productId: "p1", status: "approved", imageLocalPath: "i" }
         : { id: "p1", name: "X", description: "", targetUrl: "u", currency: "KRW", tags: [], inputMethod: "manual", createdAt: "" },
       writeJson: async () => {},
     }));

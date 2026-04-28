@@ -4,7 +4,7 @@ export interface VariantGroup {
   variantGroupId: string;
   product: Product;
   creatives: Creative[];
-  assets: { image: string; video: string };
+  assets: { image: string };
 }
 
 export interface LaunchResult {

@@ -4,7 +4,6 @@ import { PipelineScreen } from "./tui/screens/PipelineScreen.js";
 import { scrapeProduct } from "./scraper.js";
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
-import { generateVideo } from "@ad-ai/core/creative/video.js";
 import { writeJson } from "@ad-ai/core/storage.js";
 import type { Product, Creative } from "@ad-ai/core/types.js";
 import { randomUUID } from "crypto";
@@ -62,11 +61,6 @@ export async function runPipeline(urls: string[]): Promise<void> {
       update("generate", `이미지 생성 중... ${product.name}`);
       const imageLocalPath = await generateImage(product);
 
-      update("generate", `영상 생성 중... (최대 10분 소요) ${product.name}`);
-      const videoLocalPath = await generateVideo(product, (msg) =>
-        update("generate", msg)
-      );
-
       const variantGroupId = randomUUID();
 
       const fewShot: FewShotExample[] = await retrieveFewShotForProduct(product, {
@@ -88,7 +82,6 @@ export async function runPipeline(urls: string[]): Promise<void> {
             assetLabel: `${variantGroupId}::${label}`,
           },
           imageLocalPath,
-          videoLocalPath,
           status: "pending",
           createdAt: new Date().toISOString(),
         };

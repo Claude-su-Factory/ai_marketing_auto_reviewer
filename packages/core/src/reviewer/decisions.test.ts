@@ -18,7 +18,6 @@ beforeEach(() => {
       assetLabel: "variant-group-1",
     },
     imageLocalPath: "data/creatives/product-1-image.jpg",
-    videoLocalPath: "data/creatives/product-1-video.mp4",
     status: "pending",
     createdAt: "2026-04-16T00:00:00.000Z",
   };

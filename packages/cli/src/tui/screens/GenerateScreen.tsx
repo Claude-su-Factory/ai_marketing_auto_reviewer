@@ -14,7 +14,7 @@ export function GenerateScreen({ progress }: Props) {
   const doneCount = g.queue.filter((s) => s === "done").length;
   const totalCount = g.queue.length;
   const elapsedSec = Math.round(g.elapsedMs / 1000);
-  const overallPct = Math.round((g.tracks.copy.pct + g.tracks.image.pct + g.tracks.video.pct) / 3);
+  const overallPct = Math.round((g.tracks.copy.pct + g.tracks.image.pct) / 2);
   return React.createElement(Box, { flexDirection: "column" },
     React.createElement(Header, { rightSlot: "Generate" }),
     React.createElement(Box, { paddingX: 2, paddingY: 1, flexDirection: "column" },
@@ -25,7 +25,6 @@ export function GenerateScreen({ progress }: Props) {
       React.createElement(Text, { color: colors.dim }, " "),
       React.createElement(ProgressTrack, { label: "카피", status: g.tracks.copy.status, pct: g.tracks.copy.pct, detail: g.tracks.copy.label }),
       React.createElement(ProgressTrack, { label: "이미지", status: g.tracks.image.status, pct: g.tracks.image.pct, detail: g.tracks.image.label }),
-      React.createElement(ProgressTrack, { label: "영상", status: g.tracks.video.status, pct: g.tracks.video.pct, detail: g.tracks.video.label }),
       React.createElement(Text, { color: colors.dim }, "────────────────────────────"),
       React.createElement(Text, null, `전체     ${"█".repeat(Math.round(overallPct / 5))}${"░".repeat(20 - Math.round(overallPct / 5))}  ${overallPct}%  elapsed ${elapsedSec}s`),
     ),

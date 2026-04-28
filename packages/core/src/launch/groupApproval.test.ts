@@ -24,7 +24,6 @@ function mkCreative(
       assetLabel: `variant-${id}`,
     },
     imageLocalPath: "/tmp/i.png",
-    videoLocalPath: "/tmp/v.mp4",
     status,
     createdAt: "2026-04-20T00:00:00Z",
   };

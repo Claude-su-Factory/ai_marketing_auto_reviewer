@@ -44,7 +44,6 @@ for (const [groupId, members] of groups.entries()) {
     creatives: approved,
     assets: {
       image: approved[0].imageLocalPath,
-      video: approved[0].videoLocalPath,
     },
   };
 

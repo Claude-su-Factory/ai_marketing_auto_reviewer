@@ -4,7 +4,6 @@ export interface AssetFeedSpecInput {
   product: Product;
   creatives: Creative[];
   imageHash: string;
-  videoId: string;
 }
 
 export interface AssetFeedSpec {
@@ -12,12 +11,11 @@ export interface AssetFeedSpec {
   bodies: { text: string; adlabels: { name: string }[] }[];
   link_urls: { website_url: string }[];
   images: { hash: string }[];
-  videos: { video_id: string }[];
   call_to_action_types: string[];
 }
 
 export function assembleAssetFeedSpec(input: AssetFeedSpecInput): AssetFeedSpec {
-  const { product, creatives, imageHash, videoId } = input;
+  const { product, creatives, imageHash } = input;
   if (creatives.length === 0) {
     throw new Error("assembleAssetFeedSpec requires at least one creative");
   }
@@ -56,7 +54,6 @@ export function assembleAssetFeedSpec(input: AssetFeedSpecInput): AssetFeedSpec 
     bodies,
     link_urls: [{ website_url: product.targetUrl }],
     images: [{ hash: imageHash }],
-    videos: [{ video_id: videoId }],
     call_to_action_types: [sharedCta],
   };
 }

@@ -182,7 +182,7 @@ function mkCreative(id: string, variantGroupId = "g1", variantLabel: Creative["c
       headline: `h-${id}`, body: `b-${id}`, cta: "SHOP_NOW",
       hashtags: ["tag"], variantLabel, assetLabel: `${variantGroupId}::${variantLabel}`,
     },
-    imageLocalPath: "/tmp/a.jpg", videoLocalPath: "/tmp/a.mp4",
+    imageLocalPath: "/tmp/a.jpg",
     status: "approved", createdAt: "2026-04-20T00:00:00Z",
   };
 }

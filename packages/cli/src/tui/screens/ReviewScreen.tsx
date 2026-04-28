@@ -41,7 +41,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
   const [variantIndex, setVariantIndex] = useState(0);
   const [mode, setMode] = useState<"browse" | "edit" | "reject">("browse");
   const [inputValue, setInputValue] = useState("");
-  const [meta, setMeta] = useState<{ image?: AssetMeta; video?: AssetMeta }>({});
+  const [meta, setMeta] = useState<{ image?: AssetMeta }>({});
   const { bump } = useTodayStats();
 
   const currentGroup = groups[groupIndex];
@@ -50,13 +50,11 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
   useEffect(() => {
     if (!currentVariant) return;
     let cancelled = false;
-    void Promise.all([
-      getAssetMeta(currentVariant.imageLocalPath),
-      getAssetMeta(currentVariant.videoLocalPath),
-    ]).then(([image, video]) => { if (!cancelled) setMeta({ image, video }); })
+    void getAssetMeta(currentVariant.imageLocalPath)
+      .then((image) => { if (!cancelled) setMeta({ image }); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [currentVariant?.imageLocalPath, currentVariant?.videoLocalPath]);
+  }, [currentVariant?.imageLocalPath]);
 
   useInput((input, key) => {
     if (mode === "browse") {
@@ -149,7 +147,6 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
         ))}
         <Box marginTop={1} flexDirection="column">
           <Text dimColor>이미지(공유): {currentVariant.imageLocalPath}</Text>
-          <Text dimColor>영상(공유): {currentVariant.videoLocalPath}</Text>
           <Text>헤드라인: {currentVariant.copy.headline}</Text>
           <Text>본문: {currentVariant.copy.body}</Text>
           <Text>CTA: {currentVariant.copy.cta}</Text>
@@ -159,9 +156,6 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
           <Text dimColor>── ASSETS ────</Text>
           {meta.image && (
             <Text>image: {meta.image.width}×{meta.image.height} {meta.image.format} {Math.round(meta.image.sizeBytes / 1000)}KB</Text>
-          )}
-          {meta.video && (
-            <Text>video: {meta.video.format} {Math.round(meta.video.sizeBytes / 1000)}KB</Text>
           )}
         </Box>
         {mode === "browse" && currentVariant.status === "pending" && (
