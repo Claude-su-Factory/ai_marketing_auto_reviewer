@@ -302,6 +302,10 @@ export function App() {
       onEdit: async (variantGroupId: string, creativeId: string, field: keyof Creative["copy"], value: string) => {
         await applyReview(variantGroupId, creativeId, { action: "edit", field, value });
       },
+      onCancel: () => {
+        setAppState("menu");
+        setReviewGroups([]);
+      },
     });
   }
 

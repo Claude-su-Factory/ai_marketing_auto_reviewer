@@ -35,3 +35,47 @@ describe("ReviewScreen badge + ASSETS", () => {
     expect(f).toContain("mp4");
   });
 });
+
+describe("ReviewScreen escape handling (browse mode trap fix)", () => {
+  it("calls onCancel when Esc pressed in browse mode", async () => {
+    const onCancel = vi.fn();
+    const { stdin } = render(React.createElement(ReviewScreen, {
+      groups: [group], onApprove: () => {}, onReject: () => {}, onEdit: () => {}, onCancel,
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    stdin.write("\x1b"); // Esc
+    await new Promise((r) => setTimeout(r, 20));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCancel when 'q' pressed in browse mode", async () => {
+    const onCancel = vi.fn();
+    const { stdin } = render(React.createElement(ReviewScreen, {
+      groups: [group], onApprove: () => {}, onReject: () => {}, onEdit: () => {}, onCancel,
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    stdin.write("q");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCancel when Esc pressed in 'all complete' state (empty groups)", async () => {
+    const onCancel = vi.fn();
+    const { stdin } = render(React.createElement(ReviewScreen, {
+      groups: [], onApprove: () => {}, onReject: () => {}, onEdit: () => {}, onCancel,
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    stdin.write("\x1b");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders 'Esc/q 메뉴로 돌아가기' hint when groups empty", () => {
+    const { lastFrame } = render(React.createElement(ReviewScreen, {
+      groups: [], onApprove: () => {}, onReject: () => {}, onEdit: () => {}, onCancel: () => {},
+    }));
+    const f = lastFrame() ?? "";
+    expect(f).toContain("모든 검토 완료!");
+    expect(f).toContain("Esc/q 메뉴로 돌아가기");
+  });
+});

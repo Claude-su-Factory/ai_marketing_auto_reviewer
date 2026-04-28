@@ -33,9 +33,10 @@ interface Props {
     field: keyof Creative["copy"],
     value: string,
   ) => void;
+  onCancel?: () => void;
 }
 
-export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
+export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: Props) {
   const [groupIndex, setGroupIndex] = useState(0);
   const [variantIndex, setVariantIndex] = useState(0);
   const [mode, setMode] = useState<"browse" | "edit" | "reject">("browse");
@@ -59,6 +60,10 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
 
   useInput((input, key) => {
     if (mode === "browse") {
+      if (key.escape || input === "q" || input === "Q") {
+        onCancel?.();
+        return;
+      }
       if (key.upArrow) {
         setGroupIndex((i) => Math.max(0, i - 1));
         setVariantIndex(0);
@@ -113,8 +118,9 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
 
   if (!currentGroup || !currentVariant) {
     return (
-      <Box>
+      <Box flexDirection="column" padding={1}>
         <Text color="green">모든 검토 완료!</Text>
+        <Text dimColor>Esc/q 메뉴로 돌아가기</Text>
       </Box>
     );
   }
@@ -163,7 +169,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit }: Props) {
             <Text color="green">[A] 승인  </Text>
             <Text color="red">[R] 거절  </Text>
             <Text color="yellow">[E] 수정  </Text>
-            <Text dimColor>↑↓ 그룹 이동 / 1-3 variant 선택</Text>
+            <Text dimColor>↑↓ 그룹 이동 / 1-3 variant 선택 / Esc 메뉴로</Text>
           </Box>
         )}
         {mode === "browse" && currentVariant.status !== "pending" && (
