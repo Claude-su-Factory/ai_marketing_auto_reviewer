@@ -78,3 +78,66 @@ describe("ReviewScreen escape handling (browse mode trap fix)", () => {
     expect(f).toContain("Esc/q 메뉴로 돌아가기");
   });
 });
+
+describe("ReviewScreen browse-mode navigation (UX fix)", () => {
+  const groupWith3Variants = {
+    variantGroupId: "g1",
+    product: group.product,
+    creatives: [
+      { id: "c1", productId: "p1", variantGroupId: "g1",
+        copy: { headline: "h1", body: "b1", cta: "c1", hashtags: ["A"], variantLabel: "emotional" as const, assetLabel: "" },
+        imageLocalPath: "img.jpg", status: "pending" as const, createdAt: "" },
+      { id: "c2", productId: "p1", variantGroupId: "g1",
+        copy: { headline: "h2", body: "b2", cta: "c2", hashtags: ["A"], variantLabel: "numerical" as const, assetLabel: "" },
+        imageLocalPath: "img.jpg", status: "pending" as const, createdAt: "" },
+      { id: "c3", productId: "p1", variantGroupId: "g1",
+        copy: { headline: "h3", body: "b3", cta: "c3", hashtags: ["A"], variantLabel: "urgency" as const, assetLabel: "" },
+        imageLocalPath: "img.jpg", status: "pending" as const, createdAt: "" },
+    ],
+  };
+
+  it("down arrow navigates to next variant within current group", async () => {
+    const { stdin, lastFrame } = render(React.createElement(ReviewScreen, {
+      groups: [groupWith3Variants], onApprove: () => {}, onReject: () => {}, onEdit: () => {},
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    // initial: variantIndex 0 → "▶ [1]"
+    expect(lastFrame()).toContain("▶ [1] emotional");
+    stdin.write("\x1b[B"); // down arrow
+    await new Promise((r) => setTimeout(r, 20));
+    expect(lastFrame()).toContain("▶ [2] numerical");
+  });
+
+  it("up arrow at variantIndex 0 stays at 0 (no underflow)", async () => {
+    const { stdin, lastFrame } = render(React.createElement(ReviewScreen, {
+      groups: [groupWith3Variants], onApprove: () => {}, onReject: () => {}, onEdit: () => {},
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    stdin.write("\x1b[A"); // up arrow
+    await new Promise((r) => setTimeout(r, 20));
+    expect(lastFrame()).toContain("▶ [1] emotional");
+  });
+
+  it("Enter key approves current pending variant", async () => {
+    const onApprove = vi.fn();
+    const { stdin } = render(React.createElement(ReviewScreen, {
+      groups: [groupWith3Variants], onApprove, onReject: () => {}, onEdit: () => {},
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    stdin.write("\r"); // Enter
+    await new Promise((r) => setTimeout(r, 20));
+    expect(onApprove).toHaveBeenCalledTimes(1);
+    expect(onApprove).toHaveBeenCalledWith("g1", "c1");
+  });
+
+  it("renders updated help text including Enter / Tab", async () => {
+    const { lastFrame } = render(React.createElement(ReviewScreen, {
+      groups: [groupWith3Variants], onApprove: () => {}, onReject: () => {}, onEdit: () => {},
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    const f = lastFrame() ?? "";
+    expect(f).toContain("variant 이동");
+    expect(f).toContain("Enter 승인");
+    expect(f).toContain("Tab 그룹 이동");
+  });
+});

@@ -62,17 +62,32 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
         onCancel?.();
         return;
       }
+      // ↑↓ — variant 이동 (current group 내). 단일 그룹 환경에서도 시각적 피드백 보장.
       if (key.upArrow) {
-        setGroupIndex((i) => Math.max(0, i - 1));
-        setVariantIndex(0);
+        setVariantIndex((i) => Math.max(0, i - 1));
       }
       if (key.downArrow) {
+        const max = currentGroup ? currentGroup.creatives.length - 1 : 0;
+        setVariantIndex((i) => Math.min(max, i + 1));
+      }
+      // Tab / Shift+Tab — 그룹 이동 (다중 그룹 시).
+      if (key.tab && !key.shift) {
         setGroupIndex((i) => Math.min(groups.length - 1, i + 1));
+        setVariantIndex(0);
+      }
+      if (key.tab && key.shift) {
+        setGroupIndex((i) => Math.max(0, i - 1));
         setVariantIndex(0);
       }
       if (input >= "1" && input <= "9" && currentGroup) {
         const n = Number(input) - 1;
         if (n < currentGroup.creatives.length) setVariantIndex(n);
+      }
+      // Enter — 승인 shortcut (primary action). status === "pending" 일 때만 동작.
+      if (key.return && currentGroup && currentVariant && currentVariant.status === "pending") {
+        onApprove(currentGroup.variantGroupId, currentVariant.id);
+        bump();
+        return;
       }
       if (input === "a" && currentGroup && currentVariant && currentVariant.status === "pending") {
         onApprove(currentGroup.variantGroupId, currentVariant.id);
@@ -163,7 +178,7 @@ export function ReviewScreen({ groups, onApprove, onReject, onEdit, onCancel }: 
             <Text color="green">[A] 승인  </Text>
             <Text color="red">[R] 거절  </Text>
             <Text color="yellow">[E] 수정  </Text>
-            <Text dimColor>↑↓ 그룹 이동 / 1-3 variant 선택 / Esc 메뉴로</Text>
+            <Text dimColor>↑↓ variant 이동 / Enter 승인 / Tab 그룹 이동 / Esc 메뉴로</Text>
           </Box>
         )}
         {mode === "browse" && currentVariant.status !== "pending" && (
