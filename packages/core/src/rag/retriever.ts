@@ -1,6 +1,7 @@
 import type { WinnerCreative } from "./types.js";
 import type { Product } from "../types.js";
 import type { FewShotExample } from "../creative/prompt.js";
+import { buildProductEmbedText } from "./embeddingText.js";
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
@@ -118,7 +119,7 @@ export async function retrieveFewShotForProduct(
   try {
     const allWinners = deps.loadAllWinners();
     if (allWinners.length === 0) return [];
-    const [queryEmbed] = await deps.embed([product.description]);
+    const [queryEmbed] = await deps.embed([buildProductEmbedText(product)]);
     const selected = selectFewShotWinners(queryEmbed, allWinners, product);
     return selected.map((w) => ({
       headline: w.headline,

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { VariantReport } from "../platform/types.js";
 import type { VariantAggregate, WinnerCreative, QualifyDeps } from "./types.js";
+import { buildProductEmbedText } from "./embeddingText.js";
 import { cosineSimilarity, DEDUP_COSINE } from "./retriever.js";
 
 export function aggregateVariantReports(reports: VariantReport[]): VariantAggregate[] {
@@ -91,7 +92,7 @@ export async function qualifyWinners(
     if (!product) { skipped++; continue; }
 
     const [embedProduct, embedCopy] = await deps.embed([
-      product.description,
+      buildProductEmbedText(product),
       `${creative.copy.headline} ${creative.copy.body}`,
     ]);
 
