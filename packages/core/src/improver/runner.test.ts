@@ -314,10 +314,10 @@ describe("runImprovementCycle", () => {
     expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*hyperbole/);
   });
 
-  it("rejects newValue with '보장합니다' result-guarantee pattern (Gate 4)", async () => {
+  it("rejects newValue with '효과 보장합니다' result-guarantee pattern (Gate 4)", async () => {
     mockClaudeResponse = JSON.stringify({
       promptKey: "copy.angleHints.numerical",
-      newValue: "이 강의는 실력 향상을 보장합니다. 수치 강조 가이드 — 충분히 긴 길이로 유지.",
+      newValue: "이 강의는 학습 효과 보장합니다. 수치 강조 가이드 — 충분히 긴 길이로 유지.",
       reason: "test",
     });
     const analysis: AnalysisResult = {
@@ -384,6 +384,25 @@ describe("runImprovementCycle", () => {
     const raw = await readFile(rejectedPath, "utf-8");
     const rec = JSON.parse(raw);
     expect(rec[0].rejected[0].reason).toMatch(/banned pattern.*discount-superlative/);
+  });
+
+  it("does NOT reject legitimate '환불 보장' / '품질 보장된' (result-guarantee boundary positive control)", async () => {
+    mockClaudeResponse = JSON.stringify({
+      promptKey: "copy.angleHints.urgency",
+      newValue: "환불 보장으로 안심하고 결제. 품질 보장된 제품의 긴급성 강조 가이드 — 충분히 긴 길이로 유지.",
+      reason: "test",
+    });
+    const analysis: AnalysisResult = {
+      improvements: [{ campaignId: "c1", issue: "x", suggestion: "y", promptKey: "copy.angleHints.urgency" }],
+    };
+    await runImprovementCycle([mkWeak("c1", 0.5)], analysis, { promptsPath: PROMPTS_PATH, improvementsDir: IMPROVEMENTS_DIR });
+
+    // 합법 commercial 표현 — accepted 되어 prompts.json 에 반영됨
+    const dateKey = new Date().toISOString().split("T")[0];
+    const acceptedPath = path.join(IMPROVEMENTS_DIR, `${dateKey}.json`);
+    const raw = await readFile(acceptedPath, "utf-8");
+    const rec = JSON.parse(raw);
+    expect(rec[0].changes[0].after).toContain("환불 보장");
   });
 
   it("does NOT reject legitimate '최고급' / '최고온도' (boundary positive control)", async () => {

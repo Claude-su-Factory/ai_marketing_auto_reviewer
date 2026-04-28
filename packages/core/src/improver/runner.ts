@@ -57,7 +57,7 @@ interface ValidationPass { ok: true; prompts: Prompts; }
 const BANNED_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /당신만을 위한|회원[님사]|[가-힣A-Za-z]+님(?:께|에게|을(?!\s*뜻하|\s*의미)|이\s|만(?:\s|$|의))/u, label: "personalization" },
   { pattern: /100%\s*효과|1위(?!,)|최고의?\s|유일한\s/u, label: "unverified-hyperbole" },
-  { pattern: /100%\s*마스터|완벽\s*정복|보장(합니다|하는|된)/u, label: "result-guarantee" },
+  { pattern: /100%\s*마스터|완벽\s*정복|(효과|결과|성공|합격)\s*보장(합니다|하는|된|)/u, label: "result-guarantee" },
   { pattern: /역대\s*최저|최대\s*할인|유례\s*없는/u, label: "discount-superlative" },
 ];
 

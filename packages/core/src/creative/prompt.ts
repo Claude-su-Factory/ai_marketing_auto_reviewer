@@ -14,7 +14,7 @@ function buildPriceText(product: Product): string {
   if (!product.price) return "가격 미정";
   const base = `${product.currency} ${product.price.toLocaleString()}`;
   if (product.originalPrice && product.originalPrice > product.price) {
-    const discount = Math.round(
+    const discount = Math.floor(
       ((product.originalPrice - product.price) / product.originalPrice) * 100
     );
     return `${base} (정가 ${product.currency} ${product.originalPrice.toLocaleString()} 에서 ${discount}% 할인)`;
