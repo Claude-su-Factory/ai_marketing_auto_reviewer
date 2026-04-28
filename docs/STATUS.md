@@ -31,10 +31,9 @@
 |---------|------|------|
 | CLI 앱 (Owner-only) | ✅ 운영 | `packages/cli/src/entries/`, `packages/cli/src/tui/` |
 | Usage API Server (Express + SQLite) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/index.ts` |
-| AI 프록시 라우트 (copy/image/video/parse/analyze) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/routes/` |
+| AI 프록시 라우트 (copy/image/parse/analyze) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/routes/` |
 | Stripe Webhook + 자동 충전 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/routes/stripeWebhook.ts` |
 | Admin CLI (라이선스 관리) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/admin.ts` |
-| 비동기 Veo 영상 작업 관리자 | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/jobs/videoJob.ts` |
 | 세션 인증 + 레이트 리밋 (10 req/min) | 🟡 비활성 (server/ 미실행, 웹 UI 재개 시 재활성화) | `packages/server/src/auth.ts`, `packages/server/src/rateLimit.ts` |
 | 자기학습 워커 (launchd daemon) | ✅ 구현 완료 | `packages/cli/src/entries/worker.ts`, `scripts/com.adai.worker.plist` |
 | 스케줄러 (공유 모듈) | ✅ 구현 완료 | `packages/core/src/scheduler/` |
