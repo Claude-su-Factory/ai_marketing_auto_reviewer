@@ -176,6 +176,16 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
       };
     }
     const creativePaths = await listJson("data/creatives");
+    if (creativePaths.length === 0) {
+      return {
+        success: false,
+        message: "Launch 실패",
+        logs: [
+          "data/creatives/ 가 비어있습니다.",
+          "Generate 를 먼저 실행하세요 (또는 Pipeline 으로 Scrape→Generate 일괄 실행).",
+        ],
+      };
+    }
     const allCreatives: Creative[] = [];
     for (const p of creativePaths) {
       const c = await readJson<Creative>(p);
@@ -184,15 +194,19 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
     const groups = groupCreativesByVariantGroup(allCreatives);
     const logs: string[] = [];
     const launchLogs: LaunchLog[] = [];
+    let approvalSkipped = 0;
+    let orphanSkipped = 0;
     for (const [groupId, members] of groups.entries()) {
       const { launch, approved } = groupApprovalCheck(members);
       if (!launch) {
         logs.push(`skip group ${groupId.slice(0, 8)}… (approved ${approved.length}/3, 필요 ≥ 2)`);
+        approvalSkipped++;
         continue;
       }
       const product = await readJson<Product>(`data/products/${approved[0].productId}.json`);
       if (!product) {
         logs.push(`skip group ${groupId.slice(0, 8)}… (product 없음)`);
+        orphanSkipped++;
         continue;
       }
       const group: VariantGroup = { variantGroupId: groupId, product, creatives: approved, assets: { image: approved[0].imageLocalPath, video: approved[0].videoLocalPath } };
@@ -206,7 +220,17 @@ export async function runLaunch(onProgress: ProgressCallback): Promise<DoneResul
       }
     }
     if (logs.every((l) => l.startsWith("skip"))) {
-      return { success: false, message: "Launch 실패", logs: logs.length > 0 ? logs : ["승인된 variantGroup이 없습니다. Review를 먼저 실행하세요."] };
+      const guidance: string[] = [];
+      if (approvalSkipped > 0) {
+        guidance.push(`${approvalSkipped}개 그룹은 승인된 변형이 부족합니다 (필요 ≥ 2). Review 에서 승인하세요.`);
+      }
+      if (orphanSkipped > 0) {
+        guidance.push(`${orphanSkipped}개 그룹은 product 파일이 없습니다 (고아). Scrape 재실행 또는 data/creatives/ cleanup.`);
+      }
+      if (guidance.length === 0) {
+        guidance.push("게재할 그룹이 없습니다. 데이터 상태를 확인하세요.");
+      }
+      return { success: false, message: "Launch 실패", logs: [...guidance, ...logs] };
     }
     return { success: true, message: `Launch 완료 — ${logs.filter((l) => !l.startsWith("skip")).length}개 게재`, logs };
   } catch (e) {

@@ -78,6 +78,18 @@ export function App() {
 
   const loadReviewGroups = useCallback(async () => {
     const creativePaths = await listJson("data/creatives");
+    if (creativePaths.length === 0) {
+      setDoneResult({
+        success: false,
+        message: "검토할 변형이 없습니다",
+        logs: [
+          "data/creatives/ 가 비어있습니다.",
+          "Generate 를 먼저 실행하세요 (또는 Pipeline 으로 Scrape→Generate 일괄 실행).",
+        ],
+      });
+      setAppState("done");
+      return;
+    }
     const allCreatives: Creative[] = [];
     for (const p of creativePaths) {
       const c = await readJson<Creative>(p);
@@ -85,11 +97,36 @@ export function App() {
     }
     const grouped = groupCreativesByVariantGroup(allCreatives);
     const pending: ReviewGroup[] = [];
+    let orphanedCount = 0;
     for (const [variantGroupId, members] of grouped.entries()) {
       if (!members.some((c) => c.status === "pending")) continue;
       const product = await readJson<Product>(`data/products/${members[0].productId}.json`);
-      if (!product) continue;
+      if (!product) {
+        orphanedCount++;
+        continue;
+      }
       pending.push({ variantGroupId, product, creatives: members });
+    }
+    if (pending.length === 0) {
+      const totalGroups = grouped.size;
+      const reviewedCount = allCreatives.filter((c) => c.status !== "pending").length;
+      const logs: string[] = [];
+      if (orphanedCount > 0) {
+        logs.push(`고아 그룹 ${orphanedCount}개 (제품 파일 누락) — Scrape 재실행 또는 data/creatives/ cleanup 필요.`);
+      }
+      if (reviewedCount > 0) {
+        logs.push(`이미 처리된 변형 ${reviewedCount}/${allCreatives.length}개. Launch 로 진행 가능.`);
+      }
+      if (logs.length === 0) {
+        logs.push(`전체 ${allCreatives.length}개 변형 모두 비-pending 상태. (${totalGroups}개 그룹)`);
+      }
+      setDoneResult({
+        success: reviewedCount > 0 && orphanedCount === 0,
+        message: orphanedCount > 0 ? "검토할 변형 없음 (고아 그룹만 존재)" : "모든 검토 완료",
+        logs,
+      });
+      setAppState("done");
+      return;
     }
     setReviewGroups(pending);
   }, []);

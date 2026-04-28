@@ -152,6 +152,77 @@ describe("runGenerate parallelism", () => {
   });
 });
 
+describe("runLaunch failure messages distinguish data state", () => {
+  it("returns 'Generate 먼저' message when data/creatives/ is empty", async () => {
+    vi.doMock("@ad-ai/core/platform/registry.js", () => ({
+      activePlatforms: async () => [{ name: "meta", launch: async () => ({}) }],
+    }));
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      listJson: async () => [],
+      readJson: async () => null,
+      writeJson: async () => {},
+    }));
+    vi.resetModules();
+    const { runLaunch } = await import("./actions.js");
+    const result = await runLaunch(() => {});
+    expect(result.success).toBe(false);
+    expect(result.message).toBe("Launch 실패");
+    expect(result.logs.some((l: string) => l.includes("Generate 를 먼저"))).toBe(true);
+    vi.doUnmock("@ad-ai/core/platform/registry.js");
+    vi.doUnmock("@ad-ai/core/storage.js");
+  });
+
+  it("returns 'Review 에서 승인' guidance when creatives exist but none approved", async () => {
+    vi.doMock("@ad-ai/core/platform/registry.js", () => ({
+      activePlatforms: async () => [{ name: "meta", launch: async () => ({}) }],
+    }));
+    vi.doMock("@ad-ai/core/launch/groupApproval.js", () => ({
+      groupCreativesByVariantGroup: (cs: any[]) => new Map([["g1", cs]]),
+      groupApprovalCheck: () => ({ launch: false, approved: [] }),
+    }));
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      listJson: async () => ["data/creatives/c.json"],
+      readJson: async (p: string) => p.endsWith("c.json")
+        ? { id: "c", productId: "p1", variantGroupId: "g1", status: "pending", imageLocalPath: "i", videoLocalPath: "v" }
+        : null,
+      writeJson: async () => {},
+    }));
+    vi.resetModules();
+    const { runLaunch } = await import("./actions.js");
+    const result = await runLaunch(() => {});
+    expect(result.success).toBe(false);
+    expect(result.logs.some((l: string) => l.includes("승인된 변형이 부족") || l.includes("Review 에서 승인"))).toBe(true);
+    vi.doUnmock("@ad-ai/core/platform/registry.js");
+    vi.doUnmock("@ad-ai/core/launch/groupApproval.js");
+    vi.doUnmock("@ad-ai/core/storage.js");
+  });
+
+  it("returns 'product 파일 없음' guidance when creatives are orphaned (product deleted)", async () => {
+    vi.doMock("@ad-ai/core/platform/registry.js", () => ({
+      activePlatforms: async () => [{ name: "meta", launch: async () => ({}) }],
+    }));
+    vi.doMock("@ad-ai/core/launch/groupApproval.js", () => ({
+      groupCreativesByVariantGroup: (cs: any[]) => new Map([["g1", cs]]),
+      groupApprovalCheck: () => ({ launch: true, approved: [{ productId: "missing", imageLocalPath: "i", videoLocalPath: "v" }] }),
+    }));
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      listJson: async () => ["data/creatives/c.json"],
+      readJson: async (p: string) => p.endsWith("c.json")
+        ? { id: "c", productId: "missing", variantGroupId: "g1", status: "approved", imageLocalPath: "i", videoLocalPath: "v" }
+        : null, // product file not found
+      writeJson: async () => {},
+    }));
+    vi.resetModules();
+    const { runLaunch } = await import("./actions.js");
+    const result = await runLaunch(() => {});
+    expect(result.success).toBe(false);
+    expect(result.logs.some((l: string) => l.includes("product 파일이 없") || l.includes("고아"))).toBe(true);
+    vi.doUnmock("@ad-ai/core/platform/registry.js");
+    vi.doUnmock("@ad-ai/core/launch/groupApproval.js");
+    vi.doUnmock("@ad-ai/core/storage.js");
+  });
+});
+
 describe("runLaunch emits launchLogs to progress callback", () => {
   it("relays platform log entries through RunProgress.launchLogs", async () => {
     const events: any[] = [];
