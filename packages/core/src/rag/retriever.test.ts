@@ -154,6 +154,8 @@ function mkProduct(overrides: Partial<Product>): Product {
     currency: "KRW",
     targetUrl: "https://example.com",
     tags: [],
+    learningOutcomes: [],
+    differentiators: [],
     inputMethod: "manual",
     createdAt: "2026-04-20T00:00:00Z",
     ...overrides,

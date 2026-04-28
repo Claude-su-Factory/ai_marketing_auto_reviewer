@@ -6,6 +6,7 @@ const mockProduct: Product = {
   id: "test-id", name: "TypeScript 입문", description: "타입스크립트를 배웁니다",
   imageUrl: "", targetUrl: "https://inflearn.com/course/typescript",
   category: "course", currency: "KRW", price: 49000, tags: ["typescript"],
+  learningOutcomes: [], differentiators: [],
   inputMethod: "scraped", createdAt: "2026-04-16T00:00:00.000Z",
 };
 

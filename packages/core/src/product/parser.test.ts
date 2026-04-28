@@ -58,9 +58,56 @@ describe("parseProductWithClaude", () => {
     const callArgs = (client.messages.create as any).mock.calls[0][0];
     expect(callArgs.model).toBe("claude-sonnet-4-6");
     expect(callArgs.system[0].text).toContain("JSON");
+    expect(callArgs.system[0].text).toContain("learningOutcomes");
+    expect(callArgs.system[0].text).toContain("differentiators");
+    expect(callArgs.system[0].text).toContain("originalPrice");
     expect(callArgs.system[0].cache_control).toEqual({ type: "ephemeral" });
     expect(callArgs.messages[0].role).toBe("user");
     expect(callArgs.messages[0].content).toContain("HTML:");
+  });
+
+  it("extracts learningOutcomes / differentiators arrays", async () => {
+    const client = mockClient(JSON.stringify({
+      name: "Redis 강의",
+      description: "d",
+      price: 99000,
+      tags: [],
+      learningOutcomes: ["동시 접속 1000명 처리", "Redis Cluster 운영 노하우"],
+      differentiators: ["현직 카카오 시니어", "실 면접관 경험"],
+    }));
+    const product = await parseProductWithClaude(
+      client as any,
+      "https://www.inflearn.com/course/redis",
+      "<html>",
+    );
+    expect(product.learningOutcomes).toEqual(["동시 접속 1000명 처리", "Redis Cluster 운영 노하우"]);
+    expect(product.differentiators).toEqual(["현직 카카오 시니어", "실 면접관 경험"]);
+  });
+
+  it("falls back to empty arrays for learningOutcomes/differentiators when missing", async () => {
+    const client = mockClient(JSON.stringify({
+      name: "x",
+      description: "y",
+      price: 0,
+      tags: [],
+    }));
+    const product = await parseProductWithClaude(
+      client as any,
+      "https://example.com",
+      "<html>",
+    );
+    expect(product.learningOutcomes).toEqual([]);
+    expect(product.differentiators).toEqual([]);
+  });
+
+  it("converts originalPrice null → undefined; preserves number when present", async () => {
+    const client1 = mockClient(JSON.stringify({ name: "x", description: "y", price: 99000, originalPrice: 198000, tags: [], learningOutcomes: [], differentiators: [] }));
+    const product1 = await parseProductWithClaude(client1 as any, "https://example.com", "<html>");
+    expect(product1.originalPrice).toBe(198000);
+
+    const client2 = mockClient(JSON.stringify({ name: "x", description: "y", price: 99000, originalPrice: null, tags: [], learningOutcomes: [], differentiators: [] }));
+    const product2 = await parseProductWithClaude(client2 as any, "https://example.com", "<html>");
+    expect(product2.originalPrice).toBeUndefined();
   });
 });
 

@@ -3,11 +3,14 @@ export interface Product {
   name: string;
   description: string;
   price?: number;
-  currency: string;          // KRW, USD 등
+  originalPrice?: number;
+  currency: string;
   imageUrl?: string;
-  targetUrl: string;         // 광고 클릭 시 이동할 URL
-  category?: string;         // course | app | ecommerce | service | other
+  targetUrl: string;
+  category?: string;
   tags: string[];
+  learningOutcomes: string[];
+  differentiators: string[];
   inputMethod: "scraped" | "manual";
   createdAt: string;
 }

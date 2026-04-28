@@ -9,6 +9,7 @@ const mockProduct: Product = {
   id: "p1", name: "Docker 기초", description: "컨테이너 기술",
   targetUrl: "https://inflearn.com/course/docker",
   currency: "KRW", category: "course", price: 44000, tags: ["docker"],
+  learningOutcomes: [], differentiators: [],
   inputMethod: "scraped", createdAt: "2026-04-16T00:00:00.000Z",
 };
 

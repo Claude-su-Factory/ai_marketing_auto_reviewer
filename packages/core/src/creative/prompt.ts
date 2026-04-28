@@ -10,6 +10,28 @@ export interface FewShotExample {
   cta: string;
 }
 
+function buildPriceText(product: Product): string {
+  if (!product.price) return "가격 미정";
+  const base = `${product.currency} ${product.price.toLocaleString()}`;
+  if (product.originalPrice && product.originalPrice > product.price) {
+    const discount = Math.round(
+      ((product.originalPrice - product.price) / product.originalPrice) * 100
+    );
+    return `${base} (정가 ${product.currency} ${product.originalPrice.toLocaleString()} 에서 ${discount}% 할인)`;
+  }
+  return base;
+}
+
+function buildLearningOutcomesBlock(items: string[]): string {
+  if (items.length === 0) return "";
+  return `\n학습 결과:\n${items.map((s) => `- ${s}`).join("\n")}`;
+}
+
+function buildDifferentiatorsBlock(items: string[]): string {
+  if (items.length === 0) return "";
+  return `\n차별점:\n${items.map((s) => `- ${s}`).join("\n")}`;
+}
+
 export const VARIANT_LABELS: readonly VariantLabel[] = [
   "emotional",
   "numerical",
@@ -22,9 +44,6 @@ export async function buildCopyPrompt(
   variantLabel: VariantLabel,
 ): Promise<string> {
   const prompts = await loadPrompts();
-  const priceText = product.price
-    ? `${product.currency} ${product.price.toLocaleString()}`
-    : "가격 미정";
 
   const fewShotBlock =
     fewShot.length > 0
@@ -39,11 +58,13 @@ export async function buildCopyPrompt(
   return substitutePlaceholders(prompts.copy.userTemplate, {
     name: product.name,
     description: product.description,
-    priceText,
+    priceText: buildPriceText(product),
     category: product.category ?? "기타",
     tags: product.tags.join(", "),
     targetUrl: product.targetUrl,
     angleHint: prompts.copy.angleHints[variantLabel],
     fewShotBlock,
+    learningOutcomesBlock: buildLearningOutcomesBlock(product.learningOutcomes),
+    differentiatorsBlock: buildDifferentiatorsBlock(product.differentiators),
   });
 }

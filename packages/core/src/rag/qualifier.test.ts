@@ -191,7 +191,8 @@ function mkProd(id = "p1"): Product {
   return {
     id, name: "Test", description: "product description here",
     currency: "KRW", targetUrl: "https://example.com",
-    tags: ["tag"], inputMethod: "manual", createdAt: "2026-04-20T00:00:00Z",
+    tags: ["tag"], learningOutcomes: [], differentiators: [],
+    inputMethod: "manual", createdAt: "2026-04-20T00:00:00Z",
     category: "course",
   };
 }

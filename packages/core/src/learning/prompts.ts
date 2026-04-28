@@ -48,6 +48,8 @@ export const DEFAULT_PROMPTS: Prompts = {
 - 해시태그: 관련 해시태그 3개
 - 광범위 노출 정책: "당신만을 위한", "회원님께", "~님" 같은 1:1 개인화 표현 절대 금지. 모든 광고는 광범위 익명 노출 가정.
 - 과장/규제 정책: "100% 효과", "1위", "최고", "유일한" 같은 검증 안 된 과장/superlative 절대 금지. 한국 표시광고법 + Meta 광고 정책 준수.
+- 학습 결과 표현 정책: learningOutcomes 데이터 활용 시 "100% 마스터", "완벽 정복", "~을 보장합니다" 같은 효과 보장 표현 절대 금지. 동사형 결과만 (예: "실시간 채팅 시스템을 구현").
+- 할인율 표현 정책: priceText 의 정확한 % 만 인용 ("50% 할인"). "역대 최저가", "최대 할인", "유례 없는" 같은 superlative 절대 금지.
 
 반드시 JSON 형식으로만 응답하세요:
 {"headline":"","body":"","cta":"","hashtags":[]}`,
@@ -55,7 +57,7 @@ export const DEFAULT_PROMPTS: Prompts = {
 
 제품명: {{name}}
 설명: {{description}}
-가격: {{priceText}}
+가격: {{priceText}}{{learningOutcomesBlock}}{{differentiatorsBlock}}
 카테고리: {{category}}
 태그: {{tags}}
 링크: {{targetUrl}}

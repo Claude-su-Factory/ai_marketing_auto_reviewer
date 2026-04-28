@@ -41,6 +41,8 @@ async function writeProduct(id: string): Promise<void> {
     currency: "KRW",
     targetUrl: "https://example.com",
     tags: ["tag"],
+    learningOutcomes: [],
+    differentiators: [],
     inputMethod: "manual",
     createdAt: "2026-04-20T00:00:00Z",
     category: "course",

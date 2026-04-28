@@ -5,6 +5,7 @@ import type { Creative, Product } from "../../types.js";
 const mockProduct: Product = {
   id: "p1", name: "Test", description: "desc", targetUrl: "https://example.com",
   currency: "KRW", category: "course", tags: ["x"], inputMethod: "manual",
+  learningOutcomes: [], differentiators: [],
   createdAt: "2026-04-20T00:00:00.000Z",
 };
 
@@ -77,6 +78,8 @@ describe("assembleAssetFeedSpec", () => {
       currency: "KRW",
       targetUrl: "https://example.com",
       tags: [],
+      learningOutcomes: [],
+      differentiators: [],
       inputMethod: "manual",
       createdAt: "2026-04-20T00:00:00Z",
     };
@@ -117,6 +120,8 @@ describe("assembleAssetFeedSpec", () => {
       currency: "KRW",
       targetUrl: "https://example.com",
       tags: [],
+      learningOutcomes: [],
+      differentiators: [],
       inputMethod: "manual",
       createdAt: "2026-04-20T00:00:00Z",
     };

@@ -155,10 +155,13 @@ export function App() {
             description: newFormData.description ?? "",
             targetUrl: newFormData.targetUrl ?? "",
             price: newFormData.price,
+            originalPrice: undefined,
             currency: "KRW",
             imageUrl: undefined,
             category: undefined,
             tags: [],
+            learningOutcomes: [],
+            differentiators: [],
             inputMethod: "manual",
             createdAt: new Date().toISOString(),
           };

@@ -1,12 +1,23 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { generateCopy } from "./copy.js";
-import { DEFAULT_PROMPTS } from "../learning/prompts.js";
+import { DEFAULT_PROMPTS, setPromptsForTesting } from "../learning/prompts.js";
 import type { Product } from "../types.js";
+
+beforeEach(() => {
+  // 프로덕션 data/learned/prompts.json 이 self-learning 으로 변경된 상태에서도
+  // 본 테스트가 DEFAULT_PROMPTS 와 동일성을 검증할 수 있도록 강제 주입.
+  setPromptsForTesting(DEFAULT_PROMPTS);
+});
+
+afterAll(() => {
+  setPromptsForTesting(null);
+});
 
 const mockProduct: Product = {
   id: "test-id", name: "React 완전정복", description: "React를 처음부터 배웁니다",
   imageUrl: "https://example.com/thumb.jpg", targetUrl: "https://inflearn.com/course/react",
   category: "course", currency: "KRW", price: 55000, tags: ["react", "frontend"],
+  learningOutcomes: [], differentiators: [],
   inputMethod: "scraped", createdAt: "2026-04-16T00:00:00.000Z",
 };
 
