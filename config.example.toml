@@ -38,15 +38,9 @@ api_key = "sk-ant-..."
 [ai.google]
 # Google AI Studio — imagen (image) / veo (video) 생성
 # 발급: https://aistudio.google.com/app/apikey
+# 모델 ID 는 코드가 자동으로 가용 모델을 list-models 로 조회하고 best 후보를 선택함.
+# 디버깅: `npm run list-models` 로 가용 모델 + 선택 후보 확인.
 api_key = "AIza..."
-
-# 모델 ID 오버라이드 (옵셔널). Google 이 모델을 자주 deprecate 하므로 404 발생 시:
-#   1. `npm run list-models` 실행 → 가용 모델 목록 확인
-#   2. 아래 두 줄 활성화 + 적절한 값으로 교체
-# 미설정 시 코드 default 사용 (imagen-4.0-generate-001 / veo-3.1-generate-preview).
-# [ai.google.models]
-# image = "imagen-4.0-generate-001"
-# video = "veo-3.1-generate-preview"
 
 [ai.voyage]
 # Voyage AI — voyage-3-lite embedding (Winner DB RAG)

@@ -3,8 +3,9 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import type { Product } from "../types.js";
-import { requireGoogleAiKey, getGoogleImageModel } from "../config/helpers.js";
+import { requireGoogleAiKey } from "../config/helpers.js";
 import { callGoogleModel } from "./geminiRetry.js";
+import { discoverImageModel } from "./modelDiscovery.js";
 
 export function buildImagePrompt(product: Product): string {
   return `Instagram advertisement image for a product or service.
@@ -26,7 +27,7 @@ export async function saveBase64Image(base64Data: string, productId: string): Pr
 export async function generateImage(product: Product): Promise<string> {
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildImagePrompt(product);
-  const model = getGoogleImageModel();
+  const model = await discoverImageModel();
   const response = await callGoogleModel(
     () => ai.models.generateImages({
       model,

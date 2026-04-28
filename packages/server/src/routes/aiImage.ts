@@ -2,7 +2,8 @@ import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { buildImagePrompt } from "@ad-ai/core/creative/image.js";
 import { callGoogleModel } from "@ad-ai/core/creative/geminiRetry.js";
-import { requireGoogleAiKey, getGoogleImageModel } from "@ad-ai/core/config/helpers.js";
+import { discoverImageModel } from "@ad-ai/core/creative/modelDiscovery.js";
+import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -25,7 +26,7 @@ export function createAiImageRouter(billing: BillingService) {
     try {
       const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
       const prompt = buildImagePrompt(product);
-      const model = getGoogleImageModel();
+      const model = await discoverImageModel();
 
       const response = await callGoogleModel(
         () => ai.models.generateImages({

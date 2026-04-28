@@ -3,8 +3,9 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import type { Product } from "../types.js";
-import { requireGoogleAiKey, getGoogleVideoModel } from "../config/helpers.js";
+import { requireGoogleAiKey } from "../config/helpers.js";
 import { callGoogleModel, withGeminiRetry } from "./geminiRetry.js";
+import { discoverVideoModel } from "./modelDiscovery.js";
 
 export function buildVideoPrompt(product: Product): string {
   return `Short Instagram Reels advertisement (15 seconds), vertical 9:16 format.
@@ -26,7 +27,7 @@ async function saveVideoBytes(data: Uint8Array | string, productId: string): Pro
 export async function generateVideo(product: Product, onProgress?: (msg: string) => void): Promise<string> {
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
-  const model = getGoogleVideoModel();
+  const model = await discoverVideoModel();
   onProgress?.(`Google video (${model}): 영상 생성 요청 중...`);
   let operation = await callGoogleModel(
     () => ai.models.generateVideos({

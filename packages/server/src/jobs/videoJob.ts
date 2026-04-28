@@ -5,7 +5,8 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "@ad-ai/core/creative/video.js";
 import { callGoogleModel, withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
-import { requireGoogleAiKey, getGoogleVideoModel } from "@ad-ai/core/config/helpers.js";
+import { discoverVideoModel } from "@ad-ai/core/creative/modelDiscovery.js";
+import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -64,7 +65,7 @@ async function runVeoGeneration(
 ) {
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
-  const model = getGoogleVideoModel();
+  const model = await discoverVideoModel();
 
   let operation = await callGoogleModel(
     () => ai.models.generateVideos({

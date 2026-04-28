@@ -7,8 +7,6 @@ import {
   requireStripeConfig,
   requireTiktok,
   requireGoogle,
-  getGoogleImageModel,
-  getGoogleVideoModel,
 } from "./helpers.js";
 import { makeTestConfig } from "./testing.js";
 
@@ -57,40 +55,6 @@ describe("config helpers", () => {
 
   it("requireStripeConfig throws when billing omitted", () => {
     expect(() => requireStripeConfig(makeTestConfig({}, ["billing"]))).toThrow(/billing\.stripe/);
-  });
-});
-
-describe("getGoogleImageModel / getGoogleVideoModel", () => {
-  it("getGoogleImageModel returns default when no override", () => {
-    expect(getGoogleImageModel(makeTestConfig())).toBe("imagen-4.0-generate-001");
-  });
-
-  it("getGoogleImageModel returns override when set", () => {
-    const cfg = makeTestConfig({
-      ai: {
-        google: { api_key: "k", models: { image: "imagen-custom" } },
-      },
-    });
-    expect(getGoogleImageModel(cfg)).toBe("imagen-custom");
-  });
-
-  it("getGoogleVideoModel returns default when no override", () => {
-    expect(getGoogleVideoModel(makeTestConfig())).toBe("veo-3.1-generate-preview");
-  });
-
-  it("getGoogleVideoModel returns override when set", () => {
-    const cfg = makeTestConfig({
-      ai: {
-        google: { api_key: "k", models: { video: "veo-custom" } },
-      },
-    });
-    expect(getGoogleVideoModel(cfg)).toBe("veo-custom");
-  });
-
-  it("falls back to default when ai.google omitted entirely", () => {
-    const cfg = makeTestConfig({}, ["ai.google"]);
-    expect(getGoogleImageModel(cfg)).toBe("imagen-4.0-generate-001");
-    expect(getGoogleVideoModel(cfg)).toBe("veo-3.1-generate-preview");
   });
 });
 
