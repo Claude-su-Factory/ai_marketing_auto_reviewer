@@ -15,6 +15,7 @@
     "monitor": "tsx packages/cli/src/entries/monitor.ts",
     "pipeline": "tsx packages/cli/src/entries/pipeline.ts",
     "improve": "tsx packages/cli/src/entries/improve.ts",
+    "list-models": "tsx packages/cli/src/entries/listModels.ts",
     "worker": "tsx packages/cli/src/entries/worker.ts",
     "server": "tsx packages/server/src/index.ts",
     "admin": "tsx packages/server/src/admin.ts",

@@ -27,10 +27,22 @@ const PlatformsSection = z.object({
   google: GooglePlatform.optional(),
 });
 
+const GoogleModelsSection = z
+  .object({
+    image: z.string().min(1).optional(),
+    video: z.string().min(1).optional(),
+  })
+  .optional();
+
 const AiSection = z
   .object({
     anthropic: z.object({ api_key: z.string().min(1) }).optional(),
-    google: z.object({ api_key: z.string().min(1) }).optional(),
+    google: z
+      .object({
+        api_key: z.string().min(1),
+        models: GoogleModelsSection,
+      })
+      .optional(),
     voyage: z.object({ api_key: z.string().min(1) }).optional(),
   })
   .default({})

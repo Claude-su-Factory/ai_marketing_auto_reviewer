@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { withGeminiRetry, defaultIsRetryable } from "./geminiRetry.js";
+import { withGeminiRetry, defaultIsRetryable, callGoogleModel, isModelNotFoundError, buildModelNotFoundMessage } from "./geminiRetry.js";
 
 describe("defaultIsRetryable", () => {
   it("retries 503", () => {
@@ -74,5 +74,77 @@ describe("withGeminiRetry", () => {
     expect(fn).toHaveBeenCalledTimes(2);
     await vi.advanceTimersByTimeAsync(2000);  // delay 2: 2000ms (cumulative 3000)
     expect(fn).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("isModelNotFoundError", () => {
+  it("matches '404 NOT_FOUND' from Google REST error body", () => {
+    const e = new Error('ClientError: got status: 404 Not Found. {"error":{"code":404,"message":"models/imagen-3.0-generate-002 is not found for API version v1beta","status":"NOT_FOUND"}}');
+    expect(isModelNotFoundError(e)).toBe(true);
+  });
+
+  it("matches '404 is not found' lowercase variant", () => {
+    expect(isModelNotFoundError(new Error("got status: 404 — model is not found"))).toBe(true);
+  });
+
+  it("does NOT match 503 / UNAVAILABLE / 429", () => {
+    expect(isModelNotFoundError(new Error("503 UNAVAILABLE"))).toBe(false);
+    expect(isModelNotFoundError(new Error("429 RESOURCE_EXHAUSTED"))).toBe(false);
+  });
+
+  it("does NOT match generic 404 without NOT_FOUND/is not found", () => {
+    expect(isModelNotFoundError(new Error("HTTP 404 something"))).toBe(false);
+  });
+});
+
+describe("buildModelNotFoundMessage", () => {
+  it("includes model name + kind + actionable guidance", () => {
+    const msg = buildModelNotFoundMessage("imagen-x", "image", new Error("orig 404"));
+    expect(msg).toContain("imagen-x");
+    expect(msg).toContain("image");
+    expect(msg).toContain("npm run list-models");
+    expect(msg).toContain("[ai.google.models]");
+    expect(msg).toContain("orig 404");
+  });
+});
+
+describe("callGoogleModel", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns result on success (no retry)", async () => {
+    const fn = vi.fn().mockResolvedValue("ok");
+    const result = await callGoogleModel(fn, "model-x", "image");
+    expect(result).toBe("ok");
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("rewraps 404 NOT_FOUND with friendly guidance message", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error('404 Not Found {"status":"NOT_FOUND"}'));
+    await expect(callGoogleModel(fn, "imagen-3", "image")).rejects.toThrow(/imagen-3.*npm run list-models/s);
+  });
+
+  it("preserves retryable behavior (503 retried via withGeminiRetry, eventually throws)", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("503 UNAVAILABLE"));
+    const promise = callGoogleModel(fn, "model-x", "video", { onAttempt: () => {} });
+    promise.catch(() => {});
+    await vi.runAllTimersAsync();
+    await expect(promise).rejects.toThrow("503");
+    expect(fn).toHaveBeenCalledTimes(3);
+  });
+
+  it("does NOT rewrap non-404 non-retryable errors", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("400 BAD_REQUEST"));
+    await expect(callGoogleModel(fn, "model-x", "image")).rejects.toThrow("400");
+    // verify message is original, not rewrapped
+    try {
+      await callGoogleModel(fn, "model-x", "image");
+    } catch (e) {
+      expect(String(e)).not.toContain("npm run list-models");
+    }
   });
 });

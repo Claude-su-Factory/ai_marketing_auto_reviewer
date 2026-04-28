@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { buildImagePrompt } from "@ad-ai/core/creative/image.js";
-import { withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
-import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
+import { callGoogleModel } from "@ad-ai/core/creative/geminiRetry.js";
+import { requireGoogleAiKey, getGoogleImageModel } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -25,19 +25,22 @@ export function createAiImageRouter(billing: BillingService) {
     try {
       const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
       const prompt = buildImagePrompt(product);
+      const model = getGoogleImageModel();
 
-      const response = await withGeminiRetry(() =>
-        ai.models.generateImages({
-          model: "imagen-3.0-generate-002",
+      const response = await callGoogleModel(
+        () => ai.models.generateImages({
+          model,
           prompt,
           config: { numberOfImages: 1, aspectRatio: "1:1", outputMimeType: "image/jpeg" },
-        })
+        }),
+        model,
+        "image",
       );
 
       const imageData = response.generatedImages?.[0]?.image?.imageBytes;
       if (!imageData) {
         billing.refund(eventId, licenseId, pricing.charged);
-        res.status(500).json({ error: "Imagen 3: 이미지 생성 실패" });
+        res.status(500).json({ error: `Google image (${model}): 이미지 생성 실패` });
         return;
       }
 

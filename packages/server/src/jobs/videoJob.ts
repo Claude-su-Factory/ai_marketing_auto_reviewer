@@ -4,8 +4,8 @@ import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { buildVideoPrompt } from "@ad-ai/core/creative/video.js";
-import { withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
-import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
+import { callGoogleModel, withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
+import { requireGoogleAiKey, getGoogleVideoModel } from "@ad-ai/core/config/helpers.js";
 import type { Product } from "@ad-ai/core/types.js";
 import type { BillingService } from "../billing.js";
 import { PRICING } from "@ad-ai/core/billing/pricing.js";
@@ -64,13 +64,16 @@ async function runVeoGeneration(
 ) {
   const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
   const prompt = buildVideoPrompt(product);
+  const model = getGoogleVideoModel();
 
-  let operation = await withGeminiRetry(() =>
-    ai.models.generateVideos({
-      model: "veo-3.1-generate-preview",
+  let operation = await callGoogleModel(
+    () => ai.models.generateVideos({
+      model,
       prompt,
       config: { aspectRatio: "9:16", durationSeconds: 15 },
-    })
+    }),
+    model,
+    "video",
   );
 
   const maxAttempts = 60;
