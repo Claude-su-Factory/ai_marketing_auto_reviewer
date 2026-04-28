@@ -23,7 +23,6 @@
 - 프로덕션 배포 파이프라인 구축 (서버 호스팅, 도메인 연결, TLS 설정)
 - **멀티모듈 Phase B — 개별 repo 분리**: `packages/core,cli,server/` 를 독립 git repo 로 분리. 트리거: Phase A 가 충분히 실운영 검증된 후 (여러 주간 안정 운영). 작업: 각 repo 의 remote push, `"*"` → `"^1.0.0"` 버전 전환, CI/CD 분리.
 - Dev-time Agent Team Phase 1b — Performance Analyst subagent (Winner DB 구축 완료 — 바로 도입 가능)
-- 영상 생성 실패율 모니터링 및 알림
 - 통합 테스트 보강 (현재는 unit test 위주)
 - **웹 UI + customer 모드 재도입**: `server/` billing/license/AI proxy 재활성화, CLI 외 웹 사용자 대상 서비스 제공; 결제 URL 외 사용량/잔액 확인 대시보드 포함. 트리거: owner 만의 CLI 운영 경험 충분히 축적된 후
 - **Meta API spend 수집 + Monitor spend/CPC 복원**: `fetchMetaVariantReports` 확장, `VariantReport` 에 `spend/cpc` 추가, Monitor 화면 재설계. 트리거: Plan C 안정화 완료

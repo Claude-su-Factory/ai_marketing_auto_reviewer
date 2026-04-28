@@ -64,7 +64,6 @@ async function main(): Promise<void> {
     console.log(`\n=== ${method} (${list.length}) ===`);
     for (const m of list) {
       const flag = m.name?.includes("imagen") ? " [image]" :
-                   m.name?.includes("veo") ? " [video]" :
                    m.name?.includes("gemini") ? " [text/multi]" : "";
       console.log(`  ${shortName(m)}${flag}`);
       if (m.displayName && m.displayName !== shortName(m)) {
@@ -75,20 +74,12 @@ async function main(): Promise<void> {
 
   console.log("\n--- Suggested config.toml [ai.google.models] ---");
   const imagenCandidate = pickFirst(models, "imagen", "predict") ?? pickFirst(models, "imagen");
-  const veoCandidate = pickFirst(models, "veo");
 
   if (imagenCandidate) {
     const imagenAll = models.filter((m) => (m.name ?? "").includes("imagen"));
     console.log(`image = "${shortName(imagenCandidate)}"  # 후보: ${imagenAll.map(shortName).join(", ")}`);
   } else {
     console.log("# image: 가용 imagen 모델 없음 — Google AI Studio 콘솔에서 권한 확인 필요");
-  }
-
-  if (veoCandidate) {
-    const veoAll = models.filter((m) => (m.name ?? "").includes("veo"));
-    console.log(`video = "${shortName(veoCandidate)}"  # 후보: ${veoAll.map(shortName).join(", ")}`);
-  } else {
-    console.log("# video: 가용 veo 모델 없음 — Google AI Studio 콘솔에서 권한 확인 필요");
   }
 
   console.log("\n총 모델 수:", models.length);

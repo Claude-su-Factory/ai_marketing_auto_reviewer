@@ -9,7 +9,7 @@ beforeEach(() => {
   setPromptsForTesting(null);
   setPromptsPathForTesting(null);
   // 자동 모델 디스커버리는 네트워크 호출이라 테스트에서 차단 — 스텁 ID 주입
-  setModelOverrideForTesting({ image: "test-imagen", video: "test-veo" });
+  setModelOverrideForTesting({ image: "test-imagen" });
 });
 
 afterEach(() => {

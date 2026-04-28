@@ -13,9 +13,7 @@ interface ListModelsResponse {
 let cachedModels: GoogleModel[] | null = null;
 let pendingFetch: Promise<GoogleModel[]> | null = null;
 let cachedImageModel: string | null = null;
-let cachedVideoModel: string | null = null;
 let imageOverride: string | null = null;
-let videoOverride: string | null = null;
 
 function shortName(m: GoogleModel): string {
   return (m.name ?? "").replace(/^models\//, "");
@@ -54,7 +52,7 @@ async function fetchModels(): Promise<GoogleModel[]> {
 
 /** Higher score = preferred candidate. Heuristic:
  *  - non-preview > preview (production stability)
- *  - higher version number wins (imagen-4 > imagen-3, veo-3.1 > veo-3.0)
+ *  - higher version number wins (imagen-4 > imagen-3)
  *  - "generate" base variant > fast/ultra/lite (balanced quality/cost) */
 export function rankCandidate(name: string): number {
   let score = 0;
@@ -97,26 +95,9 @@ export async function discoverImageModel(): Promise<string> {
   return picked;
 }
 
-export async function discoverVideoModel(): Promise<string> {
-  if (videoOverride) return videoOverride;
-  if (cachedVideoModel) return cachedVideoModel;
-  const models = await fetchModels();
-  const picked = pickBestByName(models, "veo", "predictLongRunning");
-  if (!picked) {
-    throw new Error(
-      "Google API 키에 사용 가능한 veo 모델 없음. " +
-      "https://aistudio.google.com 에서 veo 액세스 권한 확인. " +
-      "디버깅: `npm run list-models` 로 가용 모델 확인.",
-    );
-  }
-  cachedVideoModel = picked;
-  return picked;
-}
-
 /** Test-only: bypass auto-discovery (and network) by pinning specific model IDs. */
-export function setModelOverrideForTesting(opts: { image?: string | null; video?: string | null }): void {
+export function setModelOverrideForTesting(opts: { image?: string | null }): void {
   if (opts.image !== undefined) imageOverride = opts.image;
-  if (opts.video !== undefined) videoOverride = opts.video;
 }
 
 /** Reset in-memory caches — useful in test setup or when API key changes. */
@@ -124,7 +105,5 @@ export function clearModelDiscoveryCache(): void {
   cachedModels = null;
   pendingFetch = null;
   cachedImageModel = null;
-  cachedVideoModel = null;
   imageOverride = null;
-  videoOverride = null;
 }
