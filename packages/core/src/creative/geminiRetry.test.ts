@@ -130,7 +130,7 @@ describe("callGoogleModel", () => {
 
   it("preserves retryable behavior (503 retried via withGeminiRetry, eventually throws)", async () => {
     const fn = vi.fn().mockRejectedValue(new Error("503 UNAVAILABLE"));
-    const promise = callGoogleModel(fn, "model-x", "video", { onAttempt: () => {} });
+    const promise = callGoogleModel(fn, "model-x", "image", { onAttempt: () => {} });
     promise.catch(() => {});
     await vi.runAllTimersAsync();
     await expect(promise).rejects.toThrow("503");

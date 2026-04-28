@@ -47,7 +47,7 @@ export async function withGeminiRetry<T>(
   throw lastError;
 }
 
-export type GoogleModelKind = "image" | "video" | "text";
+export type GoogleModelKind = "image" | "text";
 
 export function isModelNotFoundError(e: unknown): boolean {
   const msg = String(e);
