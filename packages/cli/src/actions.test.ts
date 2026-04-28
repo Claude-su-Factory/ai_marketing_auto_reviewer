@@ -152,6 +152,64 @@ describe("runGenerate parallelism", () => {
   });
 });
 
+describe("runGenerate cleanup on partial failure", () => {
+  it("unlinks fulfilled image/video files when video task rejects", async () => {
+    const unlinkedPaths: string[] = [];
+    vi.doMock("fs/promises", () => ({
+      unlink: async (p: string) => { unlinkedPaths.push(p); },
+    }));
+    vi.doMock("@ad-ai/core/creative/image.js", () => ({
+      generateImage: async () => "data/creatives/p1-image.jpg",
+    }));
+    vi.doMock("@ad-ai/core/creative/video.js", () => ({
+      generateVideo: async () => { throw new Error("400 Bad Request — durationSeconds out of bound"); },
+    }));
+    vi.doMock("@ad-ai/core/creative/copy.js", () => ({
+      generateCopy: async () => ({ headline: "h", body: "b", cta: "c", hashtags: [] }),
+      createAnthropicClient: () => ({}),
+    }));
+    const writtenJsons: string[] = [];
+    vi.doMock("@ad-ai/core/storage.js", () => ({
+      listJson: async () => ["data/products/p1.json"],
+      readJson: async () => ({ id: "p1", name: "X", description: "d", targetUrl: "u", currency: "KRW", tags: [], learningOutcomes: [], differentiators: [], inputMethod: "manual", createdAt: "" }),
+      writeJson: async (path: string) => { writtenJsons.push(path); },
+    }));
+    vi.doMock("@ad-ai/core/rag/voyage.js", () => ({
+      createVoyageClient: () => ({ embed: async () => [[]] }),
+    }));
+    vi.doMock("@ad-ai/core/rag/db.js", () => ({
+      createCreativesDb: () => ({ close: () => {} }),
+    }));
+    vi.doMock("@ad-ai/core/rag/store.js", () => ({
+      WinnerStore: class { loadAll() { return []; } },
+    }));
+    vi.doMock("@ad-ai/core/rag/retriever.js", () => ({
+      retrieveFewShotForProduct: async () => [],
+    }));
+
+    vi.resetModules();
+    const { runGenerate: fresh } = await import("./actions.js");
+    const result = await fresh(() => {});
+
+    expect(result.success).toBe(false);
+    expect(result.message).toBe("Generate 실패");
+    // 이미지 파일이 cleanup 됨 (video 실패 후 image fulfilled 의 파일을 unlink)
+    expect(unlinkedPaths).toContain("data/creatives/p1-image.jpg");
+    // creative JSON 은 written 되지 않음 (부분 실패 → variant 저장 skip)
+    expect(writtenJsons.filter((p) => p.includes("creatives") && p.endsWith(".json"))).toEqual([]);
+
+    vi.doUnmock("fs/promises");
+    vi.doUnmock("@ad-ai/core/creative/image.js");
+    vi.doUnmock("@ad-ai/core/creative/video.js");
+    vi.doUnmock("@ad-ai/core/creative/copy.js");
+    vi.doUnmock("@ad-ai/core/storage.js");
+    vi.doUnmock("@ad-ai/core/rag/voyage.js");
+    vi.doUnmock("@ad-ai/core/rag/db.js");
+    vi.doUnmock("@ad-ai/core/rag/store.js");
+    vi.doUnmock("@ad-ai/core/rag/retriever.js");
+  });
+});
+
 describe("runLaunch failure messages distinguish data state", () => {
   it("returns 'Generate 먼저' message when data/creatives/ is empty", async () => {
     vi.doMock("@ad-ai/core/platform/registry.js", () => ({

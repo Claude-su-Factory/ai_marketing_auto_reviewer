@@ -20,6 +20,7 @@ import { readJson, writeJson, listJson } from "@ad-ai/core/storage.js";
 import type { Product, Creative } from "@ad-ai/core/types.js";
 import type { DoneResult, ProgressCallback, TaskProgress } from "./tui/AppTypes.js";
 import { randomUUID } from "crypto";
+import { unlink } from "fs/promises";
 import { VARIANT_LABELS, type FewShotExample } from "@ad-ai/core/creative/prompt.js";
 import { generateCopy, createAnthropicClient } from "@ad-ai/core/creative/copy.js";
 import { generateImage } from "@ad-ai/core/creative/image.js";
@@ -140,7 +141,24 @@ export async function runGenerate(onProgress: ProgressCallback): Promise<DoneRes
         return copies;
       })();
 
-      const [imageLocalPath, videoLocalPath, copies] = await Promise.all([imageTask, videoTask, copiesTask]);
+      const [imageRes, videoRes, copyRes] = await Promise.allSettled([imageTask, videoTask, copiesTask]);
+
+      // 부분 실패 시 성공한 image/video 파일을 cleanup — 다음 단계 (Review) 가 고아 파일을 보지 않도록
+      const failed = [imageRes, videoRes, copyRes].some((r) => r.status === "rejected");
+      if (failed) {
+        if (imageRes.status === "fulfilled") await unlink(imageRes.value).catch(() => {});
+        if (videoRes.status === "fulfilled") await unlink(videoRes.value).catch(() => {});
+        const reasons = [
+          imageRes.status === "rejected" ? `image: ${String(imageRes.reason).slice(0, 200)}` : null,
+          videoRes.status === "rejected" ? `video: ${String(videoRes.reason).slice(0, 200)}` : null,
+          copyRes.status === "rejected" ? `copy: ${String(copyRes.reason).slice(0, 200)}` : null,
+        ].filter((s): s is string => s !== null);
+        throw new Error(`Generate 부분 실패 (${product.name}) — ${reasons.join(" | ")}`);
+      }
+
+      const imageLocalPath = (imageRes as PromiseFulfilledResult<string>).value;
+      const videoLocalPath = (videoRes as PromiseFulfilledResult<string>).value;
+      const copies = (copyRes as PromiseFulfilledResult<typeof VARIANT_LABELS extends readonly (infer L)[] ? { label: L; data: Awaited<ReturnType<typeof generateCopy>> }[] : never>).value;
 
       for (const { label, data } of copies) {
         const creative: Creative = {

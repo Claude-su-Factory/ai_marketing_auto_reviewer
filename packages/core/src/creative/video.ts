@@ -33,7 +33,8 @@ export async function generateVideo(product: Product, onProgress?: (msg: string)
     () => ai.models.generateVideos({
       model,
       prompt,
-      config: { aspectRatio: "9:16", durationSeconds: 15 },
+      // durationSeconds: Veo 2.0/3.0/3.1 모두 4-8 초만 허용 (Google API enforced)
+      config: { aspectRatio: "9:16", durationSeconds: 8 },
     }),
     model,
     "video",
