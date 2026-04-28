@@ -47,6 +47,9 @@ export function buildAdSetTargeting() {
     age_max: cfg.defaults.target_age_max,
     geo_locations: { countries: ["KR"] },
     publisher_platforms,
+    // NOTE: video_feeds 와 reels 는 video-native placement — image-only 자산으로 게재 시
+    // delivery underperform 가능 (R-G1 STATUS). 첫 launch 후 placement breakdown 확인 필요.
+    // 만약 video_feeds/reels impression 0 이면 image-friendly placement (feed/story/stream/marketplace) 만 좁히기.
     facebook_positions: ["feed", "story", "video_feeds", "marketplace"],
   };
 
