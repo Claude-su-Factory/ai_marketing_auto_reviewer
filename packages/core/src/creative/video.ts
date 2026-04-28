@@ -24,8 +24,27 @@ async function saveVideoBytes(data: Uint8Array | string, productId: string): Pro
   return filePath;
 }
 
+/** Resolves Veo response → raw bytes. Newer Veo (3.x) returns `uri` (cloud-stored),
+ *  older returns inline `videoBytes` (base64). Handle both. */
+export async function fetchVeoVideoData(
+  video: { uri?: string; videoBytes?: string },
+  apiKey: string,
+): Promise<Uint8Array | string> {
+  if (video.videoBytes) return video.videoBytes;
+  if (video.uri) {
+    const sep = video.uri.includes("?") ? "&" : "?";
+    const res = await fetch(`${video.uri}${sep}key=${apiKey}`);
+    if (!res.ok) {
+      throw new Error(`Veo URI 다운로드 실패 ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    }
+    return new Uint8Array(await res.arrayBuffer());
+  }
+  throw new Error("Veo 응답에 videoBytes/uri 모두 없음");
+}
+
 export async function generateVideo(product: Product, onProgress?: (msg: string) => void): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: requireGoogleAiKey() });
+  const apiKey = requireGoogleAiKey();
+  const ai = new GoogleGenAI({ apiKey });
   const prompt = buildVideoPrompt(product);
   const model = await discoverVideoModel();
   onProgress?.(`Google video (${model}): 영상 생성 요청 중...`);
@@ -47,7 +66,8 @@ export async function generateVideo(product: Product, onProgress?: (msg: string)
     operation = await withGeminiRetry(() => ai.operations.get({ operation }));
   }
   if (!operation.done) throw new Error(`Google video (${model}): 영상 생성 타임아웃`);
-  const videoData = operation.result?.generatedVideos?.[0]?.video?.videoBytes;
-  if (!videoData) throw new Error(`Google video (${model}): 영상 데이터 없음`);
-  return saveVideoBytes(videoData, product.id);
+  const video = operation.result?.generatedVideos?.[0]?.video;
+  if (!video) throw new Error(`Google video (${model}): 영상 응답 없음`);
+  const data = await fetchVeoVideoData(video, apiKey);
+  return saveVideoBytes(data, product.id);
 }

@@ -3,7 +3,7 @@ import { writeFile, mkdir, readdir, unlink, stat } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-import { buildVideoPrompt } from "@ad-ai/core/creative/video.js";
+import { buildVideoPrompt, fetchVeoVideoData } from "@ad-ai/core/creative/video.js";
 import { callGoogleModel, withGeminiRetry } from "@ad-ai/core/creative/geminiRetry.js";
 import { discoverVideoModel } from "@ad-ai/core/creative/modelDiscovery.js";
 import { requireGoogleAiKey } from "@ad-ai/core/config/helpers.js";
@@ -93,10 +93,19 @@ async function runVeoGeneration(
     return;
   }
 
-  const videoData = operation.result?.generatedVideos?.[0]?.video?.videoBytes;
-  if (!videoData) {
+  const video = operation.result?.generatedVideos?.[0]?.video;
+  if (!video) {
     job.status = "failed";
-    job.error = "Veo 3.1: 영상 데이터 없음";
+    job.error = `Google video (${model}): 영상 응답 없음`;
+    billing.refund(eventId, job.licenseId, PRICING.video_gen.charged);
+    return;
+  }
+  let videoData: Uint8Array | string;
+  try {
+    videoData = await fetchVeoVideoData(video, requireGoogleAiKey());
+  } catch (e) {
+    job.status = "failed";
+    job.error = `Google video (${model}): ${e instanceof Error ? e.message : String(e)}`;
     billing.refund(eventId, job.licenseId, PRICING.video_gen.charged);
     return;
   }

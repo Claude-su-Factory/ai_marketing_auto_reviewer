@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { buildVideoPrompt } from "./video.js";
+import { describe, it, expect, vi } from "vitest";
+import { buildVideoPrompt, fetchVeoVideoData } from "./video.js";
 import type { Product } from "../types.js";
 
 const mockProduct: Product = {
@@ -19,5 +19,53 @@ describe("buildVideoPrompt", () => {
   it("includes vertical format instruction", () => {
     const prompt = buildVideoPrompt(mockProduct);
     expect(prompt.toLowerCase()).toContain("vertical");
+  });
+});
+
+describe("fetchVeoVideoData (handles inline bytes vs URI dual response shape)", () => {
+  it("returns videoBytes directly when present (older Veo response)", async () => {
+    const data = await fetchVeoVideoData({ videoBytes: "BASE64_DATA" }, "k");
+    expect(data).toBe("BASE64_DATA");
+  });
+
+  it("downloads URI with key= query param when only uri present (newer Veo)", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3, 4]).buffer, { status: 200 }),
+    );
+    const data = await fetchVeoVideoData({ uri: "https://example.com/video" }, "test-key");
+    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/video?key=test-key");
+    expect(data).toBeInstanceOf(Uint8Array);
+    expect((data as Uint8Array).length).toBe(4);
+    fetchSpy.mockRestore();
+  });
+
+  it("appends key with '&' when uri already has query string", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array([0]).buffer, { status: 200 }),
+    );
+    await fetchVeoVideoData({ uri: "https://example.com/video?token=abc" }, "k");
+    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/video?token=abc&key=k");
+    fetchSpy.mockRestore();
+  });
+
+  it("throws actionable error when URI download fails", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("forbidden", { status: 403 }),
+    );
+    await expect(fetchVeoVideoData({ uri: "https://example.com/video" }, "k"))
+      .rejects.toThrow(/Veo URI 다운로드 실패 403/);
+    fetchSpy.mockRestore();
+  });
+
+  it("throws when neither videoBytes nor uri present", async () => {
+    await expect(fetchVeoVideoData({}, "k")).rejects.toThrow(/videoBytes\/uri 모두 없음/);
+  });
+
+  it("prefers videoBytes when both present (avoids unnecessary network call)", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const data = await fetchVeoVideoData({ videoBytes: "INLINE", uri: "https://x.com/v" }, "k");
+    expect(data).toBe("INLINE");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });
